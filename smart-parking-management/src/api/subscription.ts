@@ -5,10 +5,7 @@ export interface SubscriptionPlan {
   id: number
   name: string
   description: string | null
-  duration_months: number
-  price: number
-  max_parking_lots: number
-  max_staff: number
+  per_slot_price: number
   is_active: boolean
   created_at: string | null
   updated_at: string | null
@@ -18,12 +15,9 @@ export interface Subscription {
   id: number
   parking_owner_id: number
   plan_id: number
-  start_date: string
-  end_date: string
+  total_slots: number
+  total_price: number
   status: string
-  payment_status: string
-  amount_paid: number | null
-  payment_date: string | null
   created_at: string
   updated_at: string | null
   plan: SubscriptionPlan | null
@@ -32,21 +26,20 @@ export interface Subscription {
 export interface SubscriptionPlanCreate {
   name: string
   description?: string
-  duration_months: number
-  price: number
-  max_parking_lots: number
-  max_staff: number
+  per_slot_price: number
   is_active?: boolean
 }
 
 export interface SubscriptionPlanUpdate {
   name?: string
   description?: string
-  duration_months?: number
-  price?: number
-  max_parking_lots?: number
-  max_staff?: number
+  per_slot_price?: number
   is_active?: boolean
+}
+
+export interface SubscriptionPurchaseRequest {
+  plan_id: number
+  total_slots: number
 }
 
 export const subscriptionApi = {
@@ -91,10 +84,8 @@ export const subscriptionApi = {
     return res.data.data
   },
 
-  async purchaseSubscription(planId: number) {
-    const res = await apiClient.post<ApiSuccess<Subscription>>("/subscriptions/purchase", null, {
-      params: { plan_id: planId },
-    })
+  async purchaseSubscription(payload: SubscriptionPurchaseRequest) {
+    const res = await apiClient.post<ApiSuccess<Subscription>>("/subscriptions/purchase", payload)
     return res.data.data
   },
 

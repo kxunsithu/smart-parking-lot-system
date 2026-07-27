@@ -106,16 +106,27 @@ export function VerifyEmailPage() {
   async function onOTPSubmit() {
     setSubmitting(true)
     try {
-      await authApi.verifyOTP({ email: user!.email, code: otpValue })
-      toast.success("Email verified successfully!")
+      const tokens = await authApi.verifyOTP({ email: user!.email, code: otpValue })
+      const { setTokens, setUser } = useAuthStore.getState()
       
-      // Refresh user data to get updated verification status
+      // Set tokens BEFORE calling me() so the API call uses the new access token
+      setTokens(tokens.access_token, tokens.refresh_token)
+      
+      // Fetch the updated user data with the new token
       const updatedUser = await authApi.me()
-      const { setUser } = useAuthStore.getState()
       setUser(updatedUser)
       
+      toast.success("Email verified successfully! You are now logged in.")
+      
+      // Check if user has a role assigned
+      if (!updatedUser.role || !updatedUser.role.name) {
+        console.error("User role is missing after OTP verification:", updatedUser)
+        toast.error("Account setup incomplete. Please contact support.")
+        return
+      }
+      
       // Check subscription status for owners
-      if (updatedUser.role!.name === "OWNER") {
+      if (updatedUser.role.name === "OWNER") {
         try {
           const status = await subscriptionApi.getMySubscriptionStatus()
           if (!status.has_subscription) {
@@ -123,12 +134,11 @@ export function VerifyEmailPage() {
             return
           }
         } catch (error) {
-          // If subscription check fails, still proceed to dashboard
           console.error("Subscription check failed:", error)
         }
       }
       
-      navigate(homePathForRole(updatedUser.role!.name), { replace: true })
+      navigate(homePathForRole(updatedUser.role.name), { replace: true })
     } catch (error) {
       toast.error(getErrorMessage(error))
     } finally {
@@ -151,6 +161,9 @@ export function VerifyEmailPage() {
   }
 
   function handleBack() {
+    // Logout before navigating back to login
+    const { logout } = useAuthStore.getState()
+    logout()
     navigate("/login", { replace: true })
   }
 

@@ -55,7 +55,7 @@ export function OwnerDashboardPage() {
           <Crown className="size-4" />
           <AlertTitle>No Active Subscription</AlertTitle>
           <AlertDescription className="flex items-center justify-between">
-            <span>{subscriptionStatus.message}</span>
+            <span>{subscriptionStatus.message}. Parking lots and staff management are disabled.</span>
             <Button asChild variant="outline" size="sm" className="ml-4">
               <Link to="/owner/subscription">Purchase Plan</Link>
             </Button>

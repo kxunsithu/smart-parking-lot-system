@@ -10,7 +10,7 @@ from app.models.parking_owner import ParkingOwner
 from app.models.parking_session import ParkingSession
 from app.models.parking_slot import ParkingSlot
 from app.models.parking_staff import ParkingStaff
-from app.models.payment import Payment
+from app.models.parking_session_payment import ParkingSessionPayment
 from app.models.reservation import Reservation
 from app.models.customer import Customer
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
@@ -38,7 +38,7 @@ class DashboardService:
         )
         total_revenue = (
             self.db.scalar(
-                select(func.coalesce(func.sum(Payment.amount), 0)).where(Payment.status == PaymentStatus.PAID.value)
+                select(func.coalesce(func.sum(ParkingSessionPayment.amount), 0)).where(ParkingSessionPayment.status == PaymentStatus.PAID.value)
             )
             or 0
         )
@@ -116,8 +116,8 @@ class DashboardService:
 
         total_revenue = (
             self.db.scalar(
-                select(func.coalesce(func.sum(Payment.amount), 0)).where(
-                    Payment.parking_session_id.in_(session_ids), Payment.status == PaymentStatus.PAID.value
+                select(func.coalesce(func.sum(ParkingSessionPayment.amount), 0)).where(
+                    ParkingSessionPayment.parking_session_id.in_(session_ids), ParkingSessionPayment.status == PaymentStatus.PAID.value
                 )
             )
             if session_ids

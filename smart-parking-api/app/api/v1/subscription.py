@@ -15,6 +15,7 @@ from app.schemas.subscription import (
     SubscriptionPlanCreate,
     SubscriptionPlanOut,
     SubscriptionPlanUpdate,
+    SubscriptionPurchaseRequest,
     SubscriptionUpdate,
 )
 from app.services.subscription_service import SubscriptionService
@@ -152,7 +153,7 @@ def cancel_subscription(
 
 @router.post("/purchase", response_model=SuccessResponse[SubscriptionOut], status_code=status.HTTP_201_CREATED)
 def purchase_subscription(
-    plan_id: int,
+    payload: SubscriptionPurchaseRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(RoleName.OWNER)),
 ):
@@ -164,13 +165,10 @@ def purchase_subscription(
     if not owner:
         raise Exception("No parking owner found")
     
-    # Create subscription
-    payload = SubscriptionCreate(
-        parking_owner_id=owner.id,
-        plan_id=plan_id,
-        start_date=datetime.now(timezone.utc),
-        status="active",
-        payment_status="pending",
+    # Purchase or renew subscription
+    subscription = SubscriptionService(db).purchase_subscription(
+        owner_id=owner.id,
+        plan_id=payload.plan_id,
+        total_slots=payload.total_slots,
     )
-    subscription = SubscriptionService(db).create_subscription(payload)
     return {"success": True, "message": "Subscription purchased successfully.", "data": subscription}

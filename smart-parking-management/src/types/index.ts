@@ -1,6 +1,6 @@
 // Types mirroring the backend Pydantic schemas (see smart-parking-api/app/schemas).
 
-export type RoleName = "ADMIN" | "OWNER" | "STAFF"
+export type RoleName = "ADMIN" | "OWNER" | "STAFF" | "CUSTOMER"
 
 export type SlotStatus = "AVAILABLE" | "RESERVED" | "OCCUPIED"
 
@@ -137,11 +137,29 @@ export interface ParkingSessionOut {
   status: SessionStatus
 }
 
-export interface PaymentOut {
+export interface SubscriptionPaymentOut {
+  id: number
+  subscription_id: number
+  amount: number
+  payment_method: PaymentMethod
+  status: PaymentStatus
+  paid_at: string
+}
+
+export interface ParkingSessionPaymentOut {
   id: number
   parking_session_id: number
   customer_id: number
-  reservation_id?: number | null
+  amount: number
+  payment_method: PaymentMethod
+  status: PaymentStatus
+  paid_at: string
+}
+
+export interface ReservationPaymentOut {
+  id: number
+  reservation_id: number
+  customer_id: number
   amount: number
   payment_method: PaymentMethod
   status: PaymentStatus

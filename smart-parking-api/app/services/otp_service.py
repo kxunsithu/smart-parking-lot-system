@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.config.settings import settings
 from app.core.exceptions import BadRequestException
 from app.repositories.otp_repository import OTPRepository
+from app.repositories.user_repository import UserRepository
 from app.services.email_service import EmailService
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,7 @@ class OTPService:
     def __init__(self, db: Session):
         self.db = db
         self.otp_repo = OTPRepository(db)
+        self.user_repo = UserRepository(db)
         self.email_service = EmailService()
 
     async def generate_otp(self, email: str) -> str:
@@ -77,5 +79,10 @@ class OTPService:
         # the registration flow can confirm a successful verification happened.
         # The OTP will be cleaned up by cleanup_expired() once it expires.
         self.otp_repo.mark_used(otp)
+
+        # Mark the user as verified
+        user = self.user_repo.get_by_email(email)
+        if user:
+            self.user_repo.update(user, {"is_verified": True})
 
         return True

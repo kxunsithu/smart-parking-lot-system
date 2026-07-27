@@ -14,10 +14,7 @@ import { getErrorMessage } from "@/api/client"
 const planSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  duration_months: z.coerce.number().int().min(1, "Duration must be at least 1 month"),
-  price: z.coerce.number().min(0, "Price must be positive"),
-  max_parking_lots: z.coerce.number().int().min(1, "Max lots must be at least 1"),
-  max_staff: z.coerce.number().int().min(1, "Max staff must be at least 1"),
+  per_slot_price: z.coerce.number().min(0, "Per slot price must be positive"),
   is_active: z.boolean().default(true),
 })
 
@@ -107,10 +104,7 @@ export function SubscriptionPlansPage() {
     reset({
       name: plan.name,
       description: plan.description || "",
-      duration_months: plan.duration_months,
-      price: plan.price,
-      max_parking_lots: plan.max_parking_lots,
-      max_staff: plan.max_staff,
+      per_slot_price: plan.per_slot_price,
       is_active: plan.is_active,
     })
     setDialogOpen(true)
@@ -151,40 +145,13 @@ export function SubscriptionPlansPage() {
                 <Input id="description" placeholder="Plan description" {...register("description")} />
               </FormField>
 
-              <FormField label="Duration (months)" htmlFor="duration_months" error={errors.duration_months?.message} required>
+              <FormField label="Per Slot Price" htmlFor="per_slot_price" error={errors.per_slot_price?.message} required>
                 <Input
-                  id="duration_months"
-                  type="number"
-                  placeholder="12"
-                  {...register("duration_months", { valueAsNumber: true })}
-                />
-              </FormField>
-
-              <FormField label="Price" htmlFor="price" error={errors.price?.message} required>
-                <Input
-                  id="price"
+                  id="per_slot_price"
                   type="number"
                   step="0.01"
-                  placeholder="1000.00"
-                  {...register("price", { valueAsNumber: true })}
-                />
-              </FormField>
-
-              <FormField label="Max Parking Lots" htmlFor="max_parking_lots" error={errors.max_parking_lots?.message} required>
-                <Input
-                  id="max_parking_lots"
-                  type="number"
-                  placeholder="5"
-                  {...register("max_parking_lots", { valueAsNumber: true })}
-                />
-              </FormField>
-
-              <FormField label="Max Staff" htmlFor="max_staff" error={errors.max_staff?.message} required>
-                <Input
-                  id="max_staff"
-                  type="number"
-                  placeholder="10"
-                  {...register("max_staff", { valueAsNumber: true })}
+                  placeholder="500.00"
+                  {...register("per_slot_price", { valueAsNumber: true })}
                 />
               </FormField>
 
@@ -233,20 +200,8 @@ export function SubscriptionPlansPage() {
 
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Duration:</span>
-                <span className="font-medium">{plan.duration_months} months</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Price:</span>
-                <span className="font-medium">K{plan.price.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Max Lots:</span>
-                <span className="font-medium">{plan.max_parking_lots}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Max Staff:</span>
-                <span className="font-medium">{plan.max_staff}</span>
+                <span className="text-muted-foreground">Per Slot:</span>
+                <span className="font-medium">K{plan.per_slot_price.toFixed(2)}</span>
               </div>
             </div>
 

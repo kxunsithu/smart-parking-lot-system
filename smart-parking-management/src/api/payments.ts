@@ -1,33 +1,47 @@
 import { apiClient } from "@/api/client"
-import type { ListParams, ListResult } from "@/api/types"
-import type { ApiSuccess, PaymentMethod, PaymentOut, PaymentStatus } from "@/types"
+import type { ApiSuccess, PaymentMethod } from "@/types"
+import type {
+  ParkingSessionPaymentOut,
+  ReservationPaymentOut,
+  SubscriptionPaymentOut,
+} from "@/types"
 
-export interface CreatePaymentPayload {
-  parking_session_id: number
-  reservation_id?: number
+export interface CreateSubscriptionPaymentPayload {
+  subscription_id: number
   amount: number
   payment_method: PaymentMethod
-  customer_id?: number
+}
+
+export interface CreateSessionPaymentPayload {
+  parking_session_id: number
+  customer_id: number
+  amount: number
+  payment_method: PaymentMethod
+}
+
+export interface CreateReservationPaymentPayload {
+  reservation_id: number
+  customer_id: number
+  amount: number
+  payment_method: PaymentMethod
 }
 
 export const paymentsApi = {
-  async list(params?: ListParams): Promise<ListResult<PaymentOut>> {
-    const res = await apiClient.get<ApiSuccess<PaymentOut[]>>("/payments", { params })
-    return { items: res.data.data, meta: res.data.meta! }
-  },
-
-  async get(id: number) {
-    const res = await apiClient.get<ApiSuccess<PaymentOut>>(`/payments/${id}`)
+  // Subscription Payments
+  async createSubscriptionPayment(payload: CreateSubscriptionPaymentPayload): Promise<SubscriptionPaymentOut> {
+    const res = await apiClient.post<ApiSuccess<SubscriptionPaymentOut>>("/payments/subscription", payload)
     return res.data.data
   },
 
-  async create(payload: CreatePaymentPayload) {
-    const res = await apiClient.post<ApiSuccess<PaymentOut>>("/payments", payload)
+  // Parking Session Payments
+  async createSessionPayment(payload: CreateSessionPaymentPayload): Promise<ParkingSessionPaymentOut> {
+    const res = await apiClient.post<ApiSuccess<ParkingSessionPaymentOut>>("/payments/session", payload)
     return res.data.data
   },
 
-  async updateStatus(id: number, status: PaymentStatus) {
-    const res = await apiClient.patch<ApiSuccess<PaymentOut>>(`/payments/${id}/status`, { status })
+  // Reservation Payments
+  async createReservationPayment(payload: CreateReservationPaymentPayload): Promise<ReservationPaymentOut> {
+    const res = await apiClient.post<ApiSuccess<ReservationPaymentOut>>("/payments/reservation", payload)
     return res.data.data
   },
 }

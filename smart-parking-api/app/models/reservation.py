@@ -19,4 +19,4 @@ class Reservation(Base):
 
     customer: Mapped["Customer"] = relationship("Customer", back_populates="reservations")
     slot: Mapped["ParkingSlot"] = relationship("ParkingSlot", back_populates="reservations")
-    payment: Mapped[Optional["Payment"]] = relationship("Payment", back_populates="reservation", uselist=False)
+    payment: Mapped[Optional["ReservationPayment"]] = relationship("ReservationPayment", back_populates="reservation", uselist=False)

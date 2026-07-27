@@ -68,12 +68,16 @@ class AuthService:
         return self.user_repo.get_with_role(user.id)
 
     def authenticate(self, payload: LoginRequest) -> tuple[str, str]:
-        user = self.user_repo.get_by_email(payload.email)
+        user = self.user_repo.get_by_email_with_role(payload.email)
         if not user or not verify_password(payload.password, user.password):
             raise UnauthorizedException("Invalid email or password.")
         if not user.is_active:
             raise UnauthorizedException("User account is inactive.")
 
+        return self.get_tokens_for_user(user)
+
+    def get_tokens_for_user(self, user: User) -> tuple[str, str]:
+        """Generate access and refresh tokens for a user."""
         claims = {"role": user.role.name if user.role else None}
         access_token = create_access_token(str(user.id), extra_claims=claims)
         refresh_token = create_refresh_token(str(user.id), extra_claims=claims)

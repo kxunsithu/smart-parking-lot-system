@@ -67,14 +67,21 @@ class ParkingSlotService:
         return slot
 
     def _sync_lot_total_slots(self, floor_id: int) -> None:
+        from sqlalchemy import func
         floor = self.floor_repo.get(floor_id)
         if not floor:
             return
         lot = self.lot_repo.get(floor.parking_lot_id)
         if not lot:
             return
-        total = sum(len(f.slots) for f in lot.floors)
-        lot.total_slots = total
+        # Count all slots across all floors for this lot
+        total = self.db.scalar(
+            select(func.count(ParkingSlot.id))
+            .select_from(ParkingSlot)
+            .join(ParkingFloor, ParkingSlot.floor_id == ParkingFloor.id)
+            .where(ParkingFloor.parking_lot_id == lot.id)
+        )
+        lot.total_slots = total if total else 0
         self.db.commit()
 
     def get_by_id(self, slot_id: int) -> ParkingSlot:

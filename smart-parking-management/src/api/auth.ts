@@ -6,13 +6,6 @@ export interface LoginPayload {
   password: string
 }
 
-export interface RegisterPayload {
-  name: string
-  email: string
-  password: string
-  phone?: string
-}
-
 export interface ChangePasswordPayload {
   old_password: string
   new_password: string
@@ -38,19 +31,14 @@ export const authApi = {
     return res.data.data
   },
 
-  async register(payload: RegisterPayload) {
-    const res = await apiClient.post<ApiSuccess<UserOut>>("/auth/register", payload)
-    return res.data.data
-  },
-
   async sendOTP(payload: SendOTPPayload) {
     const res = await apiClient.post<ApiSuccess<null>>("/auth/send-otp", payload)
     return res.data
   },
 
   async verifyOTP(payload: VerifyOTPPayload) {
-    const res = await apiClient.post<ApiSuccess<null>>("/auth/verify-otp", payload)
-    return res.data
+    const res = await apiClient.post<ApiSuccess<TokenResponse>>("/auth/verify-otp", payload)
+    return res.data.data
   },
 
   async refresh(refresh_token: string) {

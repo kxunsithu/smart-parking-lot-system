@@ -31,10 +31,11 @@ def create_lot(payload: ParkingLotCreate, db: Session = Depends(get_db), current
 def list_lots(
     type: Optional[str] = Query(default=None),
     owner_id: Optional[int] = Query(default=None),
+    for_customers: bool = Query(default=False),
     params: PaginationParams = Depends(pagination_params),
     db: Session = Depends(get_db),
 ):
-    items, meta = ParkingLotService(db).list_lots(params, type_=type, owner_id=owner_id)
+    items, meta = ParkingLotService(db).list_lots(params, type_=type, owner_id=owner_id, for_customers=for_customers)
     return {"success": True, "message": "Parking lots fetched successfully.", "data": items, "meta": meta}
 
 

@@ -13,5 +13,8 @@ class UserRepository(BaseRepository[User]):
     def get_by_email(self, email: str) -> Optional[User]:
         return self.db.scalar(select(User).where(User.email == email))
 
+    def get_by_email_with_role(self, email: str) -> Optional[User]:
+        return self.db.scalar(select(User).options(joinedload(User.role)).where(User.email == email))
+
     def get_with_role(self, id_: int) -> Optional[User]:
         return self.db.scalar(select(User).options(joinedload(User.role)).where(User.id == id_))

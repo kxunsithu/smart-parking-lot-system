@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { Check, Crown, Loader2, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { subscriptionApi, type SubscriptionPlan, type Subscription } from "@/api/subscription"
@@ -15,6 +16,8 @@ export function SubscriptionPage() {
   const [subscriptionStatus, setSubscriptionStatus] = useState<{ has_subscription: boolean; status: string; message: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isPurchasing, setIsPurchasing] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null)
+  const [totalSlots, setTotalSlots] = useState<number>(1)
 
   const fetchData = async () => {
     try {
@@ -37,17 +40,31 @@ export function SubscriptionPage() {
     fetchData()
   }, [])
 
-  const handlePurchase = async (planId: number) => {
+  const calculateTotalPrice = (plan: SubscriptionPlan, slots: number) => {
+    return plan.per_slot_price * slots
+  }
+
+  const handlePurchase = async () => {
+    if (!selectedPlan) return
     try {
       setIsPurchasing(true)
-      await subscriptionApi.purchaseSubscription(planId)
+      await subscriptionApi.purchaseSubscription({
+        plan_id: selectedPlan.id,
+        total_slots: totalSlots,
+      })
       toast.success("Subscription purchased successfully!")
+      setSelectedPlan(null)
       fetchData()
     } catch (error) {
       toast.error(getErrorMessage(error))
     } finally {
       setIsPurchasing(false)
     }
+  }
+
+  const handleSelectPlan = (plan: SubscriptionPlan) => {
+    setSelectedPlan(plan)
+    setTotalSlots(1)
   }
 
   if (isLoading) {
@@ -72,8 +89,7 @@ export function SubscriptionPage() {
           <Crown className="size-4" />
           <AlertTitle>Active Subscription</AlertTitle>
           <AlertDescription>
-            You have an active {mySubscription.plan?.name} subscription valid until{" "}
-            {new Date(mySubscription.end_date).toLocaleDateString()}
+            You have an active {mySubscription.plan?.name} subscription with {mySubscription.total_slots} slots.
           </AlertDescription>
         </Alert>
       ) : (
@@ -86,55 +102,80 @@ export function SubscriptionPage() {
         </Alert>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {plans?.map((plan) => (
-          <Card key={plan.id} className={hasActiveSubscription ? "opacity-60" : ""}>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                {plan.name}
-                <Crown className="size-5 text-primary" />
-              </CardTitle>
-              <CardDescription>{plan.description || "Business license package"}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-3xl font-bold">K{plan.price.toFixed(2)}</div>
-              <div className="text-sm text-muted-foreground">{plan.duration_months} months</div>
-              
-              <div className="space-y-2 pt-4">
-                <div className="flex items-center text-sm">
-                  <Check className="mr-2 size-4 text-green-600" />
-                  <span>Up to {plan.max_parking_lots} parking lots</span>
+      {selectedPlan ? (
+        <Card className="border-primary">
+          <CardHeader>
+            <CardTitle>Configure Your Subscription</CardTitle>
+            <CardDescription>
+              {selectedPlan.name} - Per Slot: K{selectedPlan.per_slot_price.toFixed(2)}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Number of Slots</label>
+              <Input
+                type="number"
+                min="1"
+                value={totalSlots}
+                onChange={(e) => setTotalSlots(parseInt(e.target.value) || 1)}
+                className="mt-1"
+              />
+            </div>
+            <div className="text-2xl font-bold">
+              Total: K{calculateTotalPrice(selectedPlan, totalSlots).toFixed(2)}
+            </div>
+          </CardContent>
+          <CardFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setSelectedPlan(null)}>
+              Back
+            </Button>
+            <Button onClick={handlePurchase} disabled={isPurchasing}>
+              {isPurchasing ? <Loader2 className="mr-2 size-4 animate-spin" /> : "Confirm Purchase"}
+            </Button>
+          </CardFooter>
+        </Card>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {plans?.map((plan) => (
+            <Card key={plan.id}>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  {plan.name}
+                  <Crown className="size-5 text-primary" />
+                </CardTitle>
+                <CardDescription>{plan.description || "Business license package"}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Per Slot:</span>
+                    <span className="font-medium">K{plan.per_slot_price.toFixed(2)}</span>
+                  </div>
                 </div>
-                <div className="flex items-center text-sm">
-                  <Check className="mr-2 size-4 text-green-600" />
-                  <span>Up to {plan.max_staff} staff members</span>
-                </div>
-                {plan.description && (
+                
+                <div className="space-y-2 pt-4">
                   <div className="flex items-center text-sm">
                     <Check className="mr-2 size-4 text-green-600" />
-                    <span>Premium features included</span>
+                    <span>Flexible slot count (1+ slots)</span>
                   </div>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button
-                className="w-full"
-                disabled={hasActiveSubscription || isPurchasing}
-                onClick={() => handlePurchase(plan.id)}
-              >
-                {isPurchasing ? (
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                ) : hasActiveSubscription ? (
-                  "Already Subscribed"
-                ) : (
-                  "Purchase Plan"
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+                  <div className="flex items-center text-sm">
+                    <Check className="mr-2 size-4 text-green-600" />
+                    <span>Renewable subscription</span>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  className="w-full"
+                  onClick={() => handleSelectPlan(plan)}
+                >
+                  Select Plan
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {hasActiveSubscription && (
         <div className="flex justify-center">

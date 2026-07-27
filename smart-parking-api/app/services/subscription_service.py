@@ -48,6 +48,10 @@ class SubscriptionService:
         self.db.commit()
 
     # Subscription Management
+    def calculate_total_price(self, plan: SubscriptionPlan, total_slots: int) -> float:
+        """Calculate total price based on slot count"""
+        return plan.per_slot_price * total_slots
+
     def create_subscription(self, payload: SubscriptionCreate) -> Subscription:
         # Verify plan exists
         plan = self.get_plan(payload.plan_id)
@@ -62,19 +66,55 @@ class SubscriptionService:
         if existing:
             raise BadRequestException("Owner already has an active subscription")
 
-        # Calculate end date based on plan duration
-        end_date = payload.start_date + timedelta(days=plan.duration_months * 30)
-
         subscription = Subscription(
             parking_owner_id=payload.parking_owner_id,
             plan_id=payload.plan_id,
-            start_date=payload.start_date,
-            end_date=end_date,
+            total_slots=payload.total_slots,
+            total_price=payload.total_price,
             status=payload.status,
-            payment_status=payload.payment_status,
-            amount_paid=payload.amount_paid,
         )
         return self.subscription_repo.create(subscription)
+
+    def purchase_subscription(self, owner_id: int, plan_id: int, total_slots: int) -> Subscription:
+        """Purchase or renew subscription for owner"""
+        # Verify plan exists
+        plan = self.get_plan(plan_id)
+
+        # Verify owner exists
+        owner = self.owner_repo.get_by_id(owner_id)
+        if not owner:
+            raise NotFoundException("Parking owner not found")
+
+        # Calculate total price
+        total_price = self.calculate_total_price(plan, total_slots)
+
+        # Check if owner has existing subscription
+        existing = self.subscription_repo.get_active_subscription(owner_id)
+
+        if existing:
+            # Renew: add slots to existing subscription
+            from datetime import datetime, timezone
+            now = datetime.now(timezone.utc)
+
+            existing.total_slots = existing.total_slots + total_slots
+            existing.total_price = existing.total_price + total_price
+            existing.status = "active"
+            existing.updated_at = now
+            self.db.commit()
+            return existing
+        else:
+            # New subscription
+            from datetime import datetime, timezone
+            now = datetime.now(timezone.utc)
+
+            subscription = Subscription(
+                parking_owner_id=owner_id,
+                plan_id=plan_id,
+                total_slots=total_slots,
+                total_price=total_price,
+                status="active",
+            )
+            return self.subscription_repo.create(subscription)
 
     def get_subscription(self, subscription_id: int) -> Subscription:
         subscription = self.subscription_repo.get_by_id(subscription_id)
@@ -91,8 +131,6 @@ class SubscriptionService:
     def update_subscription(self, subscription_id: int, payload: SubscriptionUpdate) -> Subscription:
         subscription = self.get_subscription(subscription_id)
         data = payload.model_dump(exclude_unset=True)
-        if payload.payment_status == "paid" and not subscription.payment_date:
-            data["payment_date"] = datetime.now(timezone.utc)
         return self.subscription_repo.update(subscription, data)
 
     def cancel_subscription(self, subscription_id: int) -> Subscription:
@@ -104,28 +142,21 @@ class SubscriptionService:
     def check_subscription_status(self, owner_id: int) -> dict:
         """Check if owner has valid subscription"""
         subscription = self.subscription_repo.get_active_subscription(owner_id)
-        
+
         if not subscription:
             return {
                 "has_subscription": False,
                 "status": "none",
                 "message": "No active subscription found",
             }
-        
+
         if subscription.status != "active":
             return {
                 "has_subscription": False,
                 "status": subscription.status,
                 "message": f"Subscription is {subscription.status}",
             }
-        
-        if subscription.payment_status != "paid":
-            return {
-                "has_subscription": False,
-                "status": "unpaid",
-                "message": "Subscription payment is pending",
-            }
-        
+
         return {
             "has_subscription": True,
             "status": "active",

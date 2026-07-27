@@ -28,7 +28,6 @@ class SubscriptionRepository(BaseRepository[Subscription]):
             .filter(
                 self.model.parking_owner_id == owner_id,
                 self.model.status == "active",
-                self.model.end_date > now,
             )
             .first()
         )

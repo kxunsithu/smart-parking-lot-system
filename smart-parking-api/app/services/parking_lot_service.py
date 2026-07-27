@@ -8,6 +8,7 @@ from app.models.parking_lot import ParkingLot
 from app.models.user import User
 from app.repositories.parking_lot_repository import ParkingLotRepository
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
+from app.repositories.subscription_repository import SubscriptionRepository
 from app.schemas.common import PaginationParams, build_meta
 from app.schemas.parking_lot import ParkingLotCreate, ParkingLotUpdate
 
@@ -17,6 +18,16 @@ class ParkingLotService:
         self.db = db
         self.lot_repo = ParkingLotRepository(db)
         self.owner_repo = ParkingOwnerRepository(db)
+        self.subscription_repo = SubscriptionRepository(db)
+
+    def _check_subscription(self, owner_id: int, current_user: User) -> None:
+        """Check if owner has active subscription (skip for admins)."""
+        if current_user.role.name == RoleName.ADMIN.value:
+            return
+        
+        subscription = self.subscription_repo.get_active_subscription(owner_id)
+        if not subscription:
+            raise ForbiddenException("You need an active subscription to manage parking lots.")
 
     def _resolve_owner_id(self, current_user: User, requested_owner_id: int | None) -> int:
         if current_user.role.name == RoleName.ADMIN.value:
@@ -29,6 +40,10 @@ class ParkingLotService:
         owner = self.owner_repo.get_by_user_id(current_user.id)
         if not owner:
             raise ForbiddenException("Only Parking Owners or Admins can create parking lots.")
+        
+        # Check subscription for owners
+        self._check_subscription(owner.id, current_user)
+        
         return owner.id
 
     def create_lot(self, payload: ParkingLotCreate, current_user: User) -> ParkingLot:
@@ -56,13 +71,23 @@ class ParkingLotService:
         owner = self.owner_repo.get_by_user_id(current_user.id)
         if not owner or lot.owner_id != owner.id:
             raise ForbiddenException("You do not have permission to manage this parking lot.")
+        
+        # Check subscription for owners
+        self._check_subscription(owner.id, current_user)
 
-    def list_lots(self, params: PaginationParams, type_: str | None = None, owner_id: int | None = None):
+    def list_lots(self, params: PaginationParams, type_: str | None = None, owner_id: int | None = None, for_customers: bool = False):
         stmt = select(ParkingLot)
         if type_:
             stmt = stmt.where(ParkingLot.type == type_)
         if owner_id:
             stmt = stmt.where(ParkingLot.owner_id == owner_id)
+        
+        # Filter out lots from owners without active subscription when listing for customers
+        if for_customers:
+            from app.models.subscription import Subscription
+            stmt = stmt.join(Subscription, ParkingLot.owner_id == Subscription.parking_owner_id).where(
+                Subscription.status == "active"
+            )
 
         items, total = self.lot_repo.paginate(
             stmt,

@@ -17,8 +17,11 @@ from app.schemas.auth import (
 )
 from app.schemas.common import SuccessResponse
 from app.schemas.user import UserOut, UserUpdate
+from app.core.exceptions import NotFoundException
 from app.services.auth_service import AuthService
 from app.services.otp_service import OTPService
+from app.repositories.otp_repository import OTPRepository
+from app.repositories.user_repository import UserRepository
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -32,7 +35,6 @@ async def send_otp(payload: SendOTPRequest, db: Session = Depends(get_db)):
 @router.get("/otp-status")
 def get_otp_status(email: str, db: Session = Depends(get_db)):
     """Get OTP expiry time and usage status for an email."""
-    from app.repositories.otp_repository import OTPRepository
     from datetime import datetime, timezone
     
     otp_repo = OTPRepository(db)
@@ -48,10 +50,21 @@ def get_otp_status(email: str, db: Session = Depends(get_db)):
     return {"success": True, "message": "OTP status fetched", "data": {"expires_at": expires_at, "created_at": created_at, "is_used": otp.is_used}}
 
 
-@router.post("/verify-otp", response_model=SuccessResponse[None])
+@router.post("/verify-otp", response_model=SuccessResponse[TokenResponse])
 def verify_otp(payload: VerifyOTPRequest, db: Session = Depends(get_db)):
     OTPService(db).verify_otp(payload.email, payload.code)
-    return {"success": True, "message": "OTP verified successfully.", "data": None}
+
+    # After successful verification, generate tokens for the user
+    user_repo = UserRepository(db)
+    user = user_repo.get_by_email_with_role(payload.email)
+    if not user:
+        raise NotFoundException("User not found after OTP verification.")
+
+    auth_service = AuthService(db)
+    access_token, refresh_token = auth_service.get_tokens_for_user(user)
+    token = TokenResponse(access_token=access_token, refresh_token=refresh_token)
+
+    return {"success": True, "message": "OTP verified successfully. User is now logged in.", "data": token}
 
 
 @router.post("/register", response_model=SuccessResponse[UserOut], status_code=status.HTTP_201_CREATED)
