@@ -1,0 +1,1779 @@
+{
+  "info": {
+    "name": "Smart Parking API",
+    "description": "A Smart Parking Lot Management System backend API collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "apiVersion",
+      "value": "api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Check if API is running"
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Health check endpoint"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"customer@example.com\",\n  \"password\": \"Password@123\",\n  \"phone\": \"+1234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "auth", "register"]
+            },
+            "description": "Register a new customer"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.access_token) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.access_token);",
+                  "    console.log('Access token saved to collection variable');",
+                  "} else {",
+                  "    console.log('Failed to extract access token');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"Password@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "auth", "login"]
+            },
+            "description": "Login and get access token (auto-saves token to collection variable)"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"your_refresh_token_here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "auth", "refresh"]
+            },
+            "description": "Refresh access token"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"your_refresh_token_here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "auth", "logout"]
+            },
+            "description": "Logout and invalidate refresh token"
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "auth", "me"]
+            },
+            "description": "Get current user profile"
+          }
+        },
+        {
+          "name": "Update Current User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"John Updated\",\n  \"phone\": \"+1234567899\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "auth", "me"]
+            },
+            "description": "Update current user profile"
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"old_password\": \"Password@123\",\n  \"new_password\": \"NewPassword@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/auth/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "auth", "change-password"]
+            },
+            "description": "Change user password"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users (Admin)",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/users?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List all users (Admin only)"
+          }
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/users/:user_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "users", ":user_id"],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get user by ID (Admin only)"
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Updated Name\",\n  \"phone\": \"+1234567899\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/users/:user_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "users", ":user_id"],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update user (Admin only)"
+          }
+        },
+        {
+          "name": "Activate User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/users/:user_id/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "users", ":user_id", "activate"],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Activate user (Admin only)"
+          }
+        },
+        {
+          "name": "Deactivate User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/users/:user_id/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "users", ":user_id", "deactivate"],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Deactivate user (Admin only)"
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/users/:user_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "users", ":user_id"],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete user (Admin only)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "List Customers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/customers?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "customers"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List all customers (Admin/Owner/Staff)"
+          }
+        },
+        {
+          "name": "Get My Customer Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/customers/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "customers", "me"]
+            },
+            "description": "Get current customer's profile"
+          }
+        },
+        {
+          "name": "Update My Customer Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"123 Main St\",\n  \"license_plate\": \"ABC123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/customers/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "customers", "me"]
+            },
+            "description": "Update current customer's profile"
+          }
+        },
+        {
+          "name": "Get Customer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/customers/:customer_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "customers", ":customer_id"],
+              "variable": [
+                {
+                  "key": "customer_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get customer by ID (Admin/Owner/Staff)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "item": [
+        {
+          "name": "Create Vehicle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license_plate\": \"ABC1234\",\n  \"vehicle_type\": \"car\",\n  \"make\": \"Toyota\",\n  \"model\": \"Camry\",\n  \"color\": \"Blue\",\n  \"year\": 2020\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/vehicles",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "vehicles"]
+            },
+            "description": "Register a new vehicle"
+          }
+        },
+        {
+          "name": "List Vehicles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/vehicles?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "vehicles"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List vehicles"
+          }
+        },
+        {
+          "name": "Get Vehicle",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/vehicles/:vehicle_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "vehicles", ":vehicle_id"],
+              "variable": [
+                {
+                  "key": "vehicle_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get vehicle by ID"
+          }
+        },
+        {
+          "name": "Update Vehicle",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"color\": \"Red\",\n  \"year\": 2021\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/vehicles/:vehicle_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "vehicles", ":vehicle_id"],
+              "variable": [
+                {
+                  "key": "vehicle_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update vehicle"
+          }
+        },
+        {
+          "name": "Delete Vehicle",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/vehicles/:vehicle_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "vehicles", ":vehicle_id"],
+              "variable": [
+                {
+                  "key": "vehicle_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete vehicle"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Parking Lots",
+      "item": [
+        {
+          "name": "Create Parking Lot",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Downtown Parking\",\n  \"address\": \"123 Main St\",\n  \"type\": \"indoor\",\n  \"total_slots\": 100,\n  \"hourly_rate\": 1000.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-lots",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-lots"]
+            },
+            "description": "Create a new parking lot (Admin/Owner)"
+          }
+        },
+        {
+          "name": "List Parking Lots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-lots?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-lots"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List all parking lots"
+          }
+        },
+        {
+          "name": "Get Parking Lot",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-lots/:lot_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-lots", ":lot_id"],
+              "variable": [
+                {
+                  "key": "lot_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get parking lot by ID"
+          }
+        },
+        {
+          "name": "Update Parking Lot",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Parking Name\",\n  \"hourly_rate\": 1200.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-lots/:lot_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-lots", ":lot_id"],
+              "variable": [
+                {
+                  "key": "lot_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update parking lot (Admin/Owner)"
+          }
+        },
+        {
+          "name": "Delete Parking Lot",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-lots/:lot_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-lots", ":lot_id"],
+              "variable": [
+                {
+                  "key": "lot_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete parking lot (Admin/Owner)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Parking Floors",
+      "item": [
+        {
+          "name": "Create Parking Floor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"parking_lot_id\": 1,\n  \"floor_number\": 1,\n  \"name\": \"Ground Floor\",\n  \"total_slots\": 50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-floors",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-floors"]
+            },
+            "description": "Create a new parking floor (Admin/Owner)"
+          }
+        },
+        {
+          "name": "List Parking Floors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-floors?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-floors"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List all parking floors"
+          }
+        },
+        {
+          "name": "Get Parking Floor",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-floors/:floor_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-floors", ":floor_id"],
+              "variable": [
+                {
+                  "key": "floor_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get parking floor by ID"
+          }
+        },
+        {
+          "name": "Update Parking Floor",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Floor Name\",\n  \"total_slots\": 60\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-floors/:floor_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-floors", ":floor_id"],
+              "variable": [
+                {
+                  "key": "floor_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update parking floor (Admin/Owner)"
+          }
+        },
+        {
+          "name": "Delete Parking Floor",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-floors/:floor_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-floors", ":floor_id"],
+              "variable": [
+                {
+                  "key": "floor_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete parking floor (Admin/Owner)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Parking Slots",
+      "item": [
+        {
+          "name": "Create Parking Slot",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"parking_floor_id\": 1,\n  \"slot_number\": \"A1\",\n  \"slot_type\": \"standard\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-slots",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-slots"]
+            },
+            "description": "Create a new parking slot (Admin/Owner)"
+          }
+        },
+        {
+          "name": "List Parking Slots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-slots?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-slots"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List all parking slots"
+          }
+        },
+        {
+          "name": "Get Parking Slot",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-slots/:slot_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-slots", ":slot_id"],
+              "variable": [
+                {
+                  "key": "slot_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get parking slot by ID"
+          }
+        },
+        {
+          "name": "Update Parking Slot",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slot_number\": \"B1\",\n  \"slot_type\": \"compact\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-slots/:slot_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-slots", ":slot_id"],
+              "variable": [
+                {
+                  "key": "slot_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update parking slot (Admin/Owner)"
+          }
+        },
+        {
+          "name": "Update Parking Slot Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"available\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-slots/:slot_id/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-slots", ":slot_id", "status"],
+              "variable": [
+                {
+                  "key": "slot_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update parking slot status (Admin/Owner/Staff)"
+          }
+        },
+        {
+          "name": "Delete Parking Slot",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-slots/:slot_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-slots", ":slot_id"],
+              "variable": [
+                {
+                  "key": "slot_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete parking slot (Admin/Owner)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reservations",
+      "item": [
+        {
+          "name": "Create Reservation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicle_id\": 1,\n  \"parking_slot_id\": 1,\n  \"start_time\": \"2024-01-15T10:00:00\",\n  \"end_time\": \"2024-01-15T14:00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/reservations",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "reservations"]
+            },
+            "description": "Create a new reservation"
+          }
+        },
+        {
+          "name": "List Reservations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/reservations?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "reservations"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List reservations"
+          }
+        },
+        {
+          "name": "Get Reservation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/reservations/:reservation_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "reservations", ":reservation_id"],
+              "variable": [
+                {
+                  "key": "reservation_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get reservation by ID"
+          }
+        },
+        {
+          "name": "Update Reservation",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"start_time\": \"2024-01-15T11:00:00\",\n  \"end_time\": \"2024-01-15T15:00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/reservations/:reservation_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "reservations", ":reservation_id"],
+              "variable": [
+                {
+                  "key": "reservation_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update reservation"
+          }
+        },
+        {
+          "name": "Update Reservation Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/reservations/:reservation_id/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "reservations", ":reservation_id", "status"],
+              "variable": [
+                {
+                  "key": "reservation_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update reservation status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Parking Sessions",
+      "item": [
+        {
+          "name": "Start Parking Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicle_id\": 1,\n  \"parking_slot_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-sessions/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-sessions", "start"]
+            },
+            "description": "Start a parking session (Admin/Owner/Staff)"
+          }
+        },
+        {
+          "name": "List Parking Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-sessions?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-sessions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List parking sessions"
+          }
+        },
+        {
+          "name": "Get Parking Session",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-sessions/:session_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-sessions", ":session_id"],
+              "variable": [
+                {
+                  "key": "session_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get parking session by ID"
+          }
+        },
+        {
+          "name": "Finish Parking Session",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"end_time\": \"2024-01-15T14:00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-sessions/:session_id/finish",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-sessions", ":session_id", "finish"],
+              "variable": [
+                {
+                  "key": "session_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Finish a parking session (Admin/Owner/Staff)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"parking_session_id\": 1,\n  \"amount\": 4000.0,\n  \"payment_method\": \"cash\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "payments"]
+            },
+            "description": "Create a payment"
+          }
+        },
+        {
+          "name": "List Payments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/payments?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "payments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List payments"
+          }
+        },
+        {
+          "name": "Get Payment",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/payments/:payment_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "payments", ":payment_id"],
+              "variable": [
+                {
+                  "key": "payment_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get payment by ID"
+          }
+        },
+        {
+          "name": "Update Payment Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/payments/:payment_id/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "payments", ":payment_id", "status"],
+              "variable": [
+                {
+                  "key": "payment_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update payment status (Admin/Owner/Staff)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Parking Owners",
+      "item": [
+        {
+          "name": "Create Parking Owner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 2,\n  \"business_name\": \"ABC Parking Co\",\n  \"business_license\": \"BL123456\",\n  \"address\": \"456 Business Ave\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-owners",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-owners"]
+            },
+            "description": "Create a new parking owner (Admin only)"
+          }
+        },
+        {
+          "name": "List Parking Owners",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-owners?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-owners"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List all parking owners (Admin only)"
+          }
+        },
+        {
+          "name": "Get My Owner Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-owners/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-owners", "me"]
+            },
+            "description": "Get current owner's profile"
+          }
+        },
+        {
+          "name": "Get Parking Owner",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-owners/:owner_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-owners", ":owner_id"],
+              "variable": [
+                {
+                  "key": "owner_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get parking owner by ID (Admin only)"
+          }
+        },
+        {
+          "name": "Update Parking Owner",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"business_name\": \"Updated Business Name\",\n  \"address\": \"789 New Address\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-owners/:owner_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-owners", ":owner_id"],
+              "variable": [
+                {
+                  "key": "owner_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update parking owner (Admin only)"
+          }
+        },
+        {
+          "name": "Delete Parking Owner",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-owners/:owner_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-owners", ":owner_id"],
+              "variable": [
+                {
+                  "key": "owner_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete parking owner (Admin only)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Parking Staff",
+      "item": [
+        {
+          "name": "Create Parking Staff",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 3,\n  \"parking_lot_id\": 1,\n  \"employee_id\": \"EMP001\",\n  \"shift_start\": \"08:00\",\n  \"shift_end\": \"16:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-staff",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-staff"]
+            },
+            "description": "Create a new parking staff (Admin/Owner)"
+          }
+        },
+        {
+          "name": "List Parking Staff",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-staff?page=1&page_size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-staff"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List parking staff (Admin/Owner)"
+          }
+        },
+        {
+          "name": "Get Parking Staff",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-staff/:staff_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-staff", ":staff_id"],
+              "variable": [
+                {
+                  "key": "staff_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get parking staff by ID"
+          }
+        },
+        {
+          "name": "Update Parking Staff",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shift_start\": \"09:00\",\n  \"shift_end\": \"17:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-staff/:staff_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-staff", ":staff_id"],
+              "variable": [
+                {
+                  "key": "staff_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update parking staff (Admin/Owner)"
+          }
+        },
+        {
+          "name": "Delete Parking Staff",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/parking-staff/:staff_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "parking-staff", ":staff_id"],
+              "variable": [
+                {
+                  "key": "staff_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete parking staff (Admin/Owner)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Admin Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/dashboard/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "dashboard", "admin"]
+            },
+            "description": "Get admin dashboard statistics (Admin only)"
+          }
+        },
+        {
+          "name": "Owner Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/dashboard/owner",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "dashboard", "owner"]
+            },
+            "description": "Get owner dashboard statistics (Owner only)"
+          }
+        },
+        {
+          "name": "Staff Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiVersion}}/dashboard/staff",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{apiVersion}}", "dashboard", "staff"]
+            },
+            "description": "Get staff dashboard statistics (Staff only)"
+          }
+        }
+      ]
+    }
+  ]
+}
