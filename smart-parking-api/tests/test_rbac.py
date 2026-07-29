@@ -37,6 +37,16 @@ def test_non_admin_cannot_list_users(client, admin_user):
 
 
 def test_owner_cannot_manage_other_owners_lot(client, admin_user):
+    admin_headers = auth_headers(client, "admin@test.com", "Admin@12345")
+
+    # Admin creates a package
+    pkg_resp = client.post(
+        "/api/v1/packages",
+        json={"name": "Basic", "price": 9900.0, "duration_days": 30, "max_lots": 5, "max_staff": 20},
+        headers=admin_headers,
+    )
+    pkg_id = pkg_resp.json()["data"]["id"]
+
     client.post(
         "/api/v1/auth/register-owner",
         json={
@@ -60,6 +70,10 @@ def test_owner_cannot_manage_other_owners_lot(client, admin_user):
 
     owner1_headers = auth_headers(client, "owner1@example.com", "Owner@1234")
     owner2_headers = auth_headers(client, "owner2@example.com", "Owner@1234")
+
+    # Both owners subscribe
+    client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner1_headers)
+    client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner2_headers)
 
     lot_id = client.post(
         "/api/v1/parking-lots", headers=owner1_headers, json={"name": "Owner1 Lot"}

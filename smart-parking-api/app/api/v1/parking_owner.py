@@ -58,3 +58,13 @@ def update_owner(owner_id: int, payload: ParkingOwnerUpdate, db: Session = Depen
 def delete_owner(owner_id: int, db: Session = Depends(get_db)):
     ParkingOwnerService(db).delete_owner(owner_id)
     return {"success": True, "message": "Parking owner deleted successfully.", "data": None}
+
+
+@router.patch(
+    "/{owner_id}/toggle-status",
+    response_model=SuccessResponse[ParkingOwnerOut],
+    dependencies=[Depends(require_roles(RoleName.ADMIN))],
+)
+def toggle_owner_status(owner_id: int, db: Session = Depends(get_db)):
+    owner = ParkingOwnerService(db).toggle_owner_status(owner_id)
+    return {"success": True, "message": "Parking owner status toggled successfully.", "data": owner}

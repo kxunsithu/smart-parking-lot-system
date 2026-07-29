@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Loader2, MoreHorizontal, Plus } from "lucide-react"
+import { Loader2, Plus, Edit, Trash2 } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { SearchInput } from "@/components/common/SearchInput"
 import { DataPagination } from "@/components/common/DataPagination"
@@ -24,12 +24,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { parkingOwnersApi } from "@/api/parkingOwners"
 import { parkingLotsApi, type CreateLotPayload, type UpdateLotPayload } from "@/api/parkingLots"
 import { getErrorMessage } from "@/api/client"
@@ -197,24 +191,24 @@ export function LotsPage() {
                     <div>
                       <CardTitle>{lot.name}</CardTitle>
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-8"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenuItem onClick={() => setEditTarget(lot)}>Edit lot</DropdownMenuItem>
-                        <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(lot)}>
-                          Delete lot
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        onClick={(e) => { e.stopPropagation(); setEditTarget(lot) }}
+                      >
+                        <Edit className="size-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 text-destructive hover:text-destructive"
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(lot) }}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">

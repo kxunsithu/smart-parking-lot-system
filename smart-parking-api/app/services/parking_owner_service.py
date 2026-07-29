@@ -93,3 +93,10 @@ class ParkingOwnerService:
 
         # Then delete the user
         self.user_repo.delete(owner.user)
+
+    def toggle_owner_status(self, owner_id: int) -> ParkingOwner:
+        owner = self.get_by_id(owner_id)
+        owner.user.is_active = not owner.user.is_active
+        self.db.commit()
+        self.db.refresh(owner)
+        return owner

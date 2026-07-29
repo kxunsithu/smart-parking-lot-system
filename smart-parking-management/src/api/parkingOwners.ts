@@ -31,4 +31,9 @@ export const parkingOwnersApi = {
     const res = await apiClient.delete<ApiSuccess<null>>(`/parking-owners/${id}`)
     return res.data
   },
+
+  async toggleStatus(id: number) {
+    const res = await apiClient.patch<ApiSuccess<ParkingOwnerOut>>(`/parking-owners/${id}/toggle-status`)
+    return res.data.data
+  },
 }

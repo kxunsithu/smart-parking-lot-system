@@ -17,3 +17,6 @@ class ParkingOwner(Base):
     parking_lots: Mapped[List["ParkingLot"]] = relationship(
         "ParkingLot", back_populates="owner", cascade="all, delete-orphan"
     )
+    subscriptions: Mapped[List["OwnerSubscription"]] = relationship(
+        "OwnerSubscription", back_populates="owner", cascade="all, delete-orphan"
+    )

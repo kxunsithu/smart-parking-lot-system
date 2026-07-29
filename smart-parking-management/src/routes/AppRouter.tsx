@@ -36,6 +36,12 @@ const AdminLotDetailPage = lazy(() =>
 )
 const OwnersPage = lazy(() => import("@/pages/admin/OwnersPage").then((m) => ({ default: m.OwnersPage })))
 const CustomersPage = lazy(() => import("@/pages/admin/CustomersPage").then((m) => ({ default: m.CustomersPage })))
+const AdminPackagesPage = lazy(() =>
+  import("@/pages/admin/PackagesPage").then((m) => ({ default: m.AdminPackagesPage }))
+)
+const AdminSubscriptionsPage = lazy(() =>
+  import("@/pages/admin/SubscriptionsPage").then((m) => ({ default: m.AdminSubscriptionsPage }))
+)
 
 const OwnerDashboardPage = lazy(() =>
   import("@/pages/owner/OwnerDashboardPage").then((m) => ({ default: m.OwnerDashboardPage }))
@@ -48,6 +54,9 @@ const OwnerSessionsPage = lazy(() =>
 )
 const OwnerPaymentsPage = lazy(() =>
   import("@/pages/owner/PaymentsPage").then((m) => ({ default: m.PaymentsPage }))
+)
+const OwnerSubscriptionPage = lazy(() =>
+  import("@/pages/owner/SubscriptionPage").then((m) => ({ default: m.OwnerSubscriptionPage }))
 )
 
 const StaffDashboardPage = lazy(() =>
@@ -108,12 +117,15 @@ const router = createBrowserRouter([
               { path: "/admin/slots/:slotId", element: withSuspense(<SlotDetailPage />) },
               { path: "/admin/owners", element: withSuspense(<OwnersPage />) },
               { path: "/admin/users", element: withSuspense(<CustomersPage />) },
+              { path: "/admin/packages", element: withSuspense(<AdminPackagesPage />) },
+              { path: "/admin/subscriptions", element: withSuspense(<AdminSubscriptionsPage />) },
             ],
           },
           {
             element: <ProtectedRoute allowedRoles={["OWNER"]} />,
             children: [
               { path: "/owner", element: withSuspense(<OwnerDashboardPage />) },
+              { path: "/owner/subscription", element: withSuspense(<OwnerSubscriptionPage />) },
               { path: "/owner/lots", element: withSuspense(<LotsPage />) },
               { path: "/owner/lots/:lotId", element: withSuspense(<LotDetailPage />) },
               { path: "/owner/slots/:slotId", element: withSuspense(<SlotDetailPage />) },

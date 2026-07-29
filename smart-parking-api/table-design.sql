@@ -128,8 +128,39 @@ CREATE TABLE IF NOT EXISTS payments (
     customer_id INT NOT NULL,
     amount DOUBLE PRECISION NOT NULL,
     payment_method VARCHAR(50) DEFAULT 'CASH',
+    transaction_ref VARCHAR(100),
     status VARCHAR(20) DEFAULT 'PAID' CHECK (status IN ('PENDING', 'PAID', 'REFUNDED')),
     paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (parking_session_id) REFERENCES parking_sessions(id),
     FOREIGN KEY (customer_id) REFERENCES customers(id)
 );
+
+-- 14. Packages (Subscription tiers defined by Admin)
+CREATE TABLE IF NOT EXISTS packages (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    price DOUBLE PRECISION NOT NULL,
+    duration_days INT NOT NULL,
+    max_lots INT NOT NULL DEFAULT 1,
+    max_staff INT NOT NULL DEFAULT 5,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 15. Owner Subscriptions (purchased packages)
+CREATE TABLE IF NOT EXISTS owner_subscriptions (
+    id SERIAL PRIMARY KEY,
+    owner_id INT NOT NULL,
+    package_id INT NOT NULL,
+    started_at TIMESTAMP NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'EXPIRED', 'CANCELLED')),
+    payment_method VARCHAR(50) NOT NULL DEFAULT 'CASH',
+    amount DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    transaction_ref VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_id) REFERENCES parking_owners(id) ON DELETE CASCADE,
+    FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE RESTRICT
+);
+

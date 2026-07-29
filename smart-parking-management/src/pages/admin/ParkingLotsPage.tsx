@@ -100,9 +100,10 @@ export function ParkingLotsPage() {
                       </TableCell>
                       <TableCell>
                         {lot.owner ? (
-                          <div>
-                            <div>{lot.owner.company_name || "-"}</div>
-                            <div className="text-xs text-muted-foreground">{lot.owner.user?.email}</div>
+                          <div className="space-y-1">
+                            <div className="font-medium">{lot.owner.user?.name || "-"}</div>
+                            <div className="text-xs text-muted-foreground">{lot.owner.company_name || "-"}</div>
+                            <div className="text-xs text-muted-foreground">{lot.owner.user?.email || "-"}</div>
                           </div>
                         ) : (
                           <span className="text-muted-foreground">-</span>

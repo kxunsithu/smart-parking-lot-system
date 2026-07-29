@@ -14,6 +14,7 @@ from app.repositories.role_repository import RoleRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.common import PaginationParams, build_meta
 from app.schemas.parking_staff import ParkingStaffCreate, ParkingStaffUpdate
+from app.services.subscription_service import SubscriptionService
 
 
 class ParkingStaffService:
@@ -24,6 +25,7 @@ class ParkingStaffService:
         self.role_repo = RoleRepository(db)
         self.lot_repo = ParkingLotRepository(db)
         self.owner_repo = ParkingOwnerRepository(db)
+        self.sub_service = SubscriptionService(db)
 
     def _assert_lot_ownership(self, lot_id: int, current_user: User) -> None:
         lot = self.lot_repo.get(lot_id)
@@ -37,6 +39,11 @@ class ParkingStaffService:
 
     def create_staff(self, payload: ParkingStaffCreate, current_user: User) -> ParkingStaff:
         self._assert_lot_ownership(payload.parking_lot_id, current_user)
+
+        # Subscription gate
+        if current_user.role.name != RoleName.ADMIN.value:
+            owner = self.owner_repo.get_by_user_id(current_user.id)
+            self.sub_service.check_subscription_required(owner.id)
 
         if self.user_repo.get_by_email(payload.email):
             raise ConflictException(
@@ -90,10 +97,16 @@ class ParkingStaffService:
         self._assert_lot_ownership(staff.parking_lot_id, current_user)
         if payload.parking_lot_id:
             self._assert_lot_ownership(payload.parking_lot_id, current_user)
+        if current_user.role.name != RoleName.ADMIN.value:
+            owner = self.owner_repo.get_by_user_id(current_user.id)
+            self.sub_service.check_subscription_required(owner.id)
         data = payload.model_dump(exclude_unset=True)
         return self.staff_repo.update(staff, data)
 
     def delete_staff(self, staff_id: int, current_user: User) -> None:
         staff = self.get_by_id(staff_id)
         self._assert_lot_ownership(staff.parking_lot_id, current_user)
+        if current_user.role.name != RoleName.ADMIN.value:
+            owner = self.owner_repo.get_by_user_id(current_user.id)
+            self.sub_service.check_subscription_required(owner.id)
         self.staff_repo.delete(staff)

@@ -12,6 +12,7 @@ class PaymentCreate(BaseModel):
     customer_id: Optional[int] = None
     amount: float = Field(..., gt=0)
     payment_method: PaymentMethod = PaymentMethod.CASH
+    transaction_ref: Optional[str] = None
 
 
 class PaymentOut(BaseModel):
@@ -22,6 +23,7 @@ class PaymentOut(BaseModel):
     customer_id: int
     amount: float
     payment_method: str
+    transaction_ref: Optional[str] = None
     status: str
     paid_at: datetime
 

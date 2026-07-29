@@ -33,6 +33,12 @@ class PaymentMethod(str, Enum):
     UABPAY = "UABPAY"
 
 
+class SubscriptionStatus(str, Enum):
+    ACTIVE = "ACTIVE"
+    EXPIRED = "EXPIRED"
+    CANCELLED = "CANCELLED"
+
+
 class SortOrder(str, Enum):
     ASC = "asc"
     DESC = "desc"

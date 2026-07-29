@@ -10,6 +10,7 @@ from app.repositories.parking_lot_repository import ParkingLotRepository
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.schemas.common import PaginationParams, build_meta
 from app.schemas.parking_lot import ParkingLotCreate, ParkingLotUpdate
+from app.services.subscription_service import SubscriptionService
 
 
 class ParkingLotService:
@@ -17,6 +18,7 @@ class ParkingLotService:
         self.db = db
         self.lot_repo = ParkingLotRepository(db)
         self.owner_repo = ParkingOwnerRepository(db)
+        self.sub_service = SubscriptionService(db)
 
     def _resolve_owner_id(self, current_user: User, requested_owner_id: int | None) -> int:
         if current_user.role.name == RoleName.ADMIN.value:
@@ -34,6 +36,20 @@ class ParkingLotService:
 
     def create_lot(self, payload: ParkingLotCreate, current_user: User) -> ParkingLot:
         owner_id = self._resolve_owner_id(current_user, payload.owner_id)
+
+        # Subscription gate — Admin is exempt
+        if current_user.role.name != RoleName.ADMIN.value:
+            self.sub_service.check_subscription_required(owner_id)
+            max_lots = self.sub_service.get_lot_limit(owner_id)
+            current_count = self.db.scalar(
+                select(func.count(ParkingLot.id)).where(ParkingLot.owner_id == owner_id)
+            ) or 0
+            if current_count >= max_lots:
+                raise ForbiddenException(
+                    f"Your subscription allows a maximum of {max_lots} parking lot(s). "
+                    "Please upgrade your package."
+                )
+
         lot = ParkingLot(
             owner_id=owner_id,
             name=payload.name,
@@ -87,12 +103,18 @@ class ParkingLotService:
     def update_lot(self, lot_id: int, payload: ParkingLotUpdate, current_user: User) -> ParkingLot:
         lot = self.get_by_id(lot_id)
         self._assert_can_manage(lot, current_user)
+        if current_user.role.name != RoleName.ADMIN.value:
+            owner = self.owner_repo.get_by_user_id(current_user.id)
+            self.sub_service.check_subscription_required(owner.id)
         data = payload.model_dump(exclude_unset=True)
         return self.lot_repo.update(lot, data)
 
     def delete_lot(self, lot_id: int, current_user: User) -> None:
         lot = self.get_by_id(lot_id)
         self._assert_can_manage(lot, current_user)
+        if current_user.role.name != RoleName.ADMIN.value:
+            owner = self.owner_repo.get_by_user_id(current_user.id)
+            self.sub_service.check_subscription_required(owner.id)
         self.lot_repo.delete(lot)
 
     def toggle_lot_status(self, lot_id: int, current_user: User) -> ParkingLot:

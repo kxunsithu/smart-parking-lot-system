@@ -2,8 +2,26 @@
 from tests.conftest import auth_headers
 
 
+def _create_basic_package(client, admin_headers) -> int:
+    """Helper: create a Basic package and return its id."""
+    resp = client.post(
+        "/api/v1/packages",
+        json={"name": "Basic", "price": 9900.0, "duration_days": 30, "max_lots": 5, "max_staff": 20},
+        headers=admin_headers,
+    )
+    return resp.json()["data"]["id"]
+
+
+def _subscribe_owner(client, owner_headers, pkg_id: int):
+    """Helper: purchase a subscription for the current owner."""
+    client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers)
+
+
 def test_full_parking_flow(client, admin_user):
     admin_headers = auth_headers(client, "admin@test.com", "Admin@12345")
+
+    # Admin creates a subscription package
+    pkg_id = _create_basic_package(client, admin_headers)
 
     # Register an Owner.
     owner_resp = client.post(
@@ -19,6 +37,9 @@ def test_full_parking_flow(client, admin_user):
     assert owner_resp.status_code == 201
 
     owner_headers = auth_headers(client, "bob@example.com", "Owner@1234")
+
+    # Owner buys a subscription
+    _subscribe_owner(client, owner_headers, pkg_id)
 
     # Owner creates a Parking Lot.
     lot_resp = client.post(
@@ -120,10 +141,18 @@ def test_full_parking_flow(client, admin_user):
             "parking_session_id": session_id,
             "amount": finished_data["fee"],
             "payment_method": "KBZPAY",
+            "transaction_ref": "TXN123456",
         },
     )
     assert payment_resp.status_code == 201
     assert payment_resp.json()["data"]["status"] == "PAID"
+    assert payment_resp.json()["data"]["transaction_ref"] == "TXN123456"
+
+    # List payments
+    list_resp = client.get("/api/v1/payments/", headers=owner_headers)
+    assert list_resp.status_code == 200
+    assert len(list_resp.json()["data"]) >= 1
+    assert list_resp.json()["data"][0]["transaction_ref"] == "TXN123456"
 
     # Admin dashboard reflects the activity.
     dashboard_resp = client.get("/api/v1/dashboard/admin", headers=admin_headers)
@@ -137,6 +166,8 @@ def test_full_parking_flow(client, admin_user):
 def test_only_available_slot_can_start_session(client, admin_user):
     admin_headers = auth_headers(client, "admin@test.com", "Admin@12345")
 
+    pkg_id = _create_basic_package(client, admin_headers)
+
     client.post(
         "/api/v1/auth/register-owner",
         json={
@@ -148,6 +179,7 @@ def test_only_available_slot_can_start_session(client, admin_user):
         },
     )
     owner_headers = auth_headers(client, "bob@example.com", "Owner@1234")
+    _subscribe_owner(client, owner_headers, pkg_id)
 
     lot_id = client.post(
         "/api/v1/parking-lots", headers=owner_headers, json={"name": "Lot A"}

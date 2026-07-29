@@ -25,6 +25,7 @@ class Payment(Base):
     payment_method: Mapped[str] = mapped_column(
         String(50), default=PaymentMethod.CASH.value, nullable=False
     )
+    transaction_ref: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     status: Mapped[str] = mapped_column(
         String(20), default=PaymentStatus.PAID.value, index=True, nullable=False
     )

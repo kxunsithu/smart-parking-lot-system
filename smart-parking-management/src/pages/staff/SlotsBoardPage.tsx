@@ -1,24 +1,29 @@
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { ParkingSquare } from "lucide-react"
+import { ParkingSquare, Box } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { StatusBadge } from "@/components/common/StatusBadge"
 import { EmptyState } from "@/components/common/EmptyState"
 import { CardGridSkeleton } from "@/components/common/LoadingBlock"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { dashboardApi } from "@/api/dashboard"
 import { parkingFloorsApi } from "@/api/parkingFloors"
+import { parkingLotsApi } from "@/api/parkingLots"
 import { parkingSlotsApi } from "@/api/parkingSlots"
 import { getErrorMessage } from "@/api/client"
 import { slotStatusTone } from "@/utils/statusColors"
-import type { ParkingSlotOut, SlotStatus, StaffDashboardOut, ParkingFloorOut } from "@/types"
+import type { ParkingSlotOut, SlotStatus, StaffDashboardOut, ParkingFloorOut, ParkingLotOut } from "@/types"
 import type { ListResult } from "@/api/types"
 
 const SLOT_STATUS_OPTIONS: SlotStatus[] = ["AVAILABLE", "OCCUPIED"]
 
 export function SlotsBoardPage() {
+  const navigate = useNavigate()
   const [dashboard, setDashboard] = useState<StaffDashboardOut | null>(null)
+  const [parkingLot, setParkingLot] = useState<ParkingLotOut | null>(null)
   const [floorsData, setFloorsData] = useState<ListResult<ParkingFloorOut> | null>(null)
   const [slotData, setSlotData] = useState<ListResult<ParkingSlotOut>[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -30,6 +35,16 @@ export function SlotsBoardPage() {
       setDashboard(result)
     } catch (error) {
       console.error("Failed to fetch dashboard:", error)
+    }
+  }
+
+  const fetchParkingLot = async () => {
+    if (!dashboard?.parking_lot_id) return
+    try {
+      const result = await parkingLotsApi.get(dashboard.parking_lot_id)
+      setParkingLot(result)
+    } catch (error) {
+      console.error("Failed to fetch parking lot:", error)
     }
   }
 
@@ -77,6 +92,10 @@ export function SlotsBoardPage() {
   }, [])
 
   useEffect(() => {
+    fetchParkingLot()
+  }, [dashboard?.parking_lot_id])
+
+  useEffect(() => {
     fetchFloors()
   }, [dashboard?.parking_lot_id])
 
@@ -89,8 +108,14 @@ export function SlotsBoardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Slots Board"
+        title={parkingLot?.name || "Slots Board"}
         description="Check slot availability and update slot status in real time."
+        actions={
+          <Button variant="outline" onClick={() => navigate(`/3d/${dashboard?.parking_lot_id}`)}>
+            <Box className="size-4 mr-2" />
+            3D View
+          </Button>
+        }
       />
 
       {isLoading ? (
@@ -152,6 +177,15 @@ function SlotCard({
           </div>
           <StatusBadge label={slot.status} tone={slotStatusTone(slot.status)} />
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={() => window.open(`/slots/${slot.id}`, '_blank')}
+        >
+          <Box className="size-4 mr-2" />
+          3D View
+        </Button>
         <Select
           value={slot.status}
           onValueChange={(value) => onStatusChange(value as SlotStatus)}

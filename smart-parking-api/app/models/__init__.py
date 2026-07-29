@@ -13,6 +13,8 @@ from app.models.parking_session import ParkingSession
 from app.models.payment import Payment
 from app.models.token_blacklist import TokenBlacklist
 from app.models.otp import OTP
+from app.models.package import Package
+from app.models.owner_subscription import OwnerSubscription
 
 __all__ = [
     "Base",
@@ -29,4 +31,7 @@ __all__ = [
     "Payment",
     "TokenBlacklist",
     "OTP",
+    "Package",
+    "OwnerSubscription",
 ]
+

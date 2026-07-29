@@ -58,7 +58,14 @@ INSERT INTO parking_sessions (id, vehicle_id, slot_id, start_time, end_time, dur
 INSERT INTO payments (id, customer_id, parking_session_id, amount, payment_method, status, paid_at) VALUES
 (1, 1, 1, 1000.0, 'CASH', 'PAID', CURRENT_TIMESTAMP);
 
+-- 12) Packages (Sample subscription tiers)
+INSERT INTO packages (id, name, description, price, duration_days, max_lots, max_staff, is_active) VALUES
+(1, 'Basic',      'Ideal for small operators — 1 lot, up to 5 staff',        9900.0,  30,  1, 5,  1),
+(2, 'Pro',        'For growing businesses — up to 3 lots, 20 staff',         24900.0, 30,  3, 20, 1),
+(3, 'Enterprise', 'Unlimited scale — up to 10 lots, unlimited staff',        49900.0, 30, 10, 999, 1);
+
 COMMIT;
+
 
 -- Notes:
 -- Adjust password values to real password hashes in production.

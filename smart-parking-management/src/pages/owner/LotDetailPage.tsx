@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Loader2, MoreHorizontal, Pencil, Plus, Box } from "lucide-react"
+import { Loader2, Pencil, Plus, Box, Edit, Trash2 } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { EmptyState } from "@/components/common/EmptyState"
 import { LoadingSpinner } from "@/components/common/LoadingBlock"
@@ -23,12 +23,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { parkingLotsApi, type UpdateLotPayload } from "@/api/parkingLots"
 import { parkingFloorsApi, type CreateFloorPayload, type UpdateFloorPayload } from "@/api/parkingFloors"
 import { parkingSlotsApi, type CreateSlotPayload, type UpdateSlotPayload } from "@/api/parkingSlots"
@@ -408,19 +402,12 @@ function FloorSection({
             <Plus className="size-4" />
             New Slot
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8">
-                <MoreHorizontal className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onEdit}>Edit floor</DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onClick={onDelete}>
-                Delete floor
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button variant="ghost" size="icon" className="size-8" onClick={onEdit}>
+            <Edit className="size-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="size-8 text-destructive hover:text-destructive" onClick={onDelete}>
+            <Trash2 className="size-4" />
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -447,20 +434,17 @@ function FloorSection({
                       <p className="font-medium">{slot.slot_number}</p>
                       {slot.section ? <p className="text-xs text-muted-foreground">{slot.section}</p> : null}
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => navigate(`/slots/${slot.id}`)}>View details</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setEditSlotTarget(slot)}>Edit slot</DropdownMenuItem>
-                        <DropdownMenuItem variant="destructive" onClick={() => setDeleteSlotTarget(slot)}>
-                          Delete slot
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="size-8" onClick={() => navigate(`/slots/${slot.id}`)}>
+                        <Box className="size-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="size-8" onClick={() => setEditSlotTarget(slot)}>
+                        <Edit className="size-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="size-8 text-destructive hover:text-destructive" onClick={() => setDeleteSlotTarget(slot)}>
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
                   </div>
                   <StatusBadge label={slot.status} tone={slotStatusTone(slot.status)} />
                   <Select

@@ -34,6 +34,7 @@ import { getErrorMessage } from "@/api/client"
 import { usePaginationState } from "@/hooks/usePaginationState"
 import { sessionStatusTone } from "@/utils/statusColors"
 import { formatCurrency, formatDateTime, formatDuration } from "@/utils/formatters"
+import { SessionPaymentModal } from "@/components/sessions/SessionPaymentModal"
 import type { ParkingSessionOut } from "@/types"
 import type { ListResult } from "@/api/types"
 
@@ -61,6 +62,7 @@ export function StaffSessionsPage() {
   const { setPage, params } = usePaginationState()
   const [statusFilter, setStatusFilter] = useState("all")
   const [finishTarget, setFinishTarget] = useState<ParkingSessionOut | null>(null)
+  const [payTarget, setPayTarget] = useState<ParkingSessionOut | null>(null)
   const [isStartOpen, setIsStartOpen] = useState(false)
   const [data, setData] = useState<ListResult<ParkingSessionOut> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -184,20 +186,25 @@ export function StaffSessionsPage() {
                         <StatusBadge label={session.status} tone={sessionStatusTone(session.status)} />
                       </TableCell>
                       <TableCell>
-                        {session.status === "ACTIVE" ? (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="size-8">
-                                <MoreHorizontal className="size-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-8">
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {session.status === "ACTIVE" && (
                               <DropdownMenuItem onClick={() => setFinishTarget(session)}>
                                 Finish session
                               </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        ) : null}
+                            )}
+                            {session.status === "FINISHED" && session.fee != null && (
+                              <DropdownMenuItem onClick={() => setPayTarget(session)}>
+                                Collect fee
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -223,6 +230,13 @@ export function StaffSessionsPage() {
         session={finishTarget}
         onSubmit={(values) => finishTarget && handleFinish(finishTarget.id, values)}
         submitting={isSubmitting}
+      />
+
+      <SessionPaymentModal
+        open={Boolean(payTarget)}
+        onOpenChange={(open) => !open && setPayTarget(null)}
+        session={payTarget}
+        onSuccess={fetchData}
       />
     </div>
   )

@@ -5,6 +5,7 @@ from app.api.v1 import (
     auth,
     customer,
     dashboard,
+    package,
     parking_floor,
     parking_lot,
     parking_owner,
@@ -12,6 +13,7 @@ from app.api.v1 import (
     parking_slot,
     parking_staff,
     payment,
+    subscription,
     users,
     vehicle,
 )
@@ -30,3 +32,5 @@ api_router.include_router(parking_slot.router)
 api_router.include_router(parking_session.router)
 api_router.include_router(payment.router)
 api_router.include_router(dashboard.router)
+api_router.include_router(package.router)
+api_router.include_router(subscription.router)

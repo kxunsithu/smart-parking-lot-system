@@ -10,6 +10,34 @@ export type PaymentStatus = "PENDING" | "PAID" | "REFUNDED"
 
 export type PaymentMethod = "CASH" | "KBZPAY" | "WAVEPAY" | "AYAPAY" | "UABPAY"
 
+export type SubscriptionStatus = "ACTIVE" | "EXPIRED" | "CANCELLED"
+
+export interface PackageOut {
+  id: number
+  name: string
+  description?: string | null
+  price: number
+  duration_days: number
+  max_lots: number
+  max_staff: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface SubscriptionOut {
+  id: number
+  owner_id: number
+  package_id: number
+  started_at: string
+  expires_at: string
+  status: SubscriptionStatus
+  payment_method?: PaymentMethod | string
+  amount?: number
+  transaction_ref?: string | null
+  created_at: string
+  package?: PackageOut | null
+}
+
 export interface ApiMeta {
   page: number
   limit: number
@@ -129,6 +157,7 @@ export interface PaymentOut {
   customer_id: number
   amount: number
   payment_method: PaymentMethod
+  transaction_ref?: string | null
   status: PaymentStatus
   paid_at: string
 }

@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Loader2, MoreHorizontal, Plus } from "lucide-react"
+import { Loader2, Plus, Edit, Trash2 } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { SearchInput } from "@/components/common/SearchInput"
 import { DataPagination } from "@/components/common/DataPagination"
@@ -25,12 +25,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { parkingOwnersApi } from "@/api/parkingOwners"
 import { parkingLotsApi } from "@/api/parkingLots"
 import { parkingStaffApi, type UpdateStaffPayload } from "@/api/parkingStaff"
@@ -257,19 +251,14 @@ export function StaffPage() {
                         <div className="text-xs text-muted-foreground">{member.user?.phone}</div>
                       </TableCell>
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8">
-                              <MoreHorizontal className="size-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setEditTarget(member)}>Edit staff</DropdownMenuItem>
-                            <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(member)}>
-                              Delete staff
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="icon" className="size-8" onClick={() => setEditTarget(member)}>
+                            <Edit className="size-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="size-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(member)}>
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
