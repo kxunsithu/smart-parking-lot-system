@@ -1,3 +1,4 @@
+"""Pydantic schemas for parking session start, finish, and output."""
 from datetime import datetime
 from typing import Optional
 
@@ -7,14 +8,13 @@ from pydantic import BaseModel, ConfigDict, Field
 class ParkingSessionStart(BaseModel):
     vehicle_id: int
     slot_id: int
-    reservation_id: Optional[int] = Field(
-        default=None, description="If starting a session from a confirmed reservation."
-    )
 
 
 class ParkingSessionFinish(BaseModel):
     rate_per_hour: Optional[float] = Field(
-        default=None, description="Override the default hourly rate used to calculate the fee."
+        default=None,
+        gt=0,
+        description="Optional override for hourly rate; defaults to system setting.",
     )
 
 
@@ -24,8 +24,8 @@ class ParkingSessionOut(BaseModel):
     id: int
     vehicle_id: int
     slot_id: int
-    entry_time: Optional[datetime] = None
-    exit_time: Optional[datetime] = None
-    duration: Optional[int] = None
-    fee: Optional[float] = None
+    start_time: datetime
+    end_time: Optional[datetime]
+    duration: Optional[int]  # minutes
+    fee: Optional[float]
     status: str

@@ -1,47 +1,16 @@
 import { apiClient } from "@/api/client"
-import type { ApiSuccess, PaymentMethod } from "@/types"
-import type {
-  ParkingSessionPaymentOut,
-  ReservationPaymentOut,
-  SubscriptionPaymentOut,
-} from "@/types"
+import type { ApiSuccess, PaymentMethod, PaymentOut } from "@/types"
 
-export interface CreateSubscriptionPaymentPayload {
-  subscription_id: number
-  amount: number
-  payment_method: PaymentMethod
-}
-
-export interface CreateSessionPaymentPayload {
+export interface CreatePaymentPayload {
   parking_session_id: number
-  customer_id: number
-  amount: number
-  payment_method: PaymentMethod
-}
-
-export interface CreateReservationPaymentPayload {
-  reservation_id: number
-  customer_id: number
+  customer_id?: number
   amount: number
   payment_method: PaymentMethod
 }
 
 export const paymentsApi = {
-  // Subscription Payments
-  async createSubscriptionPayment(payload: CreateSubscriptionPaymentPayload): Promise<SubscriptionPaymentOut> {
-    const res = await apiClient.post<ApiSuccess<SubscriptionPaymentOut>>("/payments/subscription", payload)
-    return res.data.data
-  },
-
-  // Parking Session Payments
-  async createSessionPayment(payload: CreateSessionPaymentPayload): Promise<ParkingSessionPaymentOut> {
-    const res = await apiClient.post<ApiSuccess<ParkingSessionPaymentOut>>("/payments/session", payload)
-    return res.data.data
-  },
-
-  // Reservation Payments
-  async createReservationPayment(payload: CreateReservationPaymentPayload): Promise<ReservationPaymentOut> {
-    const res = await apiClient.post<ApiSuccess<ReservationPaymentOut>>("/payments/reservation", payload)
+  async createPayment(payload: CreatePaymentPayload): Promise<PaymentOut> {
+    const res = await apiClient.post<ApiSuccess<PaymentOut>>("/payments/", payload)
     return res.data.data
   },
 }

@@ -1,9 +1,10 @@
 """Business logic for Parking Slots."""
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.constants import RoleName, SlotStatus
-from app.core.exceptions import ForbiddenException, NotFoundException
+from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
+from app.models.parking_floor import ParkingFloor
 from app.models.parking_slot import ParkingSlot
 from app.models.user import User
 from app.repositories.parking_floor_repository import ParkingFloorRepository
@@ -24,17 +25,16 @@ class ParkingSlotService:
         self.owner_repo = ParkingOwnerRepository(db)
         self.staff_repo = ParkingStaffRepository(db)
 
-    def _assert_floor_ownership(self, floor_id: int, current_user: User) -> ParkingSlot:
+    def _assert_floor_ownership(self, floor_id: int, current_user: User) -> None:
         floor = self.floor_repo.get(floor_id)
         if not floor:
             raise NotFoundException("Parking floor not found.")
         if current_user.role.name == RoleName.ADMIN.value:
-            return floor
+            return
         owner = self.owner_repo.get_by_user_id(current_user.id)
         lot = self.lot_repo.get(floor.parking_lot_id)
         if not owner or not lot or lot.owner_id != owner.id:
             raise ForbiddenException("You can only manage slots for your own parking lots.")
-        return floor
 
     def _assert_can_update_status(self, slot: ParkingSlot, current_user: User) -> None:
         if current_user.role.name in (RoleName.ADMIN.value, RoleName.OWNER.value):
@@ -53,8 +53,27 @@ class ParkingSlotService:
             return
         raise ForbiddenException("You do not have permission to update slot status.")
 
+    def _check_slot_number_unique(self, floor_id: int, slot_number: str, exclude_slot_id: int | None = None) -> None:
+        floor = self.floor_repo.get(floor_id)
+        if not floor:
+            return
+        
+        existing_slot = self.db.scalar(
+            select(ParkingSlot)
+            .join(ParkingFloor, ParkingSlot.floor_id == ParkingFloor.id)
+            .where(
+                ParkingFloor.parking_lot_id == floor.parking_lot_id,
+                ParkingSlot.slot_number == slot_number,
+            )
+        )
+        
+        if existing_slot and (exclude_slot_id is None or existing_slot.id != exclude_slot_id):
+            raise BadRequestException(f"Slot number '{slot_number}' already exists in this parking lot.")
+
     def create_slot(self, payload: ParkingSlotCreate, current_user: User) -> ParkingSlot:
         self._assert_floor_ownership(payload.floor_id, current_user)
+        self._check_slot_number_unique(payload.floor_id, payload.slot_number)
+        
         slot = ParkingSlot(
             floor_id=payload.floor_id,
             slot_number=payload.slot_number,
@@ -63,26 +82,9 @@ class ParkingSlotService:
             longitude=payload.longitude,
         )
         slot = self.slot_repo.create(slot)
-        self._sync_lot_total_slots(payload.floor_id)
         return slot
 
-    def _sync_lot_total_slots(self, floor_id: int) -> None:
-        from sqlalchemy import func
-        floor = self.floor_repo.get(floor_id)
-        if not floor:
-            return
-        lot = self.lot_repo.get(floor.parking_lot_id)
-        if not lot:
-            return
-        # Count all slots across all floors for this lot
-        total = self.db.scalar(
-            select(func.count(ParkingSlot.id))
-            .select_from(ParkingSlot)
-            .join(ParkingFloor, ParkingSlot.floor_id == ParkingFloor.id)
-            .where(ParkingFloor.parking_lot_id == lot.id)
-        )
-        lot.total_slots = total if total else 0
-        self.db.commit()
+
 
     def get_by_id(self, slot_id: int) -> ParkingSlot:
         slot = self.slot_repo.get(slot_id)
@@ -116,6 +118,10 @@ class ParkingSlotService:
     def update_slot(self, slot_id: int, payload: ParkingSlotUpdate, current_user: User) -> ParkingSlot:
         slot = self.get_by_id(slot_id)
         self._assert_floor_ownership(slot.floor_id, current_user)
+        
+        if payload.slot_number:
+            self._check_slot_number_unique(slot.floor_id, payload.slot_number, exclude_slot_id=slot_id)
+        
         data = payload.model_dump(exclude_unset=True)
         return self.slot_repo.update(slot, data)
 
@@ -132,4 +138,3 @@ class ParkingSlotService:
         self._assert_floor_ownership(slot.floor_id, current_user)
         floor_id = slot.floor_id
         self.slot_repo.delete(slot)
-        self._sync_lot_total_slots(floor_id)

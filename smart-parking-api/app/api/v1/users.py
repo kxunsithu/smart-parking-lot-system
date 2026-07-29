@@ -1,6 +1,4 @@
 """Admin-only user management endpoints."""
-from typing import Optional
-
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -17,7 +15,7 @@ router = APIRouter(prefix="/users", tags=["Users"], dependencies=[Depends(requir
 
 @router.get("", response_model=SuccessResponse[list[UserOut]])
 def list_users(
-    role_id: Optional[int] = Query(default=None),
+    role_id: int | None = Query(default=None),
     params: PaginationParams = Depends(pagination_params),
     db: Session = Depends(get_db),
 ):

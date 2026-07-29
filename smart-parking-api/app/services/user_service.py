@@ -1,6 +1,4 @@
 """Admin-facing user management business logic."""
-from typing import Optional
-
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
@@ -22,7 +20,7 @@ class UserService:
             raise NotFoundException("Resource not found.")
         return user
 
-    def list_users(self, params: PaginationParams, role_id: Optional[int] = None):
+    def list_users(self, params: PaginationParams, role_id: int | None = None):
         stmt = select(User).options(joinedload(User.role))
         if role_id is not None:
             stmt = stmt.where(User.role_id == role_id)

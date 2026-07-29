@@ -6,16 +6,11 @@ export interface CreateStaffPayload {
   name: string
   email: string
   password: string
-  phone?: string
   parking_lot_id: number
-  employee_code?: string
-  position?: string
 }
 
 export interface UpdateStaffPayload {
   parking_lot_id?: number
-  employee_code?: string
-  position?: string
 }
 
 export const parkingStaffApi = {

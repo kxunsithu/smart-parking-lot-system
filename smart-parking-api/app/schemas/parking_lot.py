@@ -3,13 +3,12 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.parking_owner import ParkingOwnerOut
+from app.schemas.user import UserOut
+
 
 class ParkingLotCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
-    type: Optional[str] = Field(default=None, max_length=50)
-    address: Optional[str] = Field(default=None, max_length=255)
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
     google_map_url: Optional[str] = None
     owner_id: Optional[int] = Field(
         default=None, description="Only used by Admin; Owners default to their own owner profile."
@@ -18,10 +17,6 @@ class ParkingLotCreate(BaseModel):
 
 class ParkingLotUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=2, max_length=100)
-    type: Optional[str] = Field(default=None, max_length=50)
-    address: Optional[str] = Field(default=None, max_length=255)
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
     google_map_url: Optional[str] = None
 
 
@@ -31,10 +26,20 @@ class ParkingLotOut(BaseModel):
     id: int
     owner_id: int
     name: str
-    type: Optional[str] = None
-    address: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
     google_map_url: Optional[str] = None
-    total_slots: int
+    is_active: bool
     created_at: datetime
+    owner: Optional[ParkingOwnerOut] = None
+
+
+class ParkingLotWithStaffOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    owner_id: int
+    name: str
+    google_map_url: Optional[str] = None
+    is_active: bool
+    created_at: datetime
+    owner: Optional[ParkingOwnerOut] = None
+    staff_count: int = 0

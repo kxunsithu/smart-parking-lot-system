@@ -9,15 +9,10 @@ from app.models.customer import Customer
 from app.models.vehicle import Vehicle
 from app.models.parking_floor import ParkingFloor
 from app.models.parking_slot import ParkingSlot
-from app.models.reservation import Reservation
 from app.models.parking_session import ParkingSession
-from app.models.subscription_payment import SubscriptionPayment
-from app.models.parking_session_payment import ParkingSessionPayment
-from app.models.reservation_payment import ReservationPayment
+from app.models.payment import Payment
 from app.models.token_blacklist import TokenBlacklist
 from app.models.otp import OTP
-from app.models.subscription_plan import SubscriptionPlan
-from app.models.subscription import Subscription
 
 __all__ = [
     "Base",
@@ -30,13 +25,8 @@ __all__ = [
     "Vehicle",
     "ParkingFloor",
     "ParkingSlot",
-    "Reservation",
     "ParkingSession",
-    "SubscriptionPayment",
-    "ParkingSessionPayment",
-    "ReservationPayment",
+    "Payment",
     "TokenBlacklist",
     "OTP",
-    "SubscriptionPlan",
-    "Subscription",
 ]

@@ -11,15 +11,7 @@ class RoleName(str, Enum):
 
 class SlotStatus(str, Enum):
     AVAILABLE = "AVAILABLE"
-    RESERVED = "RESERVED"
     OCCUPIED = "OCCUPIED"
-
-
-class ReservationStatus(str, Enum):
-    PENDING = "PENDING"
-    CONFIRMED = "CONFIRMED"
-    CANCELLED = "CANCELLED"
-    COMPLETED = "COMPLETED"
 
 
 class SessionStatus(str, Enum):

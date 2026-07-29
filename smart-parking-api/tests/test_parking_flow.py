@@ -5,14 +5,14 @@ from tests.conftest import auth_headers
 def test_full_parking_flow(client, admin_user):
     admin_headers = auth_headers(client, "admin@test.com", "Admin@12345")
 
-    # Admin creates an Owner.
+    # Register an Owner.
     owner_resp = client.post(
-        "/api/v1/parking-owners",
-        headers=admin_headers,
+        "/api/v1/auth/register-owner",
         json={
             "name": "Bob Owner",
             "email": "bob@example.com",
             "password": "Owner@1234",
+            "confirm_password": "Owner@1234",
             "company_name": "Bob's Parking",
         },
     )
@@ -57,7 +57,6 @@ def test_full_parking_flow(client, admin_user):
             "email": "carol@example.com",
             "password": "Staff@1234",
             "parking_lot_id": lot_id,
-            "employee_code": "STF-001",
         },
     )
     assert staff_resp.status_code == 201
@@ -78,38 +77,11 @@ def test_full_parking_flow(client, admin_user):
     assert vehicle_resp.status_code == 201
     vehicle_id = vehicle_resp.json()["data"]["id"]
 
-    # Customer reserves the slot.
-    reservation_resp = client.post(
-        "/api/v1/reservations",
-        headers=customer_headers,
-        json={"slot_id": slot_id, "reservation_time": "2026-01-01T10:00:00"},
-    )
-    assert reservation_resp.status_code == 201
-    reservation_id = reservation_resp.json()["data"]["id"]
-    assert reservation_resp.json()["data"]["status"] == "PENDING"
-
-    # Slot should now be RESERVED; a second reservation must fail.
-    second_reservation = client.post(
-        "/api/v1/reservations",
-        headers=customer_headers,
-        json={"slot_id": slot_id, "reservation_time": "2026-01-01T11:00:00"},
-    )
-    assert second_reservation.status_code == 400
-
-    # Staff confirms the reservation.
-    confirm_resp = client.patch(
-        f"/api/v1/reservations/{reservation_id}/status",
-        headers=staff_headers,
-        json={"status": "CONFIRMED"},
-    )
-    assert confirm_resp.status_code == 200
-    assert confirm_resp.json()["data"]["status"] == "CONFIRMED"
-
-    # Staff starts a parking session.
+    # Staff starts a parking session directly (no reservation needed).
     session_resp = client.post(
         "/api/v1/parking-sessions/start",
         headers=staff_headers,
-        json={"vehicle_id": vehicle_id, "slot_id": slot_id, "reservation_id": reservation_id},
+        json={"vehicle_id": vehicle_id, "slot_id": slot_id},
     )
     assert session_resp.status_code == 201
     session_id = session_resp.json()["data"]["id"]
@@ -118,6 +90,14 @@ def test_full_parking_flow(client, admin_user):
     # Slot should now be OCCUPIED.
     slot_check = client.get(f"/api/v1/parking-slots/{slot_id}", headers=customer_headers)
     assert slot_check.json()["data"]["status"] == "OCCUPIED"
+
+    # A second session on the same slot must fail.
+    second_session = client.post(
+        "/api/v1/parking-sessions/start",
+        headers=staff_headers,
+        json={"vehicle_id": vehicle_id, "slot_id": slot_id},
+    )
+    assert second_session.status_code == 400
 
     # Staff finishes the session.
     finish_resp = client.patch(
@@ -134,11 +114,10 @@ def test_full_parking_flow(client, admin_user):
 
     # Customer pays for the session.
     payment_resp = client.post(
-        "/api/v1/payments",
+        "/api/v1/payments/",
         headers=customer_headers,
         json={
             "parking_session_id": session_id,
-            "reservation_id": reservation_id,
             "amount": finished_data["fee"],
             "payment_method": "KBZPAY",
         },
@@ -155,13 +134,18 @@ def test_full_parking_flow(client, admin_user):
     assert dashboard_data["total_revenue"] == finished_data["fee"]
 
 
-def test_only_available_slot_can_be_reserved(client, admin_user):
+def test_only_available_slot_can_start_session(client, admin_user):
     admin_headers = auth_headers(client, "admin@test.com", "Admin@12345")
 
     client.post(
-        "/api/v1/parking-owners",
-        headers=admin_headers,
-        json={"name": "Bob Owner", "email": "bob@example.com", "password": "Owner@1234"},
+        "/api/v1/auth/register-owner",
+        json={
+            "name": "Bob Owner",
+            "email": "bob@example.com",
+            "password": "Owner@1234",
+            "confirm_password": "Owner@1234",
+            "company_name": "Bob's Parking",
+        },
     )
     owner_headers = auth_headers(client, "bob@example.com", "Owner@1234")
 
@@ -179,20 +163,41 @@ def test_only_available_slot_can_be_reserved(client, admin_user):
         json={"floor_id": floor_id, "slot_number": "S1"},
     ).json()["data"]["id"]
 
-    # Manually mark slot OCCUPIED via status endpoint (owner allowed).
+    # Manually mark slot OCCUPIED via status endpoint.
     client.patch(
         f"/api/v1/parking-slots/{slot_id}/status", headers=owner_headers, json={"status": "OCCUPIED"}
     )
 
+    # Owner creates a staff member.
+    client.post(
+        "/api/v1/parking-staff",
+        headers=owner_headers,
+        json={
+            "name": "Carol Staff",
+            "email": "carol@example.com",
+            "password": "Staff@1234",
+            "parking_lot_id": lot_id,
+        },
+    )
+    staff_headers = auth_headers(client, "carol@example.com", "Staff@1234")
+
+    # Customer registers a vehicle.
     client.post(
         "/api/v1/auth/register",
         json={"name": "Dave", "email": "dave@example.com", "password": "Customer@1234"},
     )
     customer_headers = auth_headers(client, "dave@example.com", "Customer@1234")
-
-    reservation_resp = client.post(
-        "/api/v1/reservations",
+    vehicle_resp = client.post(
+        "/api/v1/vehicles",
         headers=customer_headers,
-        json={"slot_id": slot_id, "reservation_time": "2026-01-01T10:00:00"},
+        json={"plate_number": "XYZ-9999", "vehicle_type": "CAR"},
     )
-    assert reservation_resp.status_code == 400
+    vehicle_id = vehicle_resp.json()["data"]["id"]
+
+    # Starting a session on an OCCUPIED slot must fail.
+    session_resp = client.post(
+        "/api/v1/parking-sessions/start",
+        headers=staff_headers,
+        json={"vehicle_id": vehicle_id, "slot_id": slot_id},
+    )
+    assert session_resp.status_code == 400

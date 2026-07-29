@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { CalendarClock, Car, CheckCircle2, Clock, ParkingSquare, Timer } from "lucide-react"
+import { Car, CheckCircle2, Timer } from "lucide-react"
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 import { PageHeader } from "@/components/common/PageHeader"
 import { StatCard } from "@/components/common/StatCard"
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { StaffDashboardOut } from "@/types"
 import { dashboardApi } from "@/api/dashboard"
 
-const CHART_COLORS = ["var(--color-chart-1)", "var(--color-chart-2)", "var(--color-chart-3)"]
+const CHART_COLORS = ["var(--color-chart-1)", "var(--color-chart-2)"]
 
 export function StaffDashboardPage() {
   const [data, setData] = useState<StaffDashboardOut | null>(null)
@@ -32,7 +32,6 @@ export function StaffDashboardPage() {
     ? [
         { name: "Available", value: data.available_slots },
         { name: "Occupied", value: data.occupied_slots },
-        { name: "Reserved", value: data.reserved_slots },
       ]
     : []
 
@@ -41,15 +40,12 @@ export function StaffDashboardPage() {
       <PageHeader title="Staff Dashboard" description="Overview of your assigned parking lot." />
 
       {isLoading || !data ? (
-        <CardGridSkeleton count={6} />
+        <CardGridSkeleton count={3} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard label="Total Slots" value={data.total_slots} icon={ParkingSquare} />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <StatCard label="Available Slots" value={data.available_slots} icon={CheckCircle2} />
           <StatCard label="Occupied Slots" value={data.occupied_slots} icon={Car} />
-          <StatCard label="Reserved Slots" value={data.reserved_slots} icon={Clock} />
           <StatCard label="Active Sessions" value={data.active_sessions} icon={Timer} />
-          <StatCard label="Pending Reservations" value={data.pending_reservations} icon={CalendarClock} />
         </div>
       )}
 

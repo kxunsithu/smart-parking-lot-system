@@ -15,7 +15,7 @@ import { slotStatusTone } from "@/utils/statusColors"
 import type { ParkingSlotOut, SlotStatus, StaffDashboardOut, ParkingFloorOut } from "@/types"
 import type { ListResult } from "@/api/types"
 
-const SLOT_STATUS_OPTIONS: SlotStatus[] = ["AVAILABLE", "RESERVED", "OCCUPIED"]
+const SLOT_STATUS_OPTIONS: SlotStatus[] = ["AVAILABLE", "OCCUPIED"]
 
 export function SlotsBoardPage() {
   const [dashboard, setDashboard] = useState<StaffDashboardOut | null>(null)

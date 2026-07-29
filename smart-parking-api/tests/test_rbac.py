@@ -37,17 +37,25 @@ def test_non_admin_cannot_list_users(client, admin_user):
 
 
 def test_owner_cannot_manage_other_owners_lot(client, admin_user):
-    admin_headers = auth_headers(client, "admin@test.com", "Admin@12345")
-
     client.post(
-        "/api/v1/parking-owners",
-        headers=admin_headers,
-        json={"name": "Owner One", "email": "owner1@example.com", "password": "Owner@1234"},
+        "/api/v1/auth/register-owner",
+        json={
+            "name": "Owner One",
+            "email": "owner1@example.com",
+            "password": "Owner@1234",
+            "confirm_password": "Owner@1234",
+            "company_name": "Company One",
+        },
     )
     client.post(
-        "/api/v1/parking-owners",
-        headers=admin_headers,
-        json={"name": "Owner Two", "email": "owner2@example.com", "password": "Owner@1234"},
+        "/api/v1/auth/register-owner",
+        json={
+            "name": "Owner Two",
+            "email": "owner2@example.com",
+            "password": "Owner@1234",
+            "confirm_password": "Owner@1234",
+            "company_name": "Company Two",
+        },
     )
 
     owner1_headers = auth_headers(client, "owner1@example.com", "Owner@1234")

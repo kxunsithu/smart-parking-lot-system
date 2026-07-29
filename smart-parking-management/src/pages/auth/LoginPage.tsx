@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { FormField } from "@/components/common/FormField"
 import { authApi } from "@/api/auth"
-import { subscriptionApi } from "@/api/subscription"
 import { getErrorMessage } from "@/api/client"
 import { useAuthStore } from "@/stores/authStore"
 import { homePathForRole } from "@/utils/navConfig"
@@ -59,20 +58,6 @@ export function LoginPage() {
       
       toast.success(`Welcome back, ${user.name}!`)
       
-      // Check subscription status for owners
-      if (user.role!.name === "OWNER") {
-        try {
-          const status = await subscriptionApi.getMySubscriptionStatus()
-          if (!status.has_subscription) {
-            navigate("/owner/subscription", { replace: true })
-            return
-          }
-        } catch (error) {
-          // If subscription check fails, still proceed to dashboard
-          console.error("Subscription check failed:", error)
-        }
-      }
-      
       navigate(homePathForRole(user.role!.name), { replace: true })
     } catch (error) {
       toast.error(getErrorMessage(error))
@@ -113,6 +98,13 @@ export function LoginPage() {
           {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
           Sign in
         </Button>
+
+        <div className="text-center text-sm">
+          <span className="text-muted-foreground">Parking owner? </span>
+          <Link to="/register-owner" className="text-primary hover:underline font-medium">
+            Register here
+          </Link>
+        </div>
       </form>
     </div>
   )

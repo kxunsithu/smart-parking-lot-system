@@ -2,15 +2,7 @@ export type BadgeTone = "success" | "warning" | "danger" | "info" | "neutral"
 
 const SLOT_STATUS_TONE: Record<string, BadgeTone> = {
   AVAILABLE: "success",
-  RESERVED: "warning",
   OCCUPIED: "danger",
-}
-
-const RESERVATION_STATUS_TONE: Record<string, BadgeTone> = {
-  PENDING: "warning",
-  CONFIRMED: "info",
-  CANCELLED: "danger",
-  COMPLETED: "success",
 }
 
 const SESSION_STATUS_TONE: Record<string, BadgeTone> = {
@@ -31,10 +23,6 @@ const USER_STATUS_TONE: Record<string, BadgeTone> = {
 
 export function slotStatusTone(status: string): BadgeTone {
   return SLOT_STATUS_TONE[status] ?? "neutral"
-}
-
-export function reservationStatusTone(status: string): BadgeTone {
-  return RESERVATION_STATUS_TONE[status] ?? "neutral"
 }
 
 export function sessionStatusTone(status: string): BadgeTone {

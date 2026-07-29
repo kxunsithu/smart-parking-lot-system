@@ -11,7 +11,6 @@ from app.repositories.parking_lot_repository import ParkingLotRepository
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.repositories.parking_staff_repository import ParkingStaffRepository
 from app.repositories.role_repository import RoleRepository
-from app.repositories.subscription_repository import SubscriptionRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.common import PaginationParams, build_meta
 from app.schemas.parking_staff import ParkingStaffCreate, ParkingStaffUpdate
@@ -25,16 +24,6 @@ class ParkingStaffService:
         self.role_repo = RoleRepository(db)
         self.lot_repo = ParkingLotRepository(db)
         self.owner_repo = ParkingOwnerRepository(db)
-        self.subscription_repo = SubscriptionRepository(db)
-
-    def _check_subscription(self, owner_id: int, current_user: User) -> None:
-        """Check if owner has active subscription (skip for admins)."""
-        if current_user.role.name == RoleName.ADMIN.value:
-            return
-        
-        subscription = self.subscription_repo.get_active_subscription(owner_id)
-        if not subscription:
-            raise ForbiddenException("You need an active subscription to manage staff.")
 
     def _assert_lot_ownership(self, lot_id: int, current_user: User) -> None:
         lot = self.lot_repo.get(lot_id)
@@ -45,9 +34,6 @@ class ParkingStaffService:
         owner = self.owner_repo.get_by_user_id(current_user.id)
         if not owner or lot.owner_id != owner.id:
             raise ForbiddenException("You can only manage staff for your own parking lots.")
-        
-        # Check subscription for owners
-        self._check_subscription(owner.id, current_user)
 
     def create_staff(self, payload: ParkingStaffCreate, current_user: User) -> ParkingStaff:
         self._assert_lot_ownership(payload.parking_lot_id, current_user)
@@ -66,7 +52,6 @@ class ParkingStaffService:
             name=payload.name,
             email=payload.email,
             password=hash_password(payload.password),
-            phone=payload.phone,
             role_id=role.id,
             created_by=current_user.id,
         )
@@ -75,8 +60,6 @@ class ParkingStaffService:
         staff = ParkingStaff(
             user_id=user.id,
             parking_lot_id=payload.parking_lot_id,
-            employee_code=payload.employee_code,
-            position=payload.position,
         )
         return self.staff_repo.create(staff)
 

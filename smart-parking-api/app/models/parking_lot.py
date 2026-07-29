@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
@@ -13,12 +13,9 @@ class ParkingLot(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     owner_id: Mapped[int] = mapped_column(ForeignKey("parking_owners.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
-    address: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
-    latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    google_map_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    total_slots: Mapped[int] = mapped_column(Integer, default=0)
+    google_map_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    type: Mapped[str] = mapped_column(String(50), default="PUBLIC")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     owner: Mapped["ParkingOwner"] = relationship("ParkingOwner", back_populates="parking_lots")

@@ -18,12 +18,7 @@ class Customer(Base):
     vehicles: Mapped[List["Vehicle"]] = relationship(
         "Vehicle", back_populates="customer", cascade="all, delete-orphan"
     )
-    reservations: Mapped[List["Reservation"]] = relationship(
-        "Reservation", back_populates="customer", cascade="all, delete-orphan"
+    payments: Mapped[List["Payment"]] = relationship(
+        "Payment", back_populates="customer", cascade="all, delete-orphan"
     )
-    session_payments: Mapped[List["ParkingSessionPayment"]] = relationship(
-        "ParkingSessionPayment", back_populates="customer", cascade="all, delete-orphan"
-    )
-    reservation_payments: Mapped[List["ReservationPayment"]] = relationship(
-        "ReservationPayment", back_populates="customer", cascade="all, delete-orphan"
-    )
+

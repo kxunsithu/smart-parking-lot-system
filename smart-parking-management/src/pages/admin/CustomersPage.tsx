@@ -11,7 +11,6 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,16 +25,8 @@ import { formatDate } from "@/utils/formatters"
 import type { UserOut } from "@/types"
 import type { ListResult } from "@/api/types"
 
-const ROLE_FILTER_OPTIONS = [
-  { label: "All roles", value: "all" },
-  { label: "Admin", value: "1" },
-  { label: "Owner", value: "2" },
-  { label: "Staff", value: "3" },
-]
-
-export function UsersPage() {
+export function CustomersPage() {
   const { setPage, search, setSearch, params } = usePaginationState()
-  const [roleFilter, setRoleFilter] = useState("all")
   const [deleteTarget, setDeleteTarget] = useState<UserOut | null>(null)
   const [data, setData] = useState<ListResult<UserOut> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -43,7 +34,7 @@ export function UsersPage() {
   const [isToggling, setIsToggling] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const queryParams = useMemo(() => ({ ...params, role_id: roleFilter === "all" ? undefined : Number(roleFilter) }), [params, roleFilter])
+  const queryParams = useMemo(() => ({ ...params, role_id: 4 }), [params])
 
   const fetchData = async () => {
     try {
@@ -97,24 +88,12 @@ export function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Users" description="View and manage every account across the platform." />
+      <PageHeader title="Customers" description="View and manage customer accounts." />
 
       <Card>
         <CardContent className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <SearchInput value={search} onChange={setSearch} placeholder="Search by name or email..." className="max-w-sm" />
-            <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value ?? "all")}>
-              <SelectTrigger className="w-full sm:w-44">
-                <SelectValue placeholder="Filter by role" />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLE_FILTER_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           {isLoading ? (

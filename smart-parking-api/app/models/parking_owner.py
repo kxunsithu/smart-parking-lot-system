@@ -12,13 +12,8 @@ class ParkingOwner(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
     company_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    business_license: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    address: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     user: Mapped["User"] = relationship("User", back_populates="owner_profile")
     parking_lots: Mapped[List["ParkingLot"]] = relationship(
         "ParkingLot", back_populates="owner", cascade="all, delete-orphan"
-    )
-    subscriptions: Mapped[List["Subscription"]] = relationship(
-        "Subscription", back_populates="parking_owner", cascade="all, delete-orphan"
     )

@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react"
-import { useParams } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Loader2, MapPin, MoreHorizontal, Pencil, Plus } from "lucide-react"
+import { Loader2, MoreHorizontal, Pencil, Plus, Box } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { EmptyState } from "@/components/common/EmptyState"
 import { LoadingSpinner } from "@/components/common/LoadingBlock"
@@ -44,10 +44,6 @@ const numericString = z
 
 const lotSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  type: z.string().optional(),
-  address: z.string().optional(),
-  latitude: numericString,
-  longitude: numericString,
   google_map_url: z.string().optional(),
 })
 type LotFormValues = z.infer<typeof lotSchema>
@@ -55,10 +51,6 @@ type LotFormValues = z.infer<typeof lotSchema>
 function toLotPayload(values: LotFormValues): UpdateLotPayload {
   return {
     name: values.name,
-    type: values.type || undefined,
-    address: values.address || undefined,
-    latitude: values.latitude ? Number(values.latitude) : undefined,
-    longitude: values.longitude ? Number(values.longitude) : undefined,
     google_map_url: values.google_map_url || undefined,
   }
 }
@@ -85,10 +77,11 @@ function toSlotPayload(values: SlotFormValues) {
   }
 }
 
-const SLOT_STATUS_OPTIONS: SlotStatus[] = ["AVAILABLE", "RESERVED", "OCCUPIED"]
+const SLOT_STATUS_OPTIONS: SlotStatus[] = ["AVAILABLE", "OCCUPIED"]
 
 export function LotDetailPage() {
   const { lotId } = useParams<{ lotId: string }>()
+  const navigate = useNavigate()
   const id = Number(lotId)
   const [editLotOpen, setEditLotOpen] = useState(false)
   const [createFloorOpen, setCreateFloorOpen] = useState(false)
@@ -197,45 +190,32 @@ export function LotDetailPage() {
     <div className="space-y-6">
       <PageHeader
         title={lot.name}
-        description={lot.type ? `${lot.type} parking lot` : "Parking lot details"}
+        description="Parking lot details"
         actions={
-          <Button variant="outline" onClick={() => setEditLotOpen(true)}>
-            <Pencil className="size-4" />
-            Edit lot
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate(`/3d/${lot.id}`)}>
+              <Box className="size-4 mr-2" />
+              3D View
+            </Button>
+            <Button variant="outline" onClick={() => setEditLotOpen(true)}>
+              <Pencil className="size-4" />
+              Edit lot
+            </Button>
+          </div>
         }
       />
 
       <Card>
-        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <p className="text-xs text-muted-foreground">Address</p>
-            <p className="mt-1 flex items-center gap-1.5 text-sm font-medium">
-              <MapPin className="size-3.5 shrink-0 text-muted-foreground" />
-              {lot.address || "-"}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Coordinates</p>
-            <p className="mt-1 text-sm font-medium">
-              {lot.latitude != null && lot.longitude != null ? `${lot.latitude}, ${lot.longitude}` : "-"}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Total slots</p>
-            <p className="mt-1 text-sm font-medium">{lot.total_slots}</p>
-          </div>
+        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <p className="text-xs text-muted-foreground">Google Maps</p>
             {lot.google_map_url ? (
-              <a
-                href={lot.google_map_url}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-1 block truncate text-sm font-medium text-primary underline-offset-4 hover:underline"
+              <button
+                onClick={() => navigate(`/map/${lot.id}`)}
+                className="mt-1 block truncate text-sm font-medium text-primary underline-offset-4 hover:underline text-left"
               >
                 View on map
-              </a>
+              </button>
             ) : (
               <p className="mt-1 text-sm font-medium">-</p>
             )}
@@ -273,6 +253,7 @@ export function LotDetailPage() {
               onEdit={() => setEditFloorTarget(floor)}
               onDelete={() => setDeleteFloorTarget(floor)}
               onRefresh={() => { fetchFloors(); fetchLot() }}
+              navigate={navigate}
             />
           ))}
         </div>
@@ -326,11 +307,13 @@ function FloorSection({
   onEdit,
   onDelete,
   onRefresh,
+  navigate,
 }: {
   floor: ParkingFloorOut
   onEdit: () => void
   onDelete: () => void
   onRefresh: () => void
+  navigate: (path: string) => void
 }) {
   const [createSlotOpen, setCreateSlotOpen] = useState(false)
   const [editSlotTarget, setEditSlotTarget] = useState<ParkingSlotOut | null>(null)
@@ -344,7 +327,7 @@ function FloorSection({
 
   const fetchSlots = async () => {
     try {
-      const result = await parkingSlotsApi.list({ floor_id: floor.id, limit: 200 })
+      const result = await parkingSlotsApi.list({ floor_id: floor.id, limit: 100 })
       setSlotsData(result)
     } catch (error) {
       console.error("Failed to fetch slots:", error)
@@ -457,7 +440,7 @@ function FloorSection({
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {slots.map((slot) => (
-              <Card key={slot.id} size="sm">
+              <Card key={slot.id}>
                 <CardContent className="space-y-2">
                   <div className="flex items-start justify-between">
                     <div>
@@ -466,11 +449,12 @@ function FloorSection({
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon-sm">
+                        <Button variant="ghost" size="icon">
                           <MoreHorizontal className="size-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => navigate(`/slots/${slot.id}`)}>View details</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setEditSlotTarget(slot)}>Edit slot</DropdownMenuItem>
                         <DropdownMenuItem variant="destructive" onClick={() => setDeleteSlotTarget(slot)}>
                           Delete slot
@@ -559,10 +543,6 @@ function LotFormDialog({
     resolver: zodResolver(lotSchema),
     values: {
       name: lot.name,
-      type: lot.type ?? "",
-      address: lot.address ?? "",
-      latitude: lot.latitude != null ? String(lot.latitude) : "",
-      longitude: lot.longitude != null ? String(lot.longitude) : "",
       google_map_url: lot.google_map_url ?? "",
     },
   })
@@ -583,25 +563,9 @@ function LotFormDialog({
           <FormField label="Name" htmlFor="name" error={errors.name?.message} required>
             <Input id="name" {...register("name")} />
           </FormField>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField label="Type" htmlFor="type" error={errors.type?.message}>
-              <Input id="type" {...register("type")} />
-            </FormField>
-            <FormField label="Google Maps URL" htmlFor="google_map_url" error={errors.google_map_url?.message}>
-              <Input id="google_map_url" {...register("google_map_url")} />
-            </FormField>
-          </div>
-          <FormField label="Address" htmlFor="address" error={errors.address?.message}>
-            <Input id="address" {...register("address")} />
+          <FormField label="Google Maps URL" htmlFor="google_map_url" error={errors.google_map_url?.message}>
+            <Input id="google_map_url" {...register("google_map_url")} />
           </FormField>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField label="Latitude" htmlFor="latitude" error={errors.latitude?.message}>
-              <Input id="latitude" type="number" step="any" {...register("latitude")} />
-            </FormField>
-            <FormField label="Longitude" htmlFor="longitude" error={errors.longitude?.message}>
-              <Input id="longitude" type="number" step="any" {...register("longitude")} />
-            </FormField>
-          </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Cancel

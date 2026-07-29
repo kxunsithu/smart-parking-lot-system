@@ -1,10 +1,15 @@
-from typing import List, Optional
+"""SQLAlchemy model for a parking slot."""
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.constants import SlotStatus
 from app.database.base import Base
+
+if TYPE_CHECKING:
+    from app.models.parking_floor import ParkingFloor
+    from app.models.parking_session import ParkingSession
 
 
 class ParkingSlot(Base):
@@ -19,5 +24,4 @@ class ParkingSlot(Base):
     status: Mapped[str] = mapped_column(String(20), default=SlotStatus.AVAILABLE.value, index=True)
 
     floor: Mapped["ParkingFloor"] = relationship("ParkingFloor", back_populates="slots")
-    reservations: Mapped[List["Reservation"]] = relationship("Reservation", back_populates="slot")
     sessions: Mapped[List["ParkingSession"]] = relationship("ParkingSession", back_populates="slot")

@@ -1,6 +1,9 @@
-import { useMemo, useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { toast } from "sonner"
-import { Loader2, Plus, Search } from "lucide-react"
+import { Plus, MoreHorizontal, Loader2 } from "lucide-react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
 import { PageHeader } from "@/components/common/PageHeader"
 import { DataPagination } from "@/components/common/DataPagination"
 import { EmptyState } from "@/components/common/EmptyState"
@@ -8,8 +11,8 @@ import { TableSkeleton } from "@/components/common/LoadingBlock"
 import { StatusBadge } from "@/components/common/StatusBadge"
 import { FormField } from "@/components/common/FormField"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -20,43 +23,56 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { dashboardApi } from "@/api/dashboard"
-import { parkingFloorsApi } from "@/api/parkingFloors"
-import { parkingSlotsApi } from "@/api/parkingSlots"
-import { vehiclesApi } from "@/api/vehicles"
-import { parkingSessionsApi } from "@/api/parkingSessions"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { parkingSessionsApi, type FinishSessionPayload, type StartSessionPayload } from "@/api/parkingSessions"
 import { getErrorMessage } from "@/api/client"
-import { useDebounce } from "@/hooks/useDebounce"
+import { usePaginationState } from "@/hooks/usePaginationState"
 import { sessionStatusTone } from "@/utils/statusColors"
 import { formatCurrency, formatDateTime, formatDuration } from "@/utils/formatters"
-import type { ParkingSessionOut, VehicleOut, StaffDashboardOut, ParkingFloorOut, ParkingSlotOut } from "@/types"
+import type { ParkingSessionOut } from "@/types"
 import type { ListResult } from "@/api/types"
 
-const STATUS_FILTER_OPTIONS = [
+const STATUS_FILTER_OPTIONS: { label: string; value: string }[] = [
   { label: "All statuses", value: "all" },
   { label: "Active", value: "ACTIVE" },
   { label: "Finished", value: "FINISHED" },
 ]
 
-export function SessionsPage() {
-  const [page, setPage] = useState(1)
+const startSessionSchema = z.object({
+  vehicle_id: z.string().min(1, "Vehicle ID is required"),
+  slot_id: z.string().min(1, "Slot ID is required"),
+})
+type StartSessionFormValues = z.infer<typeof startSessionSchema>
+
+const finishSessionSchema = z.object({
+  rate_per_hour: z
+    .string()
+    .optional()
+    .refine((val) => !val || (!Number.isNaN(Number(val)) && Number(val) > 0), "Must be a positive number"),
+})
+type FinishSessionFormValues = z.infer<typeof finishSessionSchema>
+
+export function StaffSessionsPage() {
+  const { setPage, params } = usePaginationState()
   const [statusFilter, setStatusFilter] = useState("all")
-  const [startOpen, setStartOpen] = useState(false)
   const [finishTarget, setFinishTarget] = useState<ParkingSessionOut | null>(null)
+  const [isStartOpen, setIsStartOpen] = useState(false)
   const [data, setData] = useState<ListResult<ParkingSessionOut> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isFetching, setIsFetching] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const params = {
-    page,
-    limit: 10,
-    status: statusFilter === "all" ? undefined : statusFilter,
-  }
+  const queryParams = useMemo(() => ({ ...params, status: statusFilter === "all" ? undefined : statusFilter }), [params, statusFilter])
 
   const fetchData = async () => {
     try {
       setIsFetching(true)
-      const result = await parkingSessionsApi.list(params)
+      const result = await parkingSessionsApi.list(queryParams)
       setData(result)
     } catch (error) {
       console.error("Failed to fetch sessions:", error)
@@ -68,36 +84,60 @@ export function SessionsPage() {
 
   useEffect(() => {
     fetchData()
-  }, [params])
+  }, [queryParams])
+
+  const handleStart = async (values: StartSessionFormValues) => {
+    try {
+      setIsSubmitting(true)
+      const payload: StartSessionPayload = {
+        vehicle_id: Number(values.vehicle_id),
+        slot_id: Number(values.slot_id),
+      }
+      await parkingSessionsApi.start(payload)
+      toast.success("Parking session started.")
+      setIsStartOpen(false)
+      fetchData()
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleFinish = async (id: number, values: FinishSessionFormValues) => {
+    try {
+      setIsSubmitting(true)
+      const payload: FinishSessionPayload = {
+        rate_per_hour: values.rate_per_hour ? Number(values.rate_per_hour) : undefined,
+      }
+      await parkingSessionsApi.finish(id, payload)
+      toast.success("Parking session finished.")
+      setFinishTarget(null)
+      fetchData()
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   const sessions = data?.items ?? []
-
-  function handleStatusFilterChange(value: string | null) {
-    setStatusFilter(value ?? "all")
-    setPage(1)
-  }
-
-  const handleRefresh = () => {
-    fetchData()
-  }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Sessions"
-        description="Check vehicles in and out of parking slots."
+        title="Parking Sessions"
+        description="Monitor and manage active/completed parking sessions."
         actions={
-          <Button onClick={() => setStartOpen(true)}>
-            <Plus className="size-4" />
-            Start Session
+          <Button onClick={() => setIsStartOpen(true)}>
+            <Plus className="mr-2 size-4" /> Start session
           </Button>
         }
       />
-      <p className="-mt-4 text-sm text-muted-foreground">Showing all sessions visible to your role.</p>
 
       <Card>
         <CardContent className="space-y-4">
-          <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
+          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value ?? "all")}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
@@ -113,30 +153,21 @@ export function SessionsPage() {
           {isLoading ? (
             <TableSkeleton />
           ) : sessions.length === 0 ? (
-            <EmptyState
-              title="No sessions found"
-              description="Start a session to check a vehicle into a slot."
-              action={
-                <Button size="sm" onClick={() => setStartOpen(true)}>
-                  <Plus className="size-4" />
-                  Start Session
-                </Button>
-              }
-            />
+            <EmptyState title="No sessions found" description="Try adjusting your filters or start a new session." />
           ) : (
             <div className="overflow-x-auto rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID</TableHead>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>Slot</TableHead>
-                    <TableHead>Entry</TableHead>
-                    <TableHead>Exit</TableHead>
+                    <TableHead>Vehicle ID</TableHead>
+                    <TableHead>Slot ID</TableHead>
+                    <TableHead>Start Time</TableHead>
+                    <TableHead>End Time</TableHead>
                     <TableHead>Duration</TableHead>
                     <TableHead>Fee</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-24" />
+                    <TableHead className="w-12" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -145,18 +176,27 @@ export function SessionsPage() {
                       <TableCell className="font-medium">#{session.id}</TableCell>
                       <TableCell>{session.vehicle_id}</TableCell>
                       <TableCell>{session.slot_id}</TableCell>
-                      <TableCell>{formatDateTime(session.entry_time)}</TableCell>
-                      <TableCell>{formatDateTime(session.exit_time)}</TableCell>
-                      <TableCell>{formatDuration(session.duration)}</TableCell>
-                      <TableCell>{formatCurrency(session.fee)}</TableCell>
+                      <TableCell>{formatDateTime(session.start_time)}</TableCell>
+                      <TableCell>{session.end_time ? formatDateTime(session.end_time) : "—"}</TableCell>
+                      <TableCell>{session.duration ? formatDuration(session.duration) : "—"}</TableCell>
+                      <TableCell>{session.fee != null ? formatCurrency(session.fee) : "—"}</TableCell>
                       <TableCell>
                         <StatusBadge label={session.status} tone={sessionStatusTone(session.status)} />
                       </TableCell>
                       <TableCell>
                         {session.status === "ACTIVE" ? (
-                          <Button size="sm" variant="outline" onClick={() => setFinishTarget(session)}>
-                            Finish
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-8">
+                                <MoreHorizontal className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setFinishTarget(session)}>
+                                Finish session
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         ) : null}
                       </TableCell>
                     </TableRow>
@@ -171,21 +211,18 @@ export function SessionsPage() {
       </Card>
 
       <StartSessionDialog
-        open={startOpen}
-        onOpenChange={setStartOpen}
-        onSuccess={() => {
-          setStartOpen(false)
-          handleRefresh()
-        }}
+        open={isStartOpen}
+        onOpenChange={setIsStartOpen}
+        onSubmit={handleStart}
+        submitting={isSubmitting}
       />
 
       <FinishSessionDialog
-        session={finishTarget}
+        open={Boolean(finishTarget)}
         onOpenChange={(open) => !open && setFinishTarget(null)}
-        onSuccess={() => {
-          setFinishTarget(null)
-          handleRefresh()
-        }}
+        session={finishTarget}
+        onSubmit={(values) => finishTarget && handleFinish(finishTarget.id, values)}
+        submitting={isSubmitting}
       />
     </div>
   )
@@ -194,363 +231,109 @@ export function SessionsPage() {
 function StartSessionDialog({
   open,
   onOpenChange,
-  onSuccess,
+  onSubmit,
+  submitting,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSuccess: () => void
+  onSubmit: (values: StartSessionFormValues) => void
+  submitting: boolean
 }) {
-  const [vehicleQuery, setVehicleQuery] = useState("")
-  const [selectedVehicle, setSelectedVehicle] = useState<VehicleOut | null>(null)
-  const [slotId, setSlotId] = useState("")
-  const [reservationId, setReservationId] = useState("")
-  const [formError, setFormError] = useState<string | null>(null)
-
-  const debouncedQuery = useDebounce(vehicleQuery, 400)
-
-  const [dashboard, setDashboard] = useState<StaffDashboardOut | null>(null)
-  const [vehicleResults, setVehicleResults] = useState<ListResult<VehicleOut> | null>(null)
-  const [isSearching, setIsSearching] = useState(false)
-  const [floorsData, setFloorsData] = useState<ListResult<ParkingFloorOut> | null>(null)
-  const [slotData, setSlotData] = useState<ListResult<ParkingSlotOut>[]>([])
-
-  const fetchDashboard = async () => {
-    try {
-      const result = await dashboardApi.staff()
-      setDashboard(result)
-    } catch (error) {
-      console.error("Failed to fetch dashboard:", error)
-    }
-  }
-
-  const fetchVehicles = async () => {
-    if (!open || debouncedQuery.trim().length <= 1 || selectedVehicle) return
-    try {
-      setIsSearching(true)
-      const result = await vehiclesApi.list({ search: debouncedQuery, limit: 5 })
-      setVehicleResults(result)
-    } catch (error) {
-      console.error("Failed to search vehicles:", error)
-    } finally {
-      setIsSearching(false)
-    }
-  }
-
-  const fetchFloors = async () => {
-    if (!open || !dashboard?.parking_lot_id) return
-    try {
-      const result = await parkingFloorsApi.list({ parking_lot_id: dashboard.parking_lot_id })
-      setFloorsData(result)
-    } catch (error) {
-      console.error("Failed to fetch floors:", error)
-    }
-  }
-
-  const fetchSlots = async () => {
-    if (!open || !dashboard?.parking_lot_id || !floorsData?.items) return
-    try {
-      const slotPromises = floorsData.items.map((floor) => 
-        parkingSlotsApi.list({ floor_id: floor.id })
-      )
-      const results = await Promise.all(slotPromises)
-      setSlotData(results)
-    } catch (error) {
-      console.error("Failed to fetch slots:", error)
-    }
-  }
-
-  useEffect(() => {
-    fetchDashboard()
-  }, [])
-
-  useEffect(() => {
-    fetchVehicles()
-  }, [debouncedQuery, open, selectedVehicle])
-
-  useEffect(() => {
-    fetchFloors()
-  }, [open, dashboard?.parking_lot_id])
-
-  useEffect(() => {
-    fetchSlots()
-  }, [open, dashboard?.parking_lot_id, floorsData])
-
-  const floors = floorsData?.items ?? []
-
-  const availableSlots = useMemo(() => {
-    const result: { id: number; label: string }[] = []
-    floors.forEach((floor, index) => {
-      const slots = slotData[index]?.items ?? []
-      slots
-        .filter((slot) => slot.status === "AVAILABLE")
-        .forEach((slot) => {
-          result.push({
-            id: slot.id,
-            label: `${floor.floor_name || `Floor ${floor.id}`} - Slot ${slot.slot_number}${
-              slot.section ? ` (${slot.section})` : ""
-            }`,
-          })
-        })
-    })
-    return result
-  }, [floors, slotData])
-
-  const [isStarting, setIsStarting] = useState(false)
-
-  const handleStart = async (payload: any) => {
-    try {
-      setIsStarting(true)
-      await parkingSessionsApi.start(payload)
-      toast.success("Session started.")
-      resetForm()
-      onSuccess()
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-    } finally {
-      setIsStarting(false)
-    }
-  }
-
-  function resetForm() {
-    setVehicleQuery("")
-    setSelectedVehicle(null)
-    setSlotId("")
-    setReservationId("")
-    setFormError(null)
-  }
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<StartSessionFormValues>({
+    resolver: zodResolver(startSessionSchema),
+  })
 
   function handleOpenChange(next: boolean) {
-    if (!next) resetForm()
+    if (!next) reset()
     onOpenChange(next)
   }
 
-  function handleSubmit() {
-    setFormError(null)
-    if (!selectedVehicle) {
-      setFormError("Select a vehicle to check in.")
-      return
-    }
-    if (!slotId) {
-      setFormError("Select an available slot.")
-      return
-    }
-    let reservationIdNumber: number | undefined
-    if (reservationId.trim()) {
-      const parsed = Number(reservationId)
-      if (!Number.isFinite(parsed) || parsed <= 0) {
-        setFormError("Reservation ID must be a valid positive number.")
-        return
-      }
-      reservationIdNumber = parsed
-    }
-    handleStart({
-      vehicle_id: selectedVehicle.id,
-      slot_id: Number(slotId),
-      reservation_id: reservationIdNumber,
-    })
-  }
-
-  const vehicles = vehicleResults?.items ?? []
-
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Start a parking session</DialogTitle>
+          <DialogTitle>Start Parking Session</DialogTitle>
           <DialogDescription>
-            Search for the vehicle by plate number, then pick an available slot.
+            Enter the vehicle ID and assigned slot ID to begin a parking session.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="space-y-4">
-          <FormField
-            label="Vehicle"
-            required
-            hint={selectedVehicle ? undefined : "Search by plate number or brand."}
-          >
-            {selectedVehicle ? (
-              <div className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                <div>
-                  <p className="font-medium text-foreground">{selectedVehicle.plate_number}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {[selectedVehicle.brand, selectedVehicle.color].filter(Boolean).join(" - ") || "No details"}
-                  </p>
-                </div>
-                <Button type="button" variant="outline" size="sm" onClick={() => setSelectedVehicle(null)}>
-                  Change
-                </Button>
-              </div>
-            ) : (
-              <div className="relative">
-                <div className="relative">
-                  <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={vehicleQuery}
-                    onChange={(e) => setVehicleQuery(e.target.value)}
-                    placeholder="Search by plate number..."
-                    className="pl-9"
-                  />
-                </div>
-                {debouncedQuery.trim().length > 1 ? (
-                  <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
-                    {isSearching ? (
-                      <p className="px-3 py-2 text-sm text-muted-foreground">Searching...</p>
-                    ) : vehicles.length === 0 ? (
-                      <p className="px-3 py-2 text-sm text-muted-foreground">No vehicles found.</p>
-                    ) : (
-                      <ul className="max-h-48 overflow-y-auto py-1">
-                        {vehicles.map((vehicle) => (
-                          <li key={vehicle.id}>
-                            <button
-                              type="button"
-                              className="flex w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-muted"
-                              onClick={() => {
-                                setSelectedVehicle(vehicle)
-                                setVehicleQuery("")
-                              }}
-                            >
-                              <span className="font-medium">{vehicle.plate_number}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {[vehicle.brand, vehicle.color].filter(Boolean).join(" - ") || "No details"}
-                              </span>
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            )}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <FormField label="Vehicle ID" htmlFor="vehicle_id" error={errors.vehicle_id?.message}>
+            <Input id="vehicle_id" type="number" placeholder="e.g. 1" {...register("vehicle_id")} />
           </FormField>
-
-          <FormField
-            label="Slot"
-            htmlFor="slot"
-            required
-            hint={availableSlots.length === 0 ? "No available slots right now." : undefined}
-          >
-            <Select
-              value={slotId}
-              onValueChange={(value) => setSlotId(value ?? "")}
-              disabled={availableSlots.length === 0}
-            >
-              <SelectTrigger id="slot" className="w-full">
-                <SelectValue placeholder="Select an available slot" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableSlots.map((slot) => (
-                  <SelectItem key={slot.id} value={String(slot.id)}>
-                    {slot.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <FormField label="Slot ID" htmlFor="slot_id" error={errors.slot_id?.message}>
+            <Input id="slot_id" type="number" placeholder="e.g. 5" {...register("slot_id")} />
           </FormField>
-
-          <FormField
-            label="Reservation ID (optional)"
-            htmlFor="reservation_id"
-            hint="If this session fulfills an existing reservation."
-          >
-            <Input
-              id="reservation_id"
-              type="number"
-              min={1}
-              value={reservationId}
-              onChange={(e) => setReservationId(e.target.value)}
-            />
-          </FormField>
-
-          {formError ? <p className="text-xs font-medium text-destructive">{formError}</p> : null}
-        </div>
-
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="button" onClick={handleSubmit} disabled={isStarting}>
-            {isStarting ? <Loader2 className="size-4 animate-spin" /> : null}
-            Start session
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
+              Start session
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )
 }
 
 function FinishSessionDialog({
-  session,
+  open,
   onOpenChange,
-  onSuccess,
+  session,
+  onSubmit,
+  submitting,
 }: {
-  session: ParkingSessionOut | null
+  open: boolean
   onOpenChange: (open: boolean) => void
-  onSuccess: () => void
+  session: ParkingSessionOut | null
+  onSubmit: (values: FinishSessionFormValues) => void
+  submitting: boolean
 }) {
-  const [rate, setRate] = useState("")
-
-  const [isFinishing, setIsFinishing] = useState(false)
-
-  const handleFinish = async (id: number) => {
-    try {
-      setIsFinishing(true)
-      const rateValue = rate.trim() ? Number(rate) : undefined
-      await parkingSessionsApi.finish(id, rateValue !== undefined ? { rate_per_hour: rateValue } : {})
-      toast.success("Session finished.")
-      setRate("")
-      onSuccess()
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-    } finally {
-      setIsFinishing(false)
-    }
-  }
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FinishSessionFormValues>({
+    resolver: zodResolver(finishSessionSchema),
+  })
 
   function handleOpenChange(next: boolean) {
-    if (!next) setRate("")
+    if (!next) reset()
     onOpenChange(next)
   }
 
   return (
-    <Dialog open={Boolean(session)} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Finish session #{session?.id}</DialogTitle>
+          <DialogTitle>Finish Session #{session?.id}</DialogTitle>
           <DialogDescription>
-            Check the vehicle out of slot {session?.slot_id}. Optionally override the hourly rate used for the
-            fee.
+            Optionally override the hourly rate used to calculate the parking fee. Leave blank to use the default rate.
           </DialogDescription>
         </DialogHeader>
-
-        <FormField
-          label="Hourly rate override (optional)"
-          htmlFor="rate_per_hour"
-          hint="Leave blank to use the default rate."
-        >
-          <Input
-            id="rate_per_hour"
-            type="number"
-            min={0}
-            step="0.01"
-            value={rate}
-            onChange={(e) => setRate(e.target.value)}
-          />
-        </FormField>
-
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={() => session && handleFinish(session.id)}
-            disabled={isFinishing}
-          >
-            {isFinishing ? <Loader2 className="size-4 animate-spin" /> : null}
-            Finish session
-          </Button>
-        </DialogFooter>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <FormField label="Hourly rate override" htmlFor="rate_per_hour" error={errors.rate_per_hour?.message}>
+            <Input id="rate_per_hour" type="number" step="any" {...register("rate_per_hour")} />
+          </FormField>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
+              Finish session
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )

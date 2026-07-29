@@ -45,7 +45,6 @@ def seed() -> None:
                 name=settings.DEFAULT_ADMIN_NAME,
                 email=settings.DEFAULT_ADMIN_EMAIL,
                 password=hash_password(settings.DEFAULT_ADMIN_PASSWORD),
-                phone=settings.DEFAULT_ADMIN_PHONE,
                 role_id=role_map[RoleName.ADMIN.value].id,
                 created_by=None,
             )

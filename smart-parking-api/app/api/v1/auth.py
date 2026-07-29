@@ -1,15 +1,21 @@
 """Authentication endpoints: register, login, refresh, logout, profile, password, OTP."""
+from datetime import timezone
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import NotFoundException
 from app.database.session import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
+from app.repositories.otp_repository import OTPRepository
+from app.repositories.user_repository import UserRepository
 from app.schemas.auth import (
     ChangePasswordRequest,
     LoginRequest,
     LogoutRequest,
     RefreshTokenRequest,
+    RegisterOwnerRequest,
     RegisterRequest,
     SendOTPRequest,
     TokenResponse,
@@ -17,11 +23,8 @@ from app.schemas.auth import (
 )
 from app.schemas.common import SuccessResponse
 from app.schemas.user import UserOut, UserUpdate
-from app.core.exceptions import NotFoundException
 from app.services.auth_service import AuthService
 from app.services.otp_service import OTPService
-from app.repositories.otp_repository import OTPRepository
-from app.repositories.user_repository import UserRepository
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -35,8 +38,6 @@ async def send_otp(payload: SendOTPRequest, db: Session = Depends(get_db)):
 @router.get("/otp-status")
 def get_otp_status(email: str, db: Session = Depends(get_db)):
     """Get OTP expiry time and usage status for an email."""
-    from datetime import datetime, timezone
-    
     otp_repo = OTPRepository(db)
     otp = otp_repo.get_by_email(email)
     
@@ -71,6 +72,12 @@ def verify_otp(payload: VerifyOTPRequest, db: Session = Depends(get_db)):
 def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     user = AuthService(db).register_customer(payload)
     return {"success": True, "message": "Registration successful.", "data": user}
+
+
+@router.post("/register-owner", response_model=SuccessResponse[UserOut], status_code=status.HTTP_201_CREATED)
+def register_owner(payload: RegisterOwnerRequest, db: Session = Depends(get_db)):
+    user = AuthService(db).register_owner(payload)
+    return {"success": True, "message": "Owner registration successful.", "data": user}
 
 
 @router.post("/login", response_model=SuccessResponse[TokenResponse])

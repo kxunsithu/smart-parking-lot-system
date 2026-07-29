@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from "react"
+import { toast } from "sonner"
+import { MoreHorizontal, Loader2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { toast } from "sonner"
-import { Loader2, MoreHorizontal } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { DataPagination } from "@/components/common/DataPagination"
 import { EmptyState } from "@/components/common/EmptyState"
@@ -11,8 +11,8 @@ import { TableSkeleton } from "@/components/common/LoadingBlock"
 import { StatusBadge } from "@/components/common/StatusBadge"
 import { FormField } from "@/components/common/FormField"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -57,7 +57,7 @@ function toFinishPayload(values: FinishSessionFormValues): FinishSessionPayload 
   }
 }
 
-export function SessionsPage() {
+export function OwnerSessionsPage() {
   const { setPage, params } = usePaginationState()
   const [statusFilter, setStatusFilter] = useState("all")
   const [finishTarget, setFinishTarget] = useState<ParkingSessionOut | null>(null)
@@ -104,7 +104,6 @@ export function SessionsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Parking Sessions" description="Monitor active and completed parking sessions." />
-      <p className="-mt-4 text-sm text-muted-foreground">Showing all sessions visible to your role.</p>
 
       <Card>
         <CardContent className="space-y-4">
@@ -131,10 +130,10 @@ export function SessionsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID</TableHead>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>Slot</TableHead>
-                    <TableHead>Entry time</TableHead>
-                    <TableHead>Exit time</TableHead>
+                    <TableHead>Vehicle ID</TableHead>
+                    <TableHead>Slot ID</TableHead>
+                    <TableHead>Start Time</TableHead>
+                    <TableHead>End Time</TableHead>
                     <TableHead>Duration</TableHead>
                     <TableHead>Fee</TableHead>
                     <TableHead>Status</TableHead>
@@ -147,10 +146,10 @@ export function SessionsPage() {
                       <TableCell className="font-medium">#{session.id}</TableCell>
                       <TableCell>{session.vehicle_id}</TableCell>
                       <TableCell>{session.slot_id}</TableCell>
-                      <TableCell>{formatDateTime(session.entry_time)}</TableCell>
-                      <TableCell>{formatDateTime(session.exit_time)}</TableCell>
-                      <TableCell>{formatDuration(session.duration)}</TableCell>
-                      <TableCell>{formatCurrency(session.fee)}</TableCell>
+                      <TableCell>{formatDateTime(session.start_time)}</TableCell>
+                      <TableCell>{session.end_time ? formatDateTime(session.end_time) : "—"}</TableCell>
+                      <TableCell>{session.duration ? formatDuration(session.duration) : "—"}</TableCell>
+                      <TableCell>{session.fee != null ? formatCurrency(session.fee) : "—"}</TableCell>
                       <TableCell>
                         <StatusBadge label={session.status} tone={sessionStatusTone(session.status)} />
                       </TableCell>
@@ -227,8 +226,7 @@ function FinishSessionDialog({
         <DialogHeader>
           <DialogTitle>Finish session #{session?.id}</DialogTitle>
           <DialogDescription>
-            Optionally override the hourly rate used to calculate the parking fee. Leave blank to use the default
-            rate.
+            Optionally override the hourly rate used to calculate the parking fee. Leave blank to use the default rate.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -240,7 +238,7 @@ function FinishSessionDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}>
-              {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
+              {submitting ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
               Finish session
             </Button>
           </DialogFooter>

@@ -13,13 +13,15 @@ from app.core.security import (
     verify_password,
 )
 from app.models.customer import Customer
+from app.models.parking_owner import ParkingOwner
 from app.models.user import User
 from app.repositories.customer_repository import CustomerRepository
+from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.repositories.otp_repository import OTPRepository
 from app.repositories.role_repository import RoleRepository
 from app.repositories.token_blacklist_repository import TokenBlacklistRepository
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth import ChangePasswordRequest, LoginRequest, RegisterRequest
+from app.schemas.auth import ChangePasswordRequest, LoginRequest, RegisterOwnerRequest, RegisterRequest
 from app.schemas.user import UserUpdate
 
 
@@ -29,6 +31,7 @@ class AuthService:
         self.user_repo = UserRepository(db)
         self.role_repo = RoleRepository(db)
         self.customer_repo = CustomerRepository(db)
+        self.owner_repo = ParkingOwnerRepository(db)
         self.otp_repo = OTPRepository(db)
         self.blacklist_repo = TokenBlacklistRepository(db)
 
@@ -51,7 +54,6 @@ class AuthService:
             name=payload.name,
             email=payload.email,
             password=hash_password(payload.password),
-            phone=payload.phone,
             role_id=role.id,
             created_by=None,
             is_verified=is_verified,
@@ -60,6 +62,49 @@ class AuthService:
 
         customer = Customer(user_id=user.id)
         self.customer_repo.create(customer)
+
+        # Clean up the used OTP record now that the user has been created.
+        if otp:
+            self.otp_repo.delete_by_email(payload.email)
+
+        return self.user_repo.get_with_role(user.id)
+
+    def register_owner(self, payload: RegisterOwnerRequest) -> User:
+        if self.user_repo.get_by_email(payload.email):
+            raise ConflictException(
+                "Validation failed.",
+                errors=[{"field": "email", "message": "Email already exists."}],
+            )
+
+        if payload.password != payload.confirm_password:
+            raise BadRequestException(
+                "Validation failed.",
+                errors=[{"field": "confirm_password", "message": "Passwords do not match."}],
+            )
+
+        role = self.role_repo.get_by_name(RoleName.OWNER.value)
+        if not role:
+            raise NotFoundException("Owner role is not configured. Please run the seed script.")
+
+        # Confirm that the email was verified via OTP before allowing registration.
+        otp = self.otp_repo.get_by_email(payload.email)
+        is_verified = bool(otp and otp.is_used)
+
+        user = User(
+            name=payload.name,
+            email=payload.email,
+            password=hash_password(payload.password),
+            role_id=role.id,
+            created_by=None,
+            is_verified=is_verified,
+        )
+        user = self.user_repo.create(user)
+
+        owner = ParkingOwner(
+            user_id=user.id,
+            company_name=payload.company_name,
+        )
+        self.owner_repo.create(owner)
 
         # Clean up the used OTP record now that the user has been created.
         if otp:

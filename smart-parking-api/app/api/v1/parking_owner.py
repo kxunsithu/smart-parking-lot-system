@@ -1,5 +1,5 @@
-"""Parking Owner management endpoints (created and managed by Admin)."""
-from fastapi import APIRouter, Depends, status
+"""Parking Owner management endpoints (managed by Admin)."""
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.constants import RoleName
@@ -8,21 +8,10 @@ from app.dependencies.auth import get_current_user, require_roles
 from app.dependencies.pagination import pagination_params
 from app.models.user import User
 from app.schemas.common import PaginationParams, SuccessResponse
-from app.schemas.parking_owner import ParkingOwnerCreate, ParkingOwnerOut, ParkingOwnerUpdate
+from app.schemas.parking_owner import ParkingOwnerOut, ParkingOwnerUpdate
 from app.services.parking_owner_service import ParkingOwnerService
 
 router = APIRouter(prefix="/parking-owners", tags=["Parking Owners"])
-
-
-@router.post(
-    "",
-    response_model=SuccessResponse[ParkingOwnerOut],
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_roles(RoleName.ADMIN))],
-)
-def create_owner(payload: ParkingOwnerCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    owner = ParkingOwnerService(db).create_owner(payload, created_by=current_user.id)
-    return {"success": True, "message": "Parking owner created successfully.", "data": owner}
 
 
 @router.get(

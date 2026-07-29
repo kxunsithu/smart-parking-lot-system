@@ -7,7 +7,6 @@ import { Loader2, Mail, CheckCircle, ArrowLeft, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { OTPInput } from "@/components/common/OTPInput"
 import { authApi } from "@/api/auth"
-import { subscriptionApi } from "@/api/subscription"
 import { getErrorMessage } from "@/api/client"
 import { useAuthStore } from "@/stores/authStore"
 import { homePathForRole } from "@/utils/navConfig"
@@ -123,19 +122,6 @@ export function VerifyEmailPage() {
         console.error("User role is missing after OTP verification:", updatedUser)
         toast.error("Account setup incomplete. Please contact support.")
         return
-      }
-      
-      // Check subscription status for owners
-      if (updatedUser.role.name === "OWNER") {
-        try {
-          const status = await subscriptionApi.getMySubscriptionStatus()
-          if (!status.has_subscription) {
-            navigate("/owner/subscription", { replace: true })
-            return
-          }
-        } catch (error) {
-          console.error("Subscription check failed:", error)
-        }
       }
       
       navigate(homePathForRole(updatedUser.role.name), { replace: true })

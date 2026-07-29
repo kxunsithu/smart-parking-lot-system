@@ -1,9 +1,14 @@
-from typing import List, Optional
+"""SQLAlchemy model for a customer vehicle."""
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
+
+if TYPE_CHECKING:
+    from app.models.customer import Customer
+    from app.models.parking_session import ParkingSession
 
 
 class Vehicle(Base):

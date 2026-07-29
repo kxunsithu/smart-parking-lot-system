@@ -46,7 +46,7 @@ export function PublicOnlyRoute() {
   return <Outlet />
 }
 
-function homePath(role: RoleName) {
+function homePath(role: RoleName): string {
   switch (role) {
     case "ADMIN":
       return "/admin"
@@ -54,5 +54,7 @@ function homePath(role: RoleName) {
       return "/owner"
     case "STAFF":
       return "/staff"
+    default:
+      return "/"
   }
 }

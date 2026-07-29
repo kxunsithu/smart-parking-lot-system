@@ -25,6 +25,14 @@ export interface VerifyOTPPayload {
   code: string
 }
 
+export interface RegisterOwnerPayload {
+  name: string
+  email: string
+  password: string
+  confirm_password: string
+  company_name: string
+}
+
 export const authApi = {
   async login(payload: LoginPayload) {
     const res = await apiClient.post<ApiSuccess<TokenResponse>>("/auth/login", payload)
@@ -70,6 +78,11 @@ export const authApi = {
 
   async updateProfile(payload: UpdateProfilePayload) {
     const res = await apiClient.put<ApiSuccess<UserOut>>("/auth/me", payload)
+    return res.data.data
+  },
+
+  async registerOwner(payload: RegisterOwnerPayload) {
+    const res = await apiClient.post<ApiSuccess<UserOut>>("/auth/register-owner", payload)
     return res.data.data
   },
 }

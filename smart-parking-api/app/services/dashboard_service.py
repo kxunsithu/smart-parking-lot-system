@@ -2,16 +2,15 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.constants import PaymentStatus, ReservationStatus, SessionStatus, SlotStatus
-from app.core.exceptions import ForbiddenException, NotFoundException
+from app.core.constants import PaymentStatus, SessionStatus, SlotStatus
+from app.core.exceptions import NotFoundException
 from app.models.parking_floor import ParkingFloor
 from app.models.parking_lot import ParkingLot
 from app.models.parking_owner import ParkingOwner
 from app.models.parking_session import ParkingSession
 from app.models.parking_slot import ParkingSlot
 from app.models.parking_staff import ParkingStaff
-from app.models.parking_session_payment import ParkingSessionPayment
-from app.models.reservation import Reservation
+from app.models.payment import Payment
 from app.models.customer import Customer
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.repositories.parking_staff_repository import ParkingStaffRepository
@@ -29,16 +28,11 @@ class DashboardService:
         total_staff = self.db.scalar(select(func.count()).select_from(ParkingStaff)) or 0
         total_customers = self.db.scalar(select(func.count()).select_from(Customer)) or 0
         total_parking_lots = self.db.scalar(select(func.count()).select_from(ParkingLot)) or 0
-        total_slots = self.db.scalar(select(func.count()).select_from(ParkingSlot)) or 0
-        total_active_sessions = (
-            self.db.scalar(
-                select(func.count()).select_from(ParkingSession).where(ParkingSession.status == SessionStatus.ACTIVE.value)
-            )
-            or 0
-        )
         total_revenue = (
             self.db.scalar(
-                select(func.coalesce(func.sum(ParkingSessionPayment.amount), 0)).where(ParkingSessionPayment.status == PaymentStatus.PAID.value)
+                select(func.coalesce(func.sum(Payment.amount), 0)).where(
+                    Payment.status == PaymentStatus.PAID.value
+                )
             )
             or 0
         )
@@ -48,8 +42,6 @@ class DashboardService:
             total_staff=total_staff,
             total_customers=total_customers,
             total_parking_lots=total_parking_lots,
-            total_slots=total_slots,
-            total_active_sessions=total_active_sessions,
             total_revenue=float(total_revenue),
         )
 
@@ -65,59 +57,69 @@ class DashboardService:
             return OwnerDashboardOut(
                 total_parking_lots=0,
                 total_floors=0,
-                total_slots=0,
                 available_slots=0,
                 occupied_slots=0,
-                reserved_slots=0,
                 total_staff=0,
-                total_reservations=0,
-                active_sessions=0,
+                total_sessions=0,
                 total_revenue=0.0,
             )
 
         floor_ids = [
             floor.id
-            for floor in self.db.scalars(select(ParkingFloor).where(ParkingFloor.parking_lot_id.in_(lot_ids))).all()
+            for floor in self.db.scalars(
+                select(ParkingFloor).where(ParkingFloor.parking_lot_id.in_(lot_ids))
+            ).all()
         ]
         total_floors = len(floor_ids)
 
-        slots = list(self.db.scalars(select(ParkingSlot).where(ParkingSlot.floor_id.in_(floor_ids))).all()) if floor_ids else []
-        total_slots = len(slots)
+        slots = (
+            list(
+                self.db.scalars(
+                    select(ParkingSlot).where(ParkingSlot.floor_id.in_(floor_ids))
+                ).all()
+            )
+            if floor_ids
+            else []
+        )
         available_slots = sum(1 for s in slots if s.status == SlotStatus.AVAILABLE.value)
         occupied_slots = sum(1 for s in slots if s.status == SlotStatus.OCCUPIED.value)
-        reserved_slots = sum(1 for s in slots if s.status == SlotStatus.RESERVED.value)
 
         total_staff = (
-            self.db.scalar(select(func.count()).select_from(ParkingStaff).where(ParkingStaff.parking_lot_id.in_(lot_ids)))
+            self.db.scalar(
+                select(func.count()).select_from(ParkingStaff).where(
+                    ParkingStaff.parking_lot_id.in_(lot_ids)
+                )
+            )
             or 0
         )
 
         slot_ids = [s.id for s in slots]
-        total_reservations = (
-            self.db.scalar(select(func.count()).select_from(Reservation).where(Reservation.slot_id.in_(slot_ids)))
-            if slot_ids
-            else 0
-        ) or 0
-
-        active_sessions = (
+        total_sessions = (
             self.db.scalar(
-                select(func.count())
-                .select_from(ParkingSession)
-                .where(ParkingSession.slot_id.in_(slot_ids), ParkingSession.status == SessionStatus.ACTIVE.value)
+                select(func.count()).select_from(ParkingSession).where(
+                    ParkingSession.slot_id.in_(slot_ids)
+                )
             )
             if slot_ids
             else 0
         ) or 0
 
-        session_ids = [
-            s.id
-            for s in self.db.scalars(select(ParkingSession).where(ParkingSession.slot_id.in_(slot_ids))).all()
-        ] if slot_ids else []
+        session_ids = (
+            [
+                s.id
+                for s in self.db.scalars(
+                    select(ParkingSession).where(ParkingSession.slot_id.in_(slot_ids))
+                ).all()
+            ]
+            if slot_ids
+            else []
+        )
 
         total_revenue = (
             self.db.scalar(
-                select(func.coalesce(func.sum(ParkingSessionPayment.amount), 0)).where(
-                    ParkingSessionPayment.parking_session_id.in_(session_ids), ParkingSessionPayment.status == PaymentStatus.PAID.value
+                select(func.coalesce(func.sum(Payment.amount), 0)).where(
+                    Payment.parking_session_id.in_(session_ids),
+                    Payment.status == PaymentStatus.PAID.value,
                 )
             )
             if session_ids
@@ -127,13 +129,10 @@ class DashboardService:
         return OwnerDashboardOut(
             total_parking_lots=total_parking_lots,
             total_floors=total_floors,
-            total_slots=total_slots,
             available_slots=available_slots,
             occupied_slots=occupied_slots,
-            reserved_slots=reserved_slots,
             total_staff=total_staff,
-            total_reservations=total_reservations,
-            active_sessions=active_sessions,
+            total_sessions=total_sessions,
             total_revenue=float(total_revenue),
         )
 
@@ -143,31 +142,33 @@ class DashboardService:
             raise NotFoundException("Staff profile not found for the current user.")
 
         floor_ids = [
-            f.id for f in self.db.scalars(select(ParkingFloor).where(ParkingFloor.parking_lot_id == staff.parking_lot_id)).all()
+            f.id
+            for f in self.db.scalars(
+                select(ParkingFloor).where(ParkingFloor.parking_lot_id == staff.parking_lot_id)
+            ).all()
         ]
-        slots = list(self.db.scalars(select(ParkingSlot).where(ParkingSlot.floor_id.in_(floor_ids))).all()) if floor_ids else []
+        slots = (
+            list(
+                self.db.scalars(
+                    select(ParkingSlot).where(ParkingSlot.floor_id.in_(floor_ids))
+                ).all()
+            )
+            if floor_ids
+            else []
+        )
         slot_ids = [s.id for s in slots]
 
-        total_slots = len(slots)
         available_slots = sum(1 for s in slots if s.status == SlotStatus.AVAILABLE.value)
         occupied_slots = sum(1 for s in slots if s.status == SlotStatus.OCCUPIED.value)
-        reserved_slots = sum(1 for s in slots if s.status == SlotStatus.RESERVED.value)
 
         active_sessions = (
             self.db.scalar(
                 select(func.count())
                 .select_from(ParkingSession)
-                .where(ParkingSession.slot_id.in_(slot_ids), ParkingSession.status == SessionStatus.ACTIVE.value)
-            )
-            if slot_ids
-            else 0
-        ) or 0
-
-        pending_reservations = (
-            self.db.scalar(
-                select(func.count())
-                .select_from(Reservation)
-                .where(Reservation.slot_id.in_(slot_ids), Reservation.status == ReservationStatus.PENDING.value)
+                .where(
+                    ParkingSession.slot_id.in_(slot_ids),
+                    ParkingSession.status == SessionStatus.ACTIVE.value,
+                )
             )
             if slot_ids
             else 0
@@ -175,10 +176,7 @@ class DashboardService:
 
         return StaffDashboardOut(
             parking_lot_id=staff.parking_lot_id,
-            total_slots=total_slots,
             available_slots=available_slots,
             occupied_slots=occupied_slots,
-            reserved_slots=reserved_slots,
             active_sessions=active_sessions,
-            pending_reservations=pending_reservations,
         )

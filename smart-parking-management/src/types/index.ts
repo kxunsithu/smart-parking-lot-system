@@ -2,9 +2,7 @@
 
 export type RoleName = "ADMIN" | "OWNER" | "STAFF" | "CUSTOMER"
 
-export type SlotStatus = "AVAILABLE" | "RESERVED" | "OCCUPIED"
-
-export type ReservationStatus = "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED"
+export type SlotStatus = "AVAILABLE" | "OCCUPIED"
 
 export type SessionStatus = "ACTIVE" | "FINISHED"
 
@@ -75,21 +73,17 @@ export interface ParkingLotOut {
   id: number
   owner_id: number
   name: string
-  type?: string | null
-  address?: string | null
-  latitude?: number | null
-  longitude?: number | null
   google_map_url?: string | null
-  total_slots: number
+  is_active: boolean
   created_at: string
+  owner?: ParkingOwnerOut | null
+  staff_count?: number
 }
 
 export interface ParkingStaffOut {
   id: number
   user_id: number
   parking_lot_id: number
-  employee_code?: string | null
-  position?: string | null
   user?: UserOut | null
 }
 
@@ -118,47 +112,20 @@ export interface ParkingSlotOut {
   status: SlotStatus
 }
 
-export interface ReservationOut {
-  id: number
-  customer_id: number
-  slot_id: number
-  reservation_time: string
-  status: ReservationStatus
-}
-
 export interface ParkingSessionOut {
   id: number
   vehicle_id: number
   slot_id: number
-  entry_time?: string | null
-  exit_time?: string | null
+  start_time: string
+  end_time?: string | null
   duration?: number | null
   fee?: number | null
   status: SessionStatus
 }
 
-export interface SubscriptionPaymentOut {
-  id: number
-  subscription_id: number
-  amount: number
-  payment_method: PaymentMethod
-  status: PaymentStatus
-  paid_at: string
-}
-
-export interface ParkingSessionPaymentOut {
+export interface PaymentOut {
   id: number
   parking_session_id: number
-  customer_id: number
-  amount: number
-  payment_method: PaymentMethod
-  status: PaymentStatus
-  paid_at: string
-}
-
-export interface ReservationPaymentOut {
-  id: number
-  reservation_id: number
   customer_id: number
   amount: number
   payment_method: PaymentMethod
@@ -171,32 +138,24 @@ export interface AdminDashboardOut {
   total_staff: number
   total_customers: number
   total_parking_lots: number
-  total_slots: number
-  total_active_sessions: number
   total_revenue: number
 }
 
 export interface OwnerDashboardOut {
   total_parking_lots: number
   total_floors: number
-  total_slots: number
   available_slots: number
   occupied_slots: number
-  reserved_slots: number
   total_staff: number
-  total_reservations: number
-  active_sessions: number
+  total_sessions: number
   total_revenue: number
 }
 
 export interface StaffDashboardOut {
   parking_lot_id: number
-  total_slots: number
   available_slots: number
   occupied_slots: number
-  reserved_slots: number
   active_sessions: number
-  pending_reservations: number
 }
 
 export interface PaginationQuery {

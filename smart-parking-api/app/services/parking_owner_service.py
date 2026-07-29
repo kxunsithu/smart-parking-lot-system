@@ -1,17 +1,20 @@
-"""Business logic for managing Parking Owners (created by Admin)."""
-from sqlalchemy import select
+"""Business logic for managing Parking Owners."""
+from sqlalchemy import delete, select, text, update
 from sqlalchemy.orm import Session, joinedload
 
-from app.core.constants import RoleName
-from app.core.exceptions import ConflictException, NotFoundException
-from app.core.security import hash_password
+from app.core.exceptions import NotFoundException
+from app.models.parking_floor import ParkingFloor
+from app.models.parking_lot import ParkingLot
 from app.models.parking_owner import ParkingOwner
+from app.models.parking_session import ParkingSession
+from app.models.parking_slot import ParkingSlot
+from app.models.parking_staff import ParkingStaff
+from app.models.payment import Payment
 from app.models.user import User
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
-from app.repositories.role_repository import RoleRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.common import PaginationParams, build_meta
-from app.schemas.parking_owner import ParkingOwnerCreate, ParkingOwnerUpdate
+from app.schemas.parking_owner import ParkingOwnerUpdate
 
 
 class ParkingOwnerService:
@@ -19,36 +22,6 @@ class ParkingOwnerService:
         self.db = db
         self.owner_repo = ParkingOwnerRepository(db)
         self.user_repo = UserRepository(db)
-        self.role_repo = RoleRepository(db)
-
-    def create_owner(self, payload: ParkingOwnerCreate, created_by: int) -> ParkingOwner:
-        if self.user_repo.get_by_email(payload.email):
-            raise ConflictException(
-                "Validation failed.",
-                errors=[{"field": "email", "message": "Email already exists."}],
-            )
-
-        role = self.role_repo.get_by_name(RoleName.OWNER.value)
-        if not role:
-            raise NotFoundException("Owner role is not configured. Please run the seed script.")
-
-        user = User(
-            name=payload.name,
-            email=payload.email,
-            password=hash_password(payload.password),
-            phone=payload.phone,
-            role_id=role.id,
-            created_by=created_by,
-        )
-        user = self.user_repo.create(user)
-
-        owner = ParkingOwner(
-            user_id=user.id,
-            company_name=payload.company_name,
-            business_license=payload.business_license,
-            address=payload.address,
-        )
-        return self.owner_repo.create(owner)
 
     def get_by_id(self, owner_id: int) -> ParkingOwner:
         owner = self.db.scalar(
@@ -73,7 +46,7 @@ class ParkingOwnerService:
             sort_by=params.sort_by,
             order=params.order,
             search=params.search,
-            search_fields=[ParkingOwner.company_name, ParkingOwner.address],
+            search_fields=[ParkingOwner.company_name],
         )
         return items, build_meta(total, params.page, params.limit)
 
@@ -84,4 +57,39 @@ class ParkingOwnerService:
 
     def delete_owner(self, owner_id: int) -> None:
         owner = self.get_by_id(owner_id)
-        self.owner_repo.delete(owner)
+
+        # Build subqueries for the dependency chain under this owner's parking lots
+        lot_ids = select(ParkingLot.id).where(ParkingLot.owner_id == owner_id)
+        floor_ids = select(ParkingFloor.id).where(ParkingFloor.parking_lot_id.in_(lot_ids))
+        slot_ids = select(ParkingSlot.id).where(ParkingSlot.floor_id.in_(floor_ids))
+
+        # Delete payments (reference sessions via slots)
+        self.db.execute(delete(Payment).where(
+            Payment.parking_session_id.in_(
+                select(ParkingSession.id).where(ParkingSession.slot_id.in_(slot_ids))
+            )
+        ))
+
+        # Delete parking sessions (reference parking_slots)
+        self.db.execute(delete(ParkingSession).where(ParkingSession.slot_id.in_(slot_ids)))
+
+        # Delete parking slots (reference parking_floors)
+        self.db.execute(delete(ParkingSlot).where(ParkingSlot.floor_id.in_(floor_ids)))
+
+        # Delete parking floors (reference parking_lots)
+        self.db.execute(delete(ParkingFloor).where(ParkingFloor.parking_lot_id.in_(lot_ids)))
+
+        # Delete parking staff (reference parking_lots)
+        self.db.execute(delete(ParkingStaff).where(ParkingStaff.parking_lot_id.in_(lot_ids)))
+
+        # Delete parking lots (reference parking_owners)
+        self.db.execute(delete(ParkingLot).where(ParkingLot.owner_id == owner_id))
+
+        # Set created_by to NULL for users created by this user
+        self.db.execute(update(User).where(User.created_by == owner.user.id).values(created_by=None))
+
+        # Delete the owner profile directly
+        self.db.execute(delete(ParkingOwner).where(ParkingOwner.id == owner_id))
+
+        # Then delete the user
+        self.user_repo.delete(owner.user)

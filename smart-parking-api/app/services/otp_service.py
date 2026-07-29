@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.config.settings import settings
 from app.core.exceptions import BadRequestException
+from app.models.otp import OTP
 from app.repositories.otp_repository import OTPRepository
 from app.repositories.user_repository import UserRepository
 from app.services.email_service import EmailService
@@ -31,13 +32,11 @@ class OTPService:
 
         # Calculate expiry time (store as naive UTC for SQLite compatibility)
         expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=settings.OTP_EXPIRE_MINUTES)
-        logger.info(f"Generated OTP for {email}, expires_at: {expires_at}, type: {type(expires_at)}")
 
         # Delete any existing OTP for this email
         self.otp_repo.delete_by_email(email)
 
         # Create new OTP
-        from app.models.otp import OTP
         otp = OTP(
             email=email,
             code=otp_code,
@@ -67,8 +66,6 @@ class OTPService:
 
         # Compare naive UTC datetimes
         now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
-        logger.info(f"Verifying OTP for {email}, expires_at from DB: {otp.expires_at}, type: {type(otp.expires_at)}, now_utc: {now_utc}")
-        
         if otp.expires_at < now_utc:
             raise BadRequestException("OTP code has expired.")
 

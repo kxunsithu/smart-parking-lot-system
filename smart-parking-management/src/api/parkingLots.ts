@@ -4,20 +4,12 @@ import type { ApiSuccess, ParkingLotOut } from "@/types"
 
 export interface CreateLotPayload {
   name: string
-  type?: string
-  address?: string
-  latitude?: number
-  longitude?: number
   google_map_url?: string
   owner_id?: number
 }
 
 export interface UpdateLotPayload {
   name?: string
-  type?: string
-  address?: string
-  latitude?: number
-  longitude?: number
   google_map_url?: string
 }
 
@@ -45,5 +37,10 @@ export const parkingLotsApi = {
   async remove(id: number) {
     const res = await apiClient.delete<ApiSuccess<null>>(`/parking-lots/${id}`)
     return res.data
+  },
+
+  async toggleStatus(id: number) {
+    const res = await apiClient.patch<ApiSuccess<ParkingLotOut>>(`/parking-lots/${id}/toggle-status`)
+    return res.data.data
   },
 }

@@ -5,7 +5,6 @@ import type { ApiSuccess, ParkingSessionOut } from "@/types"
 export interface StartSessionPayload {
   vehicle_id: number
   slot_id: number
-  reservation_id?: number
 }
 
 export interface FinishSessionPayload {
@@ -13,7 +12,7 @@ export interface FinishSessionPayload {
 }
 
 export const parkingSessionsApi = {
-  async list(params?: ListParams): Promise<ListResult<ParkingSessionOut>> {
+  async list(params?: ListParams & { status?: string; vehicle_id?: number }): Promise<ListResult<ParkingSessionOut>> {
     const res = await apiClient.get<ApiSuccess<ParkingSessionOut[]>>("/parking-sessions", { params })
     return { items: res.data.data, meta: res.data.meta! }
   },

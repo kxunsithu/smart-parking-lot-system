@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Building2, CreditCard, ParkingSquare, Timer, UserCog, Users } from "lucide-react"
+import { Building2, CreditCard, ParkingSquare, UserCog, Users } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { PageHeader } from "@/components/common/PageHeader"
 import { StatCard } from "@/components/common/StatCard"
@@ -40,8 +40,6 @@ export function AdminDashboardPage() {
   const overviewData = data
     ? [
         { name: "Lots", value: data.total_parking_lots },
-        { name: "Slots", value: data.total_slots },
-        { name: "Active Sessions", value: data.total_active_sessions },
       ]
     : []
 
@@ -57,8 +55,6 @@ export function AdminDashboardPage() {
           <StatCard label="Parking Staff" value={data.total_staff} icon={UserCog} />
           <StatCard label="Customers" value={data.total_customers} icon={Users} />
           <StatCard label="Parking Lots" value={data.total_parking_lots} icon={ParkingSquare} />
-          <StatCard label="Total Slots" value={data.total_slots} icon={ParkingSquare} />
-          <StatCard label="Active Sessions" value={data.total_active_sessions} icon={Timer} />
           <StatCard
             label="Total Revenue"
             value={formatCurrency(data.total_revenue)}

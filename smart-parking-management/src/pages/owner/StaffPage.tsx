@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -43,17 +43,12 @@ const createStaffSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().min(1, "Email is required").email("Enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  phone: z.string().optional(),
   parking_lot_id: z.number().min(1, "Parking lot is required"),
-  employee_code: z.string().optional(),
-  position: z.string().optional(),
 })
 type CreateStaffFormValues = z.infer<typeof createStaffSchema>
 
 const updateStaffSchema = z.object({
   parking_lot_id: z.number().min(1, "Parking lot is required"),
-  employee_code: z.string().optional(),
-  position: z.string().optional(),
 })
 type UpdateStaffFormValues = z.infer<typeof updateStaffSchema>
 
@@ -111,7 +106,7 @@ export function StaffPage() {
     }
   }, [lots, selectedLotId])
 
-  const staffParams = { ...params, parking_lot_id: selectedLotId ?? undefined }
+  const staffParams = useMemo(() => ({ ...params, parking_lot_id: selectedLotId ?? undefined }), [params, selectedLotId])
 
   const fetchStaff = async () => {
     if (!selectedLotId) return
@@ -138,10 +133,7 @@ export function StaffPage() {
         name: values.name,
         email: values.email,
         password: values.password,
-        phone: values.phone,
         parking_lot_id: values.parking_lot_id,
-        employee_code: values.employee_code,
-        position: values.position,
       })
       toast.success("Staff member created successfully.")
       setCreateOpen(false)
@@ -253,8 +245,6 @@ export function StaffPage() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Contact</TableHead>
-                    <TableHead>Employee Code</TableHead>
-                    <TableHead>Position</TableHead>
                     <TableHead className="w-12" />
                   </TableRow>
                 </TableHeader>
@@ -266,8 +256,6 @@ export function StaffPage() {
                         <div>{member.user?.email}</div>
                         <div className="text-xs text-muted-foreground">{member.user?.phone}</div>
                       </TableCell>
-                      <TableCell>{member.employee_code || "-"}</TableCell>
-                      <TableCell>{member.position || "-"}</TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -355,10 +343,7 @@ function CreateStaffDialog({
       name: "",
       email: "",
       password: "",
-      phone: "",
       parking_lot_id: defaultLotId ?? 0,
-      employee_code: "",
-      position: "",
     },
   })
 
@@ -373,10 +358,7 @@ function CreateStaffDialog({
         name: values.name,
         email: values.email,
         password: values.password,
-        phone: values.phone,
         parking_lot_id: values.parking_lot_id,
-        employee_code: values.employee_code,
-        position: values.position,
       })
     } catch (error) {
       const fieldErrors = getFieldErrors(error)
@@ -401,15 +383,6 @@ function CreateStaffDialog({
             </FormField>
             <FormField label="Password" htmlFor="password" error={errors.password?.message} required>
               <Input id="password" type="password" {...register("password")} />
-            </FormField>
-            <FormField label="Phone" htmlFor="phone" error={errors.phone?.message}>
-              <Input id="phone" {...register("phone")} />
-            </FormField>
-            <FormField label="Employee code" htmlFor="employee_code" error={errors.employee_code?.message}>
-              <Input id="employee_code" {...register("employee_code")} />
-            </FormField>
-            <FormField label="Position" htmlFor="position" error={errors.position?.message}>
-              <Input id="position" {...register("position")} />
             </FormField>
           </div>
           <FormField label="Parking lot" htmlFor="parking_lot_id" error={errors.parking_lot_id?.message} required>
@@ -461,7 +434,6 @@ function EditStaffDialog({
 }) {
   const {
     handleSubmit,
-    register,
     reset,
     setValue,
     watch,
@@ -471,8 +443,6 @@ function EditStaffDialog({
     values: target
       ? {
           parking_lot_id: target.parking_lot_id,
-          employee_code: target.employee_code ?? "",
-          position: target.position ?? "",
         }
       : undefined,
   })
@@ -506,12 +476,6 @@ function EditStaffDialog({
                 ))}
               </SelectContent>
             </Select>
-          </FormField>
-          <FormField label="Employee code" htmlFor="employee_code" error={errors.employee_code?.message}>
-            <Input id="employee_code" {...register("employee_code")} />
-          </FormField>
-          <FormField label="Position" htmlFor="position" error={errors.position?.message}>
-            <Input id="position" {...register("position")} />
           </FormField>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
