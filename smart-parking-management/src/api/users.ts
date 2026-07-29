@@ -1,12 +1,6 @@
 import { apiClient } from "@/api/client"
 import type { ListParams, ListResult } from "@/api/types"
-import type { ApiSuccess, UserOut } from "@/types"
-
-export interface UpdateUserPayload {
-  name?: string
-  phone?: string
-  is_active?: boolean
-}
+import type { ApiSuccess, UserOut, UserUpdate } from "@/types"
 
 export const usersApi = {
   async list(params?: ListParams): Promise<ListResult<UserOut>> {
@@ -19,7 +13,7 @@ export const usersApi = {
     return res.data.data
   },
 
-  async update(id: number, payload: UpdateUserPayload) {
+  async update(id: number, payload: UserUpdate) {
     const res = await apiClient.put<ApiSuccess<UserOut>>(`/users/${id}`, payload)
     return res.data.data
   },

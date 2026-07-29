@@ -1,0 +1,63 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import { Toaster } from "@/components/ui/toaster"
+import { ThemeProvider } from "@/components/theme/ThemeProvider"
+import Login from "@/pages/Login"
+import Register from "@/pages/Register"
+import VerifyEmail from "@/pages/VerifyEmail"
+import Dashboard from "@/pages/Dashboard"
+import Vehicles from "@/pages/Vehicles"
+import Sessions from "@/pages/Sessions"
+import Profile from "@/pages/Profile"
+import ParkingDetail from "@/pages/ParkingDetail"
+import Lot3DView from "@/pages/Lot3DView"
+import Slot3DView from "@/pages/Slot3DView"
+import { useAuthStore } from "@/store/authStore"
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated())
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />
+}
+
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const accessToken = useAuthStore((state) => state.accessToken)
+  const user = useAuthStore((state) => state.user)
+  const isVerifying = useAuthStore((state) => state.isVerifying)
+  // Redirect to dashboard only if user is fully authenticated and not in verification mode
+  const isFullyAuthenticated = accessToken && user && user.is_verified && !isVerifying
+  return isFullyAuthenticated ? <Navigate to="/dashboard" /> : <>{children}</>
+}
+
+function AuthOnlyRoute({ children }: { children: React.ReactNode }) {
+  const accessToken = useAuthStore((state) => state.accessToken)
+  const user = useAuthStore((state) => state.user)
+  // Allow access if user has tokens but is not verified
+  if (accessToken && user && !user.is_verified) {
+    return <>{children}</>
+  }
+  return accessToken ? <>{children}</> : <Navigate to="/login" />
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+          <Route path="/verify-email" element={<AuthOnlyRoute><VerifyEmail /></AuthOnlyRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/vehicles" element={<ProtectedRoute><Vehicles /></ProtectedRoute>} />
+          <Route path="/sessions" element={<ProtectedRoute><Sessions /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/parking/:id" element={<ProtectedRoute><ParkingDetail /></ProtectedRoute>} />
+          <Route path="/parking/:id/3d" element={<ProtectedRoute><Lot3DView /></ProtectedRoute>} />
+          <Route path="/slots/:id" element={<ProtectedRoute><Slot3DView /></ProtectedRoute>} />
+          <Route path="/" element={<Navigate to="/dashboard" />} />
+        </Routes>
+        <Toaster />
+      </BrowserRouter>
+    </ThemeProvider>
+  )
+}
+
+export default App

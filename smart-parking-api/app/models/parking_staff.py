@@ -12,6 +12,8 @@ class ParkingStaff(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
     parking_lot_id: Mapped[int] = mapped_column(ForeignKey("parking_lots.id"), nullable=False)
+    created_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
 
-    user: Mapped["User"] = relationship("User", back_populates="staff_profile")
+    user: Mapped["User"] = relationship("User", back_populates="staff_profile", foreign_keys="ParkingStaff.user_id")
+    creator: Mapped[Optional["User"]] = relationship("User", remote_side="User.id", backref="created_staff", foreign_keys="ParkingStaff.created_by")
     parking_lot: Mapped["ParkingLot"] = relationship("ParkingLot", back_populates="staff")

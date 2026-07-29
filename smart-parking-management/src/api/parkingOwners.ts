@@ -1,10 +1,6 @@
 import { apiClient } from "@/api/client"
 import type { ListParams, ListResult } from "@/api/types"
-import type { ApiSuccess, ParkingOwnerOut } from "@/types"
-
-export interface UpdateOwnerPayload {
-  company_name?: string
-}
+import type { ApiSuccess, ParkingOwnerOut, ParkingOwnerUpdate } from "@/types"
 
 export const parkingOwnersApi = {
   async list(params?: ListParams): Promise<ListResult<ParkingOwnerOut>> {
@@ -22,7 +18,7 @@ export const parkingOwnersApi = {
     return res.data.data
   },
 
-  async update(id: number, payload: UpdateOwnerPayload) {
+  async update(id: number, payload: ParkingOwnerUpdate) {
     const res = await apiClient.put<ApiSuccess<ParkingOwnerOut>>(`/parking-owners/${id}`, payload)
     return res.data.data
   },

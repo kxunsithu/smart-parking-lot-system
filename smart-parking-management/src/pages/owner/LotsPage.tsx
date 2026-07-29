@@ -25,22 +25,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { parkingOwnersApi } from "@/api/parkingOwners"
-import { parkingLotsApi, type CreateLotPayload, type UpdateLotPayload } from "@/api/parkingLots"
+import { parkingLotsApi } from "@/api/parkingLots"
 import { getErrorMessage } from "@/api/client"
 import { usePaginationState } from "@/hooks/usePaginationState"
-import type { ParkingLotOut, ParkingOwnerOut } from "@/types"
+import type { ParkingLotOut, ParkingOwnerOut, ParkingLotCreate, ParkingLotUpdate } from "@/types"
 import type { ListResult } from "@/api/types"
 
 const lotSchema = z.object({
   name: z.string().min(1, "Name is required"),
   google_map_url: z.string().optional(),
+  rate_per_hour: z.coerce.number().min(0, "Rate must be positive").optional(),
 })
 type LotFormValues = z.infer<typeof lotSchema>
 
-function toLotPayload(values: LotFormValues): CreateLotPayload {
+function toLotPayload(values: LotFormValues): ParkingLotCreate {
   return {
     name: values.name,
     google_map_url: values.google_map_url || undefined,
+    rate_per_hour: values.rate_per_hour != null && !isNaN(values.rate_per_hour) ? values.rate_per_hour : undefined,
   }
 }
 
@@ -91,7 +93,7 @@ export function LotsPage() {
     fetchLots()
   }, [params, ownerProfile?.id])
 
-  const handleCreate = async (payload: CreateLotPayload) => {
+  const handleCreate = async (payload: ParkingLotCreate) => {
     try {
       setIsCreating(true)
       await parkingLotsApi.create(payload)
@@ -105,7 +107,7 @@ export function LotsPage() {
     }
   }
 
-  const handleUpdate = async (id: number, payload: UpdateLotPayload) => {
+  const handleUpdate = async (id: number, payload: ParkingLotUpdate) => {
     try {
       setIsUpdating(true)
       await parkingLotsApi.update(id, payload)
@@ -296,6 +298,7 @@ function LotFormDialog({
       ? {
           name: defaultValues.name,
           google_map_url: defaultValues.google_map_url ?? "",
+          rate_per_hour: defaultValues.rate_per_hour ?? undefined,
         }
       : undefined,
   })
@@ -315,6 +318,9 @@ function LotFormDialog({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <FormField label="Name" htmlFor="name" error={errors.name?.message} required>
             <Input id="name" {...register("name")} />
+          </FormField>
+          <FormField label="Hourly Rate (MMK/hr)" htmlFor="rate_per_hour" error={errors.rate_per_hour?.message}>
+            <Input id="rate_per_hour" type="number" step="1" placeholder="e.g. 500" {...register("rate_per_hour")} />
           </FormField>
           <FormField label="Google Maps URL" htmlFor="google_map_url" error={errors.google_map_url?.message}>
             <Input id="google_map_url" {...register("google_map_url")} />

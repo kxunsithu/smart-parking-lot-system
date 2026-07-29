@@ -10,11 +10,11 @@ INSERT INTO roles (id, name, description) VALUES
 (4, 'CUSTOMER', 'End customer');
 
 -- 2) Users
-INSERT INTO users (id, name, email, password, role_id, created_by, is_active, is_verified) VALUES
-(1, 'Alice Admin', 'alice.admin@example.com', 'password123', 1, NULL, 1, 1),
-(2, 'Bob Owner', 'bob.owner@example.com', 'password123', 2, 1, 1, 1),
-(3, 'Carol Staff', 'carol.staff@example.com', 'password123', 3, 2, 1, 1),
-(4, 'Dave Customer', 'dave.customer@example.com', 'password123', 4, 1, 1, 1);
+INSERT INTO users (id, name, email, password, role_id, is_active, is_verified) VALUES
+(1, 'Alice Admin', 'alice.admin@example.com', 'password123', 1, 1, 1),
+(2, 'Bob Owner', 'bob.owner@example.com', 'password123', 2, 1, 1),
+(3, 'Carol Staff', 'carol.staff@example.com', 'password123', 3, 1, 1),
+(4, 'Dave Customer', 'dave.customer@example.com', 'password123', 4, 1, 1);
 
 -- 3) Parking Owners
 INSERT INTO parking_owners (id, user_id, company_name) VALUES
@@ -39,8 +39,8 @@ INSERT INTO parking_slots (id, floor_id, slot_number, section, latitude, longitu
 (6, 2, 'L2-03', 'B', 40.71286, -74.00606, 'AVAILABLE');
 
 -- 7) Parking Staff
-INSERT INTO parking_staff (id, user_id, parking_lot_id) VALUES
-(1, 3, 1);
+INSERT INTO parking_staff (id, user_id, parking_lot_id, created_by) VALUES
+(1, 3, 1, 2);
 
 -- 8) Customers
 INSERT INTO customers (id, user_id, current_lat, current_lng) VALUES

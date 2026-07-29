@@ -24,4 +24,5 @@ class ParkingStaffOut(BaseModel):
     id: int
     user_id: int
     parking_lot_id: int
+    created_by: Optional[int] = None
     user: Optional[UserOut] = None

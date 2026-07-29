@@ -1,6 +1,6 @@
 export function formatCurrency(amount: number | null | undefined): string {
   if (amount === null || amount === undefined) return "-"
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "MMK" }).format(amount)
+  return `${Math.round(amount).toLocaleString("en-US")} MMK`
 }
 
 export function formatDate(value: string | null | undefined): string {

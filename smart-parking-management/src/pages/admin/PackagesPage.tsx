@@ -22,9 +22,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { packagesApi, type CreatePackagePayload, type UpdatePackagePayload } from "@/api/packages"
+import { packagesApi } from "@/api/packages"
 import { getErrorMessage } from "@/api/client"
-import type { PackageOut } from "@/types"
+import type { PackageOut, PackageCreate as CreatePackagePayload, PackageUpdate as UpdatePackagePayload } from "@/types"
 
 const packageSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -46,7 +46,7 @@ const packageSchema = z.object({
 type PackageFormValues = z.infer<typeof packageSchema>
 
 function formatPrice(price: number): string {
-  return price.toLocaleString("en-US", { style: "currency", currency: "MMK", maximumFractionDigits: 0 })
+  return `${Math.round(price).toLocaleString("en-US")} MMK`
 }
 
 export function AdminPackagesPage() {

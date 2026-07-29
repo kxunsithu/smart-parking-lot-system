@@ -464,6 +464,19 @@ function Scene3D({
   )
 }
 
+function checkWebGLSupport(): boolean {
+  try {
+    const canvas = document.createElement("canvas")
+    const gl = (canvas.getContext("webgl") || canvas.getContext("experimental-webgl")) as WebGLRenderingContext | null
+    if (!gl) return false
+    const loseContext = gl.getExtension("WEBGL_lose_context")
+    if (loseContext) loseContext.loseContext()
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function Lot3DViewPage() {
   const { lotId } = useParams<{ lotId: string }>()
   const [searchParams] = useSearchParams()
@@ -481,9 +494,7 @@ export function Lot3DViewPage() {
   const highlightedSlotId = searchParams.get("slotId") ? Number(searchParams.get("slotId")) : null
 
   useEffect(() => {
-    const canvas = document.createElement("canvas")
-    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl")
-    if (!gl) setWebGLError("WebGL is not supported in your browser")
+    if (!checkWebGLSupport()) setWebGLError("WebGL is not supported in your browser")
   }, [])
 
   const toggleFullscreen = () => {
@@ -637,7 +648,8 @@ export function Lot3DViewPage() {
           }`}
         >
           <span className="flex items-center gap-1.5">
-            <span className="size-3 rounded-sm bg-[#eab308] inline-block shadow-sm" /> Car (occupied)
+            <span className={`size-3 rounded-sm inline-block shadow-sm ${isNightMode ? "bg-[#dc2626]" : "bg-[#ef4444]"}`} />
+            Occupied
           </span>
           <span className="flex items-center gap-1.5">
             <span
@@ -645,7 +657,7 @@ export function Lot3DViewPage() {
                 isNightMode ? "border-emerald-400 bg-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "border-emerald-600 bg-emerald-500/30"
               }`}
             />{" "}
-            Empty slot pad
+            Available
           </span>
           {highlightedSlotId && (
             <span className="flex items-center gap-1.5">

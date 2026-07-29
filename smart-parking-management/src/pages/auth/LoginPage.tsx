@@ -38,6 +38,14 @@ export function LoginPage() {
       setTokens(tokens.access_token, tokens.refresh_token)
       const user = await authApi.me()
       setUser(user)
+
+            // Check if user has customer role
+      if (!user.role || user.role.name.toLowerCase() == "customer") {
+        toast.error("Access denied. This is a management portal.")
+        const { logout } = useAuthStore.getState()
+        logout()
+        return
+      }
       
       // Check if email is verified
       if (!user.is_verified) {

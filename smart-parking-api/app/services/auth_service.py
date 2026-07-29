@@ -55,7 +55,6 @@ class AuthService:
             email=payload.email,
             password=hash_password(payload.password),
             role_id=role.id,
-            created_by=None,
             is_verified=is_verified,
         )
         user = self.user_repo.create(user)
@@ -95,7 +94,6 @@ class AuthService:
             email=payload.email,
             password=hash_password(payload.password),
             role_id=role.id,
-            created_by=None,
             is_verified=is_verified,
         )
         user = self.user_repo.create(user)

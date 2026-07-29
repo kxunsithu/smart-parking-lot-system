@@ -35,7 +35,6 @@ class UserOut(BaseModel):
     phone: Optional[str] = None
     role_id: int
     role: Optional[RoleOut] = None
-    created_by: Optional[int] = None
     is_active: bool
     is_verified: bool
     created_at: datetime

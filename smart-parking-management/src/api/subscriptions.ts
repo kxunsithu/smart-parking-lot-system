@@ -1,20 +1,13 @@
 import { apiClient } from "@/api/client"
-import type { ApiSuccess, SubscriptionOut } from "@/types"
-
-export interface PurchaseSubscriptionPayload {
-  package_id: number
-  owner_id?: number | null
-  payment_method?: string
-  transaction_ref?: string | null
-}
+import type { ApiSuccess, SubscriptionOut, SubscriptionPurchase } from "@/types"
 
 export const subscriptionsApi = {
-  async purchase(payload: PurchaseSubscriptionPayload): Promise<SubscriptionOut> {
+  async purchase(payload: SubscriptionPurchase): Promise<SubscriptionOut> {
     const res = await apiClient.post<ApiSuccess<SubscriptionOut>>("/subscriptions/purchase", payload)
     return res.data.data
   },
 
-  async renew(payload: PurchaseSubscriptionPayload): Promise<SubscriptionOut> {
+  async renew(payload: SubscriptionPurchase): Promise<SubscriptionOut> {
     const res = await apiClient.post<ApiSuccess<SubscriptionOut>>("/subscriptions/renew", payload)
     return res.data.data
   },

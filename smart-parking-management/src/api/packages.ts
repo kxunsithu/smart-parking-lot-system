@@ -1,24 +1,5 @@
 import { apiClient } from "@/api/client"
-import type { ApiSuccess, PackageOut } from "@/types"
-
-export interface CreatePackagePayload {
-  name: string
-  description?: string | null
-  price: number
-  duration_days: number
-  max_lots?: number
-  max_staff?: number
-}
-
-export interface UpdatePackagePayload {
-  name?: string
-  description?: string | null
-  price?: number
-  duration_days?: number
-  max_lots?: number
-  max_staff?: number
-  is_active?: boolean
-}
+import type { ApiSuccess, PackageOut, PackageCreate, PackageUpdate } from "@/types"
 
 export interface ListPackagesParams {
   page?: number
@@ -39,12 +20,12 @@ export const packagesApi = {
     return res.data.data
   },
 
-  async create(payload: CreatePackagePayload): Promise<PackageOut> {
+  async create(payload: PackageCreate): Promise<PackageOut> {
     const res = await apiClient.post<ApiSuccess<PackageOut>>("/packages", payload)
     return res.data.data
   },
 
-  async update(id: number, payload: UpdatePackagePayload): Promise<PackageOut> {
+  async update(id: number, payload: PackageUpdate): Promise<PackageOut> {
     const res = await apiClient.put<ApiSuccess<PackageOut>>(`/packages/${id}`, payload)
     return res.data.data
   },

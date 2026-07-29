@@ -29,13 +29,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { parkingSessionsApi, type FinishSessionPayload } from "@/api/parkingSessions"
+import { parkingSessionsApi } from "@/api/parkingSessions"
 import { getErrorMessage } from "@/api/client"
 import { usePaginationState } from "@/hooks/usePaginationState"
 import { sessionStatusTone } from "@/utils/statusColors"
 import { formatCurrency, formatDateTime, formatDuration } from "@/utils/formatters"
 import { SessionPaymentModal } from "@/components/sessions/SessionPaymentModal"
-import type { ParkingSessionOut } from "@/types"
+import type { ParkingSessionOut, ParkingSessionFinish as FinishSessionPayload } from "@/types"
 import type { ListResult } from "@/api/types"
 
 const STATUS_FILTER_OPTIONS: { label: string; value: string }[] = [

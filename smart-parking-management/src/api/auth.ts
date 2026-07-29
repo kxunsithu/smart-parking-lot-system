@@ -1,50 +1,18 @@
 import { apiClient } from "@/api/client"
-import type { ApiSuccess, TokenResponse, UserOut } from "@/types"
-
-export interface LoginPayload {
-  email: string
-  password: string
-}
-
-export interface ChangePasswordPayload {
-  old_password: string
-  new_password: string
-}
-
-export interface UpdateProfilePayload {
-  name?: string
-  phone?: string
-}
-
-export interface SendOTPPayload {
-  email: string
-}
-
-export interface VerifyOTPPayload {
-  email: string
-  code: string
-}
-
-export interface RegisterOwnerPayload {
-  name: string
-  email: string
-  password: string
-  confirm_password: string
-  company_name: string
-}
+import type { ApiSuccess, TokenResponse, UserOut, LoginRequest, ChangePasswordRequest, SendOTPRequest, VerifyOTPRequest, RegisterOwnerRequest, UserUpdate } from "@/types"
 
 export const authApi = {
-  async login(payload: LoginPayload) {
+  async login(payload: LoginRequest) {
     const res = await apiClient.post<ApiSuccess<TokenResponse>>("/auth/login", payload)
     return res.data.data
   },
 
-  async sendOTP(payload: SendOTPPayload) {
+  async sendOTP(payload: SendOTPRequest) {
     const res = await apiClient.post<ApiSuccess<null>>("/auth/send-otp", payload)
     return res.data
   },
 
-  async verifyOTP(payload: VerifyOTPPayload) {
+  async verifyOTP(payload: VerifyOTPRequest) {
     const res = await apiClient.post<ApiSuccess<TokenResponse>>("/auth/verify-otp", payload)
     return res.data.data
   },
@@ -59,7 +27,7 @@ export const authApi = {
     return res.data
   },
 
-  async changePassword(payload: ChangePasswordPayload) {
+  async changePassword(payload: ChangePasswordRequest) {
     const res = await apiClient.post<ApiSuccess<null>>("/auth/change-password", payload)
     return res.data
   },
@@ -76,12 +44,12 @@ export const authApi = {
     return res.data.data
   },
 
-  async updateProfile(payload: UpdateProfilePayload) {
+  async updateProfile(payload: UserUpdate) {
     const res = await apiClient.put<ApiSuccess<UserOut>>("/auth/me", payload)
     return res.data.data
   },
 
-  async registerOwner(payload: RegisterOwnerPayload) {
+  async registerOwner(payload: RegisterOwnerRequest) {
     const res = await apiClient.post<ApiSuccess<UserOut>>("/auth/register-owner", payload)
     return res.data.data
   },

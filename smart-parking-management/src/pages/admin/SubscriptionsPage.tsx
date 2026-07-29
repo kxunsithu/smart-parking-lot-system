@@ -140,11 +140,7 @@ export function AdminSubscriptionsPage() {
                           <span className="text-muted-foreground">Amount:</span>
                         </div>
                         <span className="font-semibold">
-                          {(sub.amount ?? sub.package?.price ?? 0).toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "MMK",
-                            maximumFractionDigits: 0,
-                          })}
+                          {Math.round(sub.amount ?? sub.package?.price ?? 0).toLocaleString("en-US")} MMK
                         </span>
                       </div>
                       <div className="flex items-center justify-between">

@@ -60,13 +60,13 @@ class ParkingStaffService:
             email=payload.email,
             password=hash_password(payload.password),
             role_id=role.id,
-            created_by=current_user.id,
         )
         user = self.user_repo.create(user)
 
         staff = ParkingStaff(
             user_id=user.id,
             parking_lot_id=payload.parking_lot_id,
+            created_by=current_user.id,
         )
         return self.staff_repo.create(staff)
 

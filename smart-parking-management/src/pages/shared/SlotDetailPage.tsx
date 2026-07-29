@@ -444,6 +444,19 @@ function Slot3DScene({
   )
 }
 
+function checkWebGLSupport(): boolean {
+  try {
+    const canvas = document.createElement("canvas")
+    const gl = (canvas.getContext("webgl") || canvas.getContext("experimental-webgl")) as WebGLRenderingContext | null
+    if (!gl) return false
+    const loseContext = gl.getExtension("WEBGL_lose_context")
+    if (loseContext) loseContext.loseContext()
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function SlotDetailPage() {
   const { slotId } = useParams<{ slotId: string }>()
   const navigate = useNavigate()
@@ -462,9 +475,7 @@ export function SlotDetailPage() {
   const [isAutoRotate, setIsAutoRotate] = useState(true) // Default to auto-rotate for 360 view
 
   useEffect(() => {
-    const canvas = document.createElement("canvas")
-    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl")
-    if (!gl) setWebGLError("WebGL is not supported in your browser")
+    if (!checkWebGLSupport()) setWebGLError("WebGL is not supported in your browser")
   }, [])
 
   const toggleFullscreen = () => {
@@ -631,14 +642,17 @@ export function SlotDetailPage() {
                   : "bg-white/80 border-slate-200 text-slate-800 shadow-md"
               }`}
             >
-              <span className="flex items-center gap-1.5"><span className="size-3 rounded-sm bg-[#eab308]" /> Car (occupied)</span>
+              <span className="flex items-center gap-1.5">
+                <span className={`size-3 rounded-sm ${isNightMode ? "bg-[#dc2626]" : "bg-[#ef4444]"}`} />
+                Occupied
+              </span>
               <span className="flex items-center gap-1.5">
                 <span
                   className={`size-3 rounded-sm border ${
                     isNightMode ? "border-emerald-400 bg-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "border-emerald-600 bg-emerald-500/30"
                   }`}
                 />{" "}
-                Empty slot pad
+                Available
               </span>
               <span className="flex items-center gap-1.5"><span className="size-3 rounded-sm bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.6)]" /> Selected</span>
             </div>

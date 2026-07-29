@@ -103,6 +103,7 @@ export function CustomersPage() {
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Email Verified</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead className="w-12" />
                   </TableRow>
@@ -117,6 +118,12 @@ export function CustomersPage() {
                         <StatusBadge
                           label={user.is_active ? "Active" : "Inactive"}
                           tone={activeStatusTone(user.is_active)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge
+                          label={user.is_verified ? "Verified" : "Not Verified"}
+                          tone={user.is_verified ? "success" : "warning"}
                         />
                       </TableCell>
                       <TableCell>{formatDate(user.created_at)}</TableCell>

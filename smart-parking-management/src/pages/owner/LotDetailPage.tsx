@@ -23,12 +23,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { parkingLotsApi, type UpdateLotPayload } from "@/api/parkingLots"
-import { parkingFloorsApi, type CreateFloorPayload, type UpdateFloorPayload } from "@/api/parkingFloors"
-import { parkingSlotsApi, type CreateSlotPayload, type UpdateSlotPayload } from "@/api/parkingSlots"
+import { parkingLotsApi } from "@/api/parkingLots"
+import { parkingFloorsApi } from "@/api/parkingFloors"
+import { parkingSlotsApi } from "@/api/parkingSlots"
 import { getErrorMessage } from "@/api/client"
 import { slotStatusTone } from "@/utils/statusColors"
-import type { ParkingFloorOut, ParkingLotOut, ParkingSlotOut, SlotStatus } from "@/types"
+import type {
+  ParkingFloorOut,
+  ParkingLotOut,
+  ParkingSlotOut,
+  SlotStatus,
+  ParkingLotUpdate as UpdateLotPayload,
+  ParkingFloorCreate as CreateFloorPayload,
+  ParkingFloorUpdate as UpdateFloorPayload,
+  ParkingSlotCreate as CreateSlotPayload,
+  ParkingSlotUpdate as UpdateSlotPayload,
+} from "@/types"
 import type { ListResult } from "@/api/types"
 
 const numericString = z
@@ -39,6 +49,7 @@ const numericString = z
 const lotSchema = z.object({
   name: z.string().min(1, "Name is required"),
   google_map_url: z.string().optional(),
+  rate_per_hour: z.coerce.number().min(0, "Rate must be positive").optional(),
 })
 type LotFormValues = z.infer<typeof lotSchema>
 
@@ -46,6 +57,7 @@ function toLotPayload(values: LotFormValues): UpdateLotPayload {
   return {
     name: values.name,
     google_map_url: values.google_map_url || undefined,
+    rate_per_hour: values.rate_per_hour != null && !isNaN(values.rate_per_hour) ? values.rate_per_hour : undefined,
   }
 }
 
@@ -201,6 +213,12 @@ export function LotDetailPage() {
 
       <Card>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <p className="text-xs text-muted-foreground">Hourly Rate</p>
+            <p className="mt-1 text-sm font-semibold text-primary">
+              {lot.rate_per_hour != null ? `${lot.rate_per_hour.toLocaleString()} MMK / hr` : "Not set (System Default)"}
+            </p>
+          </div>
           <div>
             <p className="text-xs text-muted-foreground">Google Maps</p>
             {lot.google_map_url ? (
@@ -528,6 +546,7 @@ function LotFormDialog({
     values: {
       name: lot.name,
       google_map_url: lot.google_map_url ?? "",
+      rate_per_hour: lot.rate_per_hour ?? undefined,
     },
   })
 
@@ -546,6 +565,9 @@ function LotFormDialog({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <FormField label="Name" htmlFor="name" error={errors.name?.message} required>
             <Input id="name" {...register("name")} />
+          </FormField>
+          <FormField label="Hourly Rate (MMK/hr)" htmlFor="rate_per_hour" error={errors.rate_per_hour?.message}>
+            <Input id="rate_per_hour" type="number" step="1" placeholder="e.g. 500" {...register("rate_per_hour")} />
           </FormField>
           <FormField label="Google Maps URL" htmlFor="google_map_url" error={errors.google_map_url?.message}>
             <Input id="google_map_url" {...register("google_map_url")} />

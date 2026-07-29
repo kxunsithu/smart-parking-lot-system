@@ -27,10 +27,10 @@ import {
 } from "@/components/ui/dialog"
 import { parkingOwnersApi } from "@/api/parkingOwners"
 import { parkingLotsApi } from "@/api/parkingLots"
-import { parkingStaffApi, type UpdateStaffPayload } from "@/api/parkingStaff"
+import { parkingStaffApi } from "@/api/parkingStaff"
 import { getErrorMessage, getFieldErrors } from "@/api/client"
 import { usePaginationState } from "@/hooks/usePaginationState"
-import type { ParkingLotOut, ParkingStaffOut, ParkingOwnerOut } from "@/types"
+import type { ParkingLotOut, ParkingStaffOut, ParkingOwnerOut, ParkingStaffUpdate as UpdateStaffPayload } from "@/types"
 import type { ListResult } from "@/api/types"
 
 const createStaffSchema = z.object({

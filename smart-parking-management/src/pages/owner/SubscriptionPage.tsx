@@ -40,7 +40,7 @@ import { getErrorMessage } from "@/api/client"
 import type { PackageOut, SubscriptionOut, SubscriptionStatus } from "@/types"
 
 function formatPrice(price: number): string {
-  return price.toLocaleString("en-US", { style: "currency", currency: "MMK", maximumFractionDigits: 0 })
+  return `${Math.round(price).toLocaleString("en-US")} MMK`
 }
 
 function formatDate(dateStr: string): string {

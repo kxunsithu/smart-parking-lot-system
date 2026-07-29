@@ -1,14 +1,6 @@
 import { apiClient } from "@/api/client"
-import type { ApiSuccess, PaginationQuery, PaymentMethod, PaymentOut } from "@/types"
+import type { ApiSuccess, PaginationQuery, PaymentOut, PaymentCreate } from "@/types"
 import type { ListResult } from "@/api/types"
-
-export interface CreatePaymentPayload {
-  parking_session_id: number
-  customer_id?: number
-  amount: number
-  payment_method: PaymentMethod
-  transaction_ref?: string
-}
 
 export interface ListPaymentsQuery extends PaginationQuery {
   payment_method?: string
@@ -23,7 +15,7 @@ export const paymentsApi = {
     }
   },
 
-  async createPayment(payload: CreatePaymentPayload): Promise<PaymentOut> {
+  async createPayment(payload: PaymentCreate): Promise<PaymentOut> {
     const res = await apiClient.post<ApiSuccess<PaymentOut>>("/payments/", payload)
     return res.data.data
   },

@@ -18,6 +18,7 @@ class ParkingLotCreate(BaseModel):
 class ParkingLotUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=2, max_length=100)
     google_map_url: Optional[str] = None
+    rate_per_hour: Optional[float] = Field(default=None, gt=0, description="Hourly parking rate set by the owner")
 
 
 class ParkingLotOut(BaseModel):
@@ -28,6 +29,7 @@ class ParkingLotOut(BaseModel):
     name: str
     google_map_url: Optional[str] = None
     is_active: bool
+    rate_per_hour: Optional[float] = None
     created_at: datetime
     owner: Optional[ParkingOwnerOut] = None
 

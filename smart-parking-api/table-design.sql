@@ -12,12 +12,10 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     role_id INT NOT NULL,
-    created_by INT,
     is_active BOOLEAN DEFAULT TRUE,
     is_verified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (role_id) REFERENCES roles(id),
-    FOREIGN KEY (created_by) REFERENCES users(id)
+    FOREIGN KEY (role_id) REFERENCES roles(id)
 );
 
 -- 3. Token Blacklist
@@ -72,8 +70,10 @@ CREATE TABLE IF NOT EXISTS parking_staff (
     id SERIAL PRIMARY KEY,
     user_id INT UNIQUE NOT NULL,
     parking_lot_id INT NOT NULL,
+    created_by INT,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (parking_lot_id) REFERENCES parking_lots(id)
+    FOREIGN KEY (parking_lot_id) REFERENCES parking_lots(id),
+    FOREIGN KEY (created_by) REFERENCES users(id)
 );
 
 -- 9. Vehicles

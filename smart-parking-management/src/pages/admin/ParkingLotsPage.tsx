@@ -14,13 +14,13 @@ import { Button } from "@/components/ui/button"
 import { parkingLotsApi } from "@/api/parkingLots"
 import { getErrorMessage } from "@/api/client"
 import { usePaginationState } from "@/hooks/usePaginationState"
-import type { ParkingLotOut } from "@/types"
+import type { ParkingLotWithStaffOut } from "@/types"
 import type { ListResult } from "@/api/types"
 
 export function ParkingLotsPage() {
   const navigate = useNavigate()
   const { setPage, search, setSearch, params } = usePaginationState()
-  const [data, setData] = useState<ListResult<ParkingLotOut> | null>(null)
+  const [data, setData] = useState<ListResult<ParkingLotWithStaffOut> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isFetching, setIsFetching] = useState(false)
   const [togglingId, setTogglingId] = useState<number | null>(null)
@@ -29,7 +29,7 @@ export function ParkingLotsPage() {
     try {
       setIsFetching(true)
       const result = await parkingLotsApi.list({ ...params, with_staff_count: "true" })
-      setData(result)
+      setData(result as ListResult<ParkingLotWithStaffOut>)
     } catch (error) {
       console.error("Failed to fetch parking lots:", error)
       toast.error(getErrorMessage(error))
@@ -112,7 +112,7 @@ export function ParkingLotsPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Users className="size-4 text-muted-foreground" />
-                          {(lot as any).staff_count || 0}
+                          {lot.staff_count || 0}
                         </div>
                       </TableCell>
                       <TableCell>

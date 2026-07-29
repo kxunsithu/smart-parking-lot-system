@@ -74,7 +74,6 @@ def seed() -> None:
                 email=settings.DEFAULT_ADMIN_EMAIL,
                 password=hash_password(settings.DEFAULT_ADMIN_PASSWORD),
                 role_id=role_map[RoleName.ADMIN.value].id,
-                created_by=None,
             )
             db.add(admin)
             db.commit()

@@ -1,17 +1,6 @@
 import { apiClient } from "@/api/client"
 import type { ListParams, ListResult } from "@/api/types"
-import type { ApiSuccess, ParkingStaffOut } from "@/types"
-
-export interface CreateStaffPayload {
-  name: string
-  email: string
-  password: string
-  parking_lot_id: number
-}
-
-export interface UpdateStaffPayload {
-  parking_lot_id?: number
-}
+import type { ApiSuccess, ParkingStaffOut, ParkingStaffCreate, ParkingStaffUpdate } from "@/types"
 
 export const parkingStaffApi = {
   async list(params?: ListParams): Promise<ListResult<ParkingStaffOut>> {
@@ -24,12 +13,12 @@ export const parkingStaffApi = {
     return res.data.data
   },
 
-  async create(payload: CreateStaffPayload) {
+  async create(payload: ParkingStaffCreate) {
     const res = await apiClient.post<ApiSuccess<ParkingStaffOut>>("/parking-staff", payload)
     return res.data.data
   },
 
-  async update(id: number, payload: UpdateStaffPayload) {
+  async update(id: number, payload: ParkingStaffUpdate) {
     const res = await apiClient.put<ApiSuccess<ParkingStaffOut>>(`/parking-staff/${id}`, payload)
     return res.data.data
   },

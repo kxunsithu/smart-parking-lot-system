@@ -1,17 +1,6 @@
 import { apiClient } from "@/api/client"
 import type { ListParams, ListResult } from "@/api/types"
-import type { ApiSuccess, ParkingLotOut } from "@/types"
-
-export interface CreateLotPayload {
-  name: string
-  google_map_url?: string
-  owner_id?: number
-}
-
-export interface UpdateLotPayload {
-  name?: string
-  google_map_url?: string
-}
+import type { ApiSuccess, ParkingLotOut, ParkingLotCreate, ParkingLotUpdate } from "@/types"
 
 export const parkingLotsApi = {
   async list(params?: ListParams): Promise<ListResult<ParkingLotOut>> {
@@ -24,12 +13,12 @@ export const parkingLotsApi = {
     return res.data.data
   },
 
-  async create(payload: CreateLotPayload) {
+  async create(payload: ParkingLotCreate) {
     const res = await apiClient.post<ApiSuccess<ParkingLotOut>>("/parking-lots", payload)
     return res.data.data
   },
 
-  async update(id: number, payload: UpdateLotPayload) {
+  async update(id: number, payload: ParkingLotUpdate) {
     const res = await apiClient.put<ApiSuccess<ParkingLotOut>>(`/parking-lots/${id}`, payload)
     return res.data.data
   },

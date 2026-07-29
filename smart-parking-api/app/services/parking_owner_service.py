@@ -1,5 +1,5 @@
 """Business logic for managing Parking Owners."""
-from sqlalchemy import delete, select, text, update
+from sqlalchemy import delete, select, text
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.exceptions import NotFoundException
@@ -10,7 +10,6 @@ from app.models.parking_session import ParkingSession
 from app.models.parking_slot import ParkingSlot
 from app.models.parking_staff import ParkingStaff
 from app.models.payment import Payment
-from app.models.user import User
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.common import PaginationParams, build_meta
@@ -84,9 +83,6 @@ class ParkingOwnerService:
 
         # Delete parking lots (reference parking_owners)
         self.db.execute(delete(ParkingLot).where(ParkingLot.owner_id == owner_id))
-
-        # Set created_by to NULL for users created by this user
-        self.db.execute(update(User).where(User.created_by == owner.user.id).values(created_by=None))
 
         # Delete the owner profile directly
         self.db.execute(delete(ParkingOwner).where(ParkingOwner.id == owner_id))
