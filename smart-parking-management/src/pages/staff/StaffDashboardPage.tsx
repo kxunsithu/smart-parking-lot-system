@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { toast } from "sonner"
 import { Car, CheckCircle2, Timer } from "lucide-react"
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 import { PageHeader } from "@/components/common/PageHeader"
@@ -7,12 +8,14 @@ import { CardGridSkeleton } from "@/components/common/LoadingBlock"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { StaffDashboardOut } from "@/types"
 import { dashboardApi } from "@/api/dashboard"
+import { getErrorMessage } from "@/api/client"
 
 const CHART_COLORS = ["var(--color-chart-1)", "var(--color-chart-2)"]
 
 export function StaffDashboardPage() {
   const [data, setData] = useState<StaffDashboardOut | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
     async function fetchData() {
@@ -21,6 +24,8 @@ export function StaffDashboardPage() {
         setData(result)
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error)
+        toast.error(getErrorMessage(error))
+        setError(true)
       } finally {
         setIsLoading(false)
       }
@@ -34,6 +39,8 @@ export function StaffDashboardPage() {
         { name: "Occupied", value: data.occupied_slots },
       ]
     : []
+
+  if (error) return <div className="text-center py-10 text-destructive">Failed to load dashboard data. Please try again.</div>
 
   return (
     <div className="space-y-6">

@@ -10,6 +10,7 @@ from app.schemas.user import UserOut
 class ParkingLotCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
     google_map_url: Optional[str] = None
+    rate_per_hour: Optional[float] = Field(default=None, gt=0, description="Hourly parking rate set by the owner")
     owner_id: Optional[int] = Field(
         default=None, description="Only used by Admin; Owners default to their own owner profile."
     )
@@ -29,6 +30,7 @@ class ParkingLotOut(BaseModel):
     name: str
     google_map_url: Optional[str] = None
     is_active: bool
+    type: str = "PUBLIC"
     rate_per_hour: Optional[float] = None
     created_at: datetime
     owner: Optional[ParkingOwnerOut] = None

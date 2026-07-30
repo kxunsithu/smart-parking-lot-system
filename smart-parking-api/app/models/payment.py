@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import DateTime, Float, ForeignKey, String, func
+from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.constants import PaymentMethod, PaymentStatus
@@ -15,6 +15,12 @@ if TYPE_CHECKING:
 
 class Payment(Base):
     __tablename__ = "payments"
+    __table_args__ = (
+        CheckConstraint(
+            "payment_method IN ('CASH', 'KBZPAY', 'WAVEPAY', 'AYAPAY', 'UABPAY')",
+            name="ck_payments_payment_method",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     parking_session_id: Mapped[int] = mapped_column(

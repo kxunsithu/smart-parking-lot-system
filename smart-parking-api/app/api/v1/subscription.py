@@ -8,6 +8,8 @@ from app.dependencies.auth import get_current_user, require_roles
 from app.dependencies.pagination import pagination_params
 from app.models.user import User
 from app.schemas.common import PaginationParams, SuccessResponse
+from app.core.exceptions import ForbiddenException
+from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.schemas.owner_subscription import SubscriptionOut, SubscriptionPurchase
 from app.services.subscription_service import SubscriptionService
 
@@ -56,8 +58,6 @@ def active_subscription(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(RoleName.OWNER)),
 ):
-    from app.repositories.parking_owner_repository import ParkingOwnerRepository
-    from app.core.exceptions import ForbiddenException
     owner = ParkingOwnerRepository(db).get_by_user_id(current_user.id)
     if not owner:
         raise ForbiddenException("Owner profile not found.")

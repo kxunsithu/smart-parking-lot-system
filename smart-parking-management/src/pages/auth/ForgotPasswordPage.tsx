@@ -1,18 +1,32 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { MailQuestion } from "lucide-react"
+import { toast } from "sonner"
+import { Loader2, MailQuestion } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { FormField } from "@/components/common/FormField"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { authApi } from "@/api/auth"
+import { getErrorMessage } from "@/api/client"
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [submitted, setSubmitted] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setSubmitted(true)
+    if (!email) return
+    try {
+      setIsLoading(true)
+      await authApi.sendOTP({ email })
+      setSubmitted(true)
+      toast.success("A password reset OTP has been sent to your email.")
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -20,21 +34,17 @@ export function ForgotPasswordPage() {
       <div className="space-y-1">
         <h2 className="text-2xl font-semibold tracking-tight">Forgot your password?</h2>
         <p className="text-sm text-muted-foreground">
-          Enter your account email. If self-service reset isn&apos;t available yet, your administrator can
-          reset it for you.
+          Enter your account email and we&apos;ll send you a password reset OTP.
         </p>
       </div>
 
       {submitted ? (
         <Alert>
           <MailQuestion className="size-4" />
-          <AlertTitle>Reset request noted</AlertTitle>
+          <AlertTitle>OTP sent</AlertTitle>
           <AlertDescription>
-            Self-service email reset is not enabled on this server yet. Please contact your System Admin or
-            Parking Owner with the email <span className="font-medium text-foreground">{email}</span> to
-            have your password reset manually. You can also sign in and use{" "}
-            <span className="font-medium text-foreground">Change Password</span> from your profile once
-            logged in.
+            A password reset OTP has been sent to <span className="font-medium text-foreground">{email}</span>.
+            Please check your inbox and follow the instructions to reset your password.
           </AlertDescription>
         </Alert>
       ) : (
@@ -49,7 +59,8 @@ export function ForgotPasswordPage() {
               onChange={(e) => setEmail(e.target.value)}
             />
           </FormField>
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? <Loader2 className="size-4 animate-spin" /> : null}
             Send reset instructions
           </Button>
         </form>

@@ -1,8 +1,6 @@
-"""OTP repository for database operations."""
 from datetime import datetime, timezone, timedelta
-
+from sqlalchemy import select, delete as sa_delete
 from sqlalchemy.orm import Session
-
 from app.config.settings import settings
 from app.models.otp import OTP
 from app.repositories.base import BaseRepository
@@ -15,7 +13,8 @@ class OTPRepository(BaseRepository[OTP]):
         super().__init__(db)
 
     def get_by_email(self, email: str) -> OTP | None:
-        return self.db.query(self.model).filter(self.model.email == email).order_by(self.model.created_at.desc()).first()
+        stmt = select(self.model).where(self.model.email == email).order_by(self.model.created_at.desc()).limit(1)
+        return self.db.scalar(stmt)
 
     def mark_used(self, otp: OTP) -> OTP:
         otp.is_used = True
@@ -24,11 +23,12 @@ class OTPRepository(BaseRepository[OTP]):
         return otp
 
     def delete_by_email(self, email: str) -> None:
-        self.db.query(self.model).filter(self.model.email == email).delete()
+        stmt = sa_delete(self.model).where(self.model.email == email)
+        self.db.execute(stmt)
         self.db.commit()
 
     def cleanup_expired(self) -> None:
-        """Delete expired OTPs older than the configured expiry time."""
         expiry_threshold = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=settings.OTP_EXPIRE_MINUTES + 5)
-        self.db.query(self.model).filter(self.model.created_at < expiry_threshold).delete()
+        stmt = sa_delete(self.model).where(self.model.created_at < expiry_threshold)
+        self.db.execute(stmt)
         self.db.commit()

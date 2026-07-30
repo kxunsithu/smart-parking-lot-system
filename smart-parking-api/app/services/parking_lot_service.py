@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.core.constants import RoleName
 from app.core.exceptions import ForbiddenException, NotFoundException
 from app.models.parking_lot import ParkingLot
+from app.models.parking_staff import ParkingStaff
 from app.models.user import User
 from app.repositories.parking_lot_repository import ParkingLotRepository
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
@@ -54,6 +55,7 @@ class ParkingLotService:
             owner_id=owner_id,
             name=payload.name,
             google_map_url=payload.google_map_url,
+            rate_per_hour=payload.rate_per_hour,
         )
         return self.lot_repo.create(lot)
 
@@ -91,12 +93,17 @@ class ParkingLotService:
         
         # Add staff count if requested
         if with_staff_count:
-            from app.models.parking_staff import ParkingStaff
+            # Perform a single query to get staff counts for all lots in the current page
+            staff_counts_query = (
+                select(ParkingStaff.parking_lot_id, func.count(ParkingStaff.id).label("staff_count"))
+                .where(ParkingStaff.parking_lot_id.in_([lot.id for lot in items]))
+                .group_by(ParkingStaff.parking_lot_id)
+            )
+            staff_counts_result = self.db.execute(staff_counts_query).fetchall()
+            staff_counts_map = {row.parking_lot_id: row.staff_count for row in staff_counts_result}
+
             for lot in items:
-                staff_count = self.db.scalar(
-                    select(func.count(ParkingStaff.id)).where(ParkingStaff.parking_lot_id == lot.id)
-                )
-                lot.staff_count = staff_count or 0
+                lot.staff_count = staff_counts_map.get(lot.id, 0)
         
         return items, build_meta(total, params.page, params.limit)
 

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Switch } from "@/components/ui/switch"
+import { StatusBadge } from "@/components/common/StatusBadge"
 import { parkingOwnersApi } from "@/api/parkingOwners"
 import { getErrorMessage } from "@/api/client"
 import { usePaginationState } from "@/hooks/usePaginationState"
@@ -33,6 +34,7 @@ export function OwnersPage() {
       setData(result)
     } catch (error) {
       console.error("Failed to fetch owners:", error)
+      toast.error(getErrorMessage(error))
     } finally {
       setIsLoading(false)
       setIsFetching(false)
@@ -94,12 +96,13 @@ export function OwnersPage() {
             <div className="overflow-x-auto rounded-md border">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-12" />
-                  </TableRow>
+                    <TableRow>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Email Verified</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-12" />
+                    </TableRow>
                 </TableHeader>
                 <TableBody>
                   {owners.map((owner) => (
@@ -110,6 +113,12 @@ export function OwnersPage() {
                           <div>{owner.user?.name || "-"}</div>
                           <div className="text-xs text-muted-foreground">{owner.user?.email || "-"}</div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge
+                          label={owner.user?.is_verified ? "Verified" : "Not Verified"}
+                          tone={owner.user?.is_verified ? "success" : "warning"}
+                        />
                       </TableCell>
                       <TableCell>
                         <Switch

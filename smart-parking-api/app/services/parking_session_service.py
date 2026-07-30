@@ -1,6 +1,6 @@
 """Business logic for Parking Sessions (entry/exit, fee calculation)."""
 import math
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -11,6 +11,9 @@ from app.core.exceptions import BadRequestException, ForbiddenException, NotFoun
 from app.models.parking_session import ParkingSession
 from app.models.payment import Payment
 from app.models.user import User
+from app.repositories.customer_repository import CustomerRepository
+from app.repositories.parking_floor_repository import ParkingFloorRepository
+from app.repositories.parking_lot_repository import ParkingLotRepository
 from app.repositories.parking_session_repository import ParkingSessionRepository
 from app.repositories.parking_slot_repository import ParkingSlotRepository
 from app.repositories.vehicle_repository import VehicleRepository
@@ -45,14 +48,11 @@ class ParkingSessionService:
             raise ForbiddenException("Only Staff, Owner, or Admin can manage parking sessions.")
 
     def _get_customer(self, current_user: User):
-        from app.repositories.customer_repository import CustomerRepository
         customer_repo = CustomerRepository(self.db)
         return customer_repo.get_by_user_id(current_user.id)
 
     def _get_lot_rate(self, slot_id: int) -> float:
         """Resolve the effective hourly rate for a slot (lot rate → system default)."""
-        from app.repositories.parking_floor_repository import ParkingFloorRepository
-        from app.repositories.parking_lot_repository import ParkingLotRepository
         slot = self.slot_repo.get(slot_id)
         if not slot:
             return settings.DEFAULT_HOURLY_RATE
@@ -114,7 +114,6 @@ class ParkingSessionService:
             )
         ).all()
 
-        from datetime import timedelta
         for s in existing_sessions:
             s_start = s.start_time.replace(tzinfo=timezone.utc) if s.start_time.tzinfo is None else s.start_time
             if s.end_time:
@@ -203,7 +202,6 @@ class ParkingSessionService:
                 ParkingSession.status.in_([SessionStatus.ACTIVE.value, SessionStatus.PENDING.value])
             )
         ).all()
-        from datetime import timedelta
         for s in existing_sessions:
             s_start = s.start_time.replace(tzinfo=timezone.utc) if s.start_time.tzinfo is None else s.start_time
             if s_start > now:
@@ -241,6 +239,7 @@ class ParkingSessionService:
         params: PaginationParams,
         status: str | None = None,
         vehicle_id: int | None = None,
+        slot_id: int | None = None,
         current_user: User | None = None,
     ):
         stmt = select(ParkingSession)
@@ -248,12 +247,13 @@ class ParkingSessionService:
             stmt = stmt.where(ParkingSession.status == status)
         if vehicle_id:
             stmt = stmt.where(ParkingSession.vehicle_id == vehicle_id)
+        if slot_id:
+            stmt = stmt.where(ParkingSession.slot_id == slot_id)
 
         # Filter by customer if current user is a customer
         if current_user and current_user.role.name == RoleName.CUSTOMER.value:
             customer = self._get_customer(current_user)
             if customer:
-                from app.repositories.vehicle_repository import VehicleRepository
                 vehicle_repo = VehicleRepository(self.db)
                 customer_vehicles = vehicle_repo.list_by_customer(customer.id)
                 customer_vehicle_ids = [v.id for v in customer_vehicles]

@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.constants import SessionStatus
@@ -16,6 +16,10 @@ if TYPE_CHECKING:
 
 class ParkingSession(Base):
     __tablename__ = "parking_sessions"
+    __table_args__ = (
+        Index("ix_parking_sessions_vehicle_id", "vehicle_id"),
+        Index("ix_parking_sessions_vehicle_status", "vehicle_id", "status"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicles.id"), nullable=False)

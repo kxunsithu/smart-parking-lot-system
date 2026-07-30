@@ -135,8 +135,7 @@ export function LotsPage() {
     }
   }
 
-  const handleToggleStatus = async (lotId: number, e: React.MouseEvent) => {
-    e.stopPropagation()
+  const handleToggleStatus = async (lotId: number) => {
     try {
       setTogglingId(lotId)
       await parkingLotsApi.toggleStatus(lotId)
@@ -215,11 +214,13 @@ export function LotsPage() {
                   <CardContent className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">Status:</span>
-                      <Switch
-                        checked={lot.is_active}
-                        onCheckedChange={() => handleToggleStatus(lot.id, { stopPropagation: () => {} } as any)}
-                        disabled={togglingId === lot.id}
-                      />
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Switch
+                          checked={lot.is_active}
+                          onCheckedChange={() => handleToggleStatus(lot.id)}
+                          disabled={togglingId === lot.id}
+                        />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

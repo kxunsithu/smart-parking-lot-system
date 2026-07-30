@@ -57,7 +57,11 @@ export default function Dashboard() {
       <div className="min-h-screen">
         <Navbar />
         <div className="flex items-center justify-center h-64">
-          <p>Loading...</p>
+          <div className="space-y-4 w-full max-w-md px-4">
+            <div className="h-8 bg-muted animate-pulse rounded-lg" />
+            <div className="h-4 bg-muted animate-pulse rounded-lg w-2/3" />
+            <div className="h-32 bg-muted animate-pulse rounded-xl" />
+          </div>
         </div>
       </div>
     )
@@ -122,8 +126,17 @@ export default function Dashboard() {
                   </Badge>
                 </div>
                 <CardDescription className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  {lot.google_map_url ? "View on Map" : "Location not specified"}
+                  {lot.google_map_url ? (
+                    <a href={lot.google_map_url} target="_blank" rel="noopener noreferrer" className="flex items-center text-primary hover:underline">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      View on Map
+                    </a>
+                  ) : (
+                    <span className="flex items-center">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      Location not specified
+                    </span>
+                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent>

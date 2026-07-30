@@ -1,14 +1,29 @@
 """FastAPI application entry point."""
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.config.settings import settings
 from app.core.logging_config import configure_logging
+from app.database.session import SessionLocal
 from app.middleware.exception_handlers import register_exception_handlers
 from app.middleware.logging_middleware import RequestLoggingMiddleware
+from app.repositories.token_blacklist_repository import TokenBlacklistRepository
 
 configure_logging(debug=settings.DEBUG)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    db = SessionLocal()
+    try:
+        TokenBlacklistRepository(db).purge_expired()
+    finally:
+        db.close()
+    yield
+
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -17,6 +32,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

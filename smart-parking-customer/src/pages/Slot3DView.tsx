@@ -112,9 +112,11 @@ function SelectedSlotAnimation({ sw, sd }: { sw: number; sd: number }) {
   const ringRef = useRef<THREE.Mesh>(null)
   const ringMatRef = useRef<THREE.MeshStandardMaterial>(null)
   const labelRef = useRef<THREE.Group>(null)
+  const timeRef = useRef(0)
 
-  useFrame((state) => {
-    const t = state.clock.getElapsedTime()
+  useFrame((_, delta) => {
+    timeRef.current += delta
+    const t = timeRef.current
 
     if (padMatRef.current) {
       padMatRef.current.emissiveIntensity = 0.6 + Math.sin(t * 4) * 0.4
@@ -180,7 +182,7 @@ function ParkingSlot3D({
   isHighlighted: boolean
 }) {
   const isOccupied = slot.status === "OCCUPIED"
-  const lw = 0.12
+  const lw = 0.18
   const lh = 0.08
 
   const padColor = isOccupied
@@ -278,9 +280,10 @@ function ParkingFloor3D({
 }) {
   const sw = 3.2
   const sd = 5.2
-  const sg = 0.12
+  const sg = 0.6
   const laneW = 6.0
   const spr = 5
+  const floorPad = 2
 
   const bySection = slots.reduce((acc, slot) => {
     const sec = slot.section || "Main"
@@ -298,8 +301,8 @@ function ParkingFloor3D({
     return layout
   })
 
-  const totalDepth = Math.max(zCursor, 10)
-  const totalWidth = spr * (sw + sg) + 4
+  const totalDepth = Math.max(zCursor, 10) + floorPad
+  const totalWidth = spr * (sw + sg) + 4 + floorPad
 
   const nightAsphalts = ["#090d16", "#0b0f19", "#0e1322", "#0a0e1c"]
   const dayAsphalts = ["#334155", "#374151", "#475569", "#3b4252"]
@@ -310,7 +313,7 @@ function ParkingFloor3D({
 
   return (
     <group position={[0, y, 0]}>
-      <Box args={[totalWidth, 0.12, totalDepth]} position={[0, 0, totalDepth / 2]}>
+      <Box args={[totalWidth, 0.12, totalDepth]} position={[0, 0, (totalDepth - floorPad) / 2]}>
         <meshStandardMaterial
           color={asphaltColor}
           roughness={isNightMode ? 0.9 : 0.8}
@@ -318,8 +321,9 @@ function ParkingFloor3D({
         />
       </Box>
 
+      {/* Floor label in neon cyan for night mode */}
       <Text
-        position={[-totalWidth / 2 - 0.8, 1.4, totalDepth / 2]}
+        position={[-totalWidth / 2 - 0.8, 1.4, (totalDepth - floorPad) / 2]}
         fontSize={1.0}
         color={isNightMode ? "#38bdf8" : "#475569"}
         anchorX="right"
@@ -645,7 +649,7 @@ export default function Slot3DView() {
                 <Suspense fallback={<div className="flex items-center justify-center h-full text-muted-foreground">Loading 3D scene...</div>}>
                   <Canvas
                     camera={{ position: [0, 40, 18], fov: 42 }}
-                    gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
+                    gl={{ antialias: true, alpha: false }}
                     dpr={[1, 1.5]}
                     frameloop="always"
                     onError={() => setWebGLError("Failed to initialize 3D rendering.")}

@@ -16,6 +16,7 @@ class ParkingStaffCreate(BaseModel):
 
 class ParkingStaffUpdate(BaseModel):
     parking_lot_id: Optional[int] = None
+    is_active: Optional[bool] = None
 
 
 class ParkingStaffOut(BaseModel):

@@ -1,8 +1,21 @@
 import { useEffect, useState } from "react"
-import { Plus, Trash2, Edit, Car as CarIcon } from "lucide-react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { Plus, Trash2, Car as CarIcon, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import Navbar from "@/components/layout/Navbar"
 import { vehiclesApi } from "@/api/vehicles"
 import { useVehicleStore } from "@/store/vehicleStore"
@@ -13,6 +26,7 @@ export default function Vehicles() {
   const { vehicles, setVehicles, addVehicle, removeVehicle } = useVehicleStore()
   const [showAddForm, setShowAddForm] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [deleteTarget, setDeleteTarget] = useState<VehicleOut | null>(null)
 
   useEffect(() => {
     loadVehicles()
@@ -29,15 +43,16 @@ export default function Vehicles() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this vehicle?")) return
-    
+  const handleDelete = async () => {
+    if (!deleteTarget) return
     try {
-      await vehiclesApi.delete(id)
-      removeVehicle(id)
+      await vehiclesApi.delete(deleteTarget.id)
+      removeVehicle(deleteTarget.id)
       toast.success("Vehicle deleted successfully")
     } catch (error) {
       toast.error("Failed to delete vehicle")
+    } finally {
+      setDeleteTarget(null)
     }
   }
 
@@ -46,7 +61,11 @@ export default function Vehicles() {
       <div className="min-h-screen">
         <Navbar />
         <div className="flex items-center justify-center h-64">
-          <p>Loading...</p>
+          <div className="space-y-4 w-full max-w-md px-4">
+            <div className="h-8 bg-muted animate-pulse rounded-lg" />
+            <div className="h-4 bg-muted animate-pulse rounded-lg w-2/3" />
+            <div className="h-32 bg-muted animate-pulse rounded-xl" />
+          </div>
         </div>
       </div>
     )
@@ -111,7 +130,7 @@ export default function Vehicles() {
                         variant="destructive"
                         size="sm"
                         className="flex-1"
-                        onClick={() => handleDelete(vehicle.id)}
+                        onClick={() => setDeleteTarget(vehicle)}
                       >
                         <Trash2 className="h-4 w-4 mr-1" />
                         Delete
@@ -134,25 +153,64 @@ export default function Vehicles() {
             }}
           />
         )}
+
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogMedia>
+                <AlertTriangle className="size-6 text-destructive" />
+              </AlertDialogMedia>
+              <AlertDialogTitle>Delete Vehicle</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete {deleteTarget?.plate_number}? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" onClick={handleDelete}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   )
 }
 
+const vehicleSchema = z.object({
+  plate_number: z.string().min(1, "License plate is required"),
+  vehicle_type: z.string().optional(),
+  brand: z.string().optional(),
+  color: z.string().optional(),
+})
+
+type VehicleFormData = z.infer<typeof vehicleSchema>
+
 function AddVehicleForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (vehicle: VehicleOut) => void }) {
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    plate_number: "",
-    vehicle_type: "car",
-    brand: "",
-    color: "",
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<VehicleFormData>({
+    resolver: zodResolver(vehicleSchema),
+    defaultValues: {
+      plate_number: "",
+      vehicle_type: "car",
+      brand: "",
+      color: "",
+    },
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onSubmit = async (data: VehicleFormData) => {
     setLoading(true)
     try {
-      const response = await vehiclesApi.create(formData)
+      const response = await vehiclesApi.create({
+        plate_number: data.plate_number,
+        vehicle_type: data.vehicle_type || null,
+        brand: data.brand || null,
+        color: data.color || null,
+      })
       onSuccess(response)
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to add vehicle")
@@ -169,23 +227,23 @@ function AddVehicleForm({ onClose, onSuccess }: { onClose: () => void; onSuccess
           <CardDescription>Register a new vehicle to your account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-1 block">License Plate</label>
               <input
                 type="text"
-                required
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-                value={formData.plate_number}
-                onChange={(e) => setFormData({ ...formData, plate_number: e.target.value })}
+                {...register("plate_number")}
               />
+              {errors.plate_number && (
+                <p className="text-sm text-destructive mt-1">{errors.plate_number.message}</p>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Vehicle Type</label>
               <select
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-                value={formData.vehicle_type}
-                onChange={(e) => setFormData({ ...formData, vehicle_type: e.target.value })}
+                {...register("vehicle_type")}
               >
                 <option value="car">Car</option>
                 <option value="motorcycle">Motorcycle</option>
@@ -198,8 +256,7 @@ function AddVehicleForm({ onClose, onSuccess }: { onClose: () => void; onSuccess
               <input
                 type="text"
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-                value={formData.brand}
-                onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                {...register("brand")}
               />
             </div>
             <div>
@@ -207,8 +264,7 @@ function AddVehicleForm({ onClose, onSuccess }: { onClose: () => void; onSuccess
               <input
                 type="text"
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-                value={formData.color}
-                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                {...register("color")}
               />
             </div>
             <div className="flex gap-2 pt-4">

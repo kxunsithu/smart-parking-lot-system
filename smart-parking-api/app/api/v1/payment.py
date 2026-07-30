@@ -13,7 +13,7 @@ router = APIRouter(prefix="/payments", tags=["Payments"])
 
 
 @router.get(
-    "/",
+    "",
     response_model=SuccessResponse[list[PaymentOut]],
     status_code=status.HTTP_200_OK,
 )

@@ -87,6 +87,8 @@ class ParkingOwnerService:
         # Delete the owner profile directly
         self.db.execute(delete(ParkingOwner).where(ParkingOwner.id == owner_id))
 
+        self.db.commit()
+
         # Then delete the user
         self.user_repo.delete(owner.user)
 
@@ -95,4 +97,5 @@ class ParkingOwnerService:
         owner.user.is_active = not owner.user.is_active
         self.db.commit()
         self.db.refresh(owner)
+        self.db.refresh(owner.user)
         return owner

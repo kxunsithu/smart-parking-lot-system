@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -51,14 +51,18 @@ export default function VerifyEmail() {
     setValue("otp", value)
   }
 
-  const fetchOtpExpiry = async () => {
+  const expiresAtRef = useRef<Date | null>(null)
+
+  const fetchOtpExpiry = useCallback(async () => {
+    if (!user) return
     try {
-      const status = await authApi.getOtpStatus(user!.email)
+      const status = await authApi.getOtpStatus(user.email)
       setIsUsed(status.is_used)
       
       if (status.expires_at) {
         const expiryDate = new Date(status.expires_at)
         setExpiresAt(expiryDate)
+        expiresAtRef.current = expiryDate
         
         const now = new Date()
         const remaining = Math.max(0, Math.floor((expiryDate.getTime() - now.getTime()) / 1000))
@@ -70,27 +74,29 @@ export default function VerifyEmail() {
       console.error("Failed to fetch OTP status:", error)
       setTimeLeft(0)
     }
-  }
+  }, [user])
 
   useEffect(() => {
     fetchOtpExpiry()
-  }, [resendingOTP])
+  }, [fetchOtpExpiry])
 
   useEffect(() => {
-    if (!expiresAt || timeLeft <= 0) return
+    if (!expiresAt) return
 
     const timer = setInterval(() => {
+      const expiry = expiresAtRef.current
+      if (!expiry) return
       const now = new Date()
-      const remaining = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000))
+      const remaining = Math.max(0, Math.floor((expiry.getTime() - now.getTime()) / 1000))
       setTimeLeft(remaining)
-      
+
       if (remaining % 30 === 0) {
         fetchOtpExpiry()
       }
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [expiresAt, timeLeft])
+  }, [expiresAt, fetchOtpExpiry])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)

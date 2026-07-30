@@ -1,6 +1,6 @@
 """Business logic for Owner Subscriptions: purchase, renew, and access gate."""
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.constants import RoleName, SubscriptionStatus
@@ -138,13 +138,10 @@ class SubscriptionService:
 
     def get_current_lot_count(self, owner_id: int) -> int:
         return self.db.scalar(
-            select(ParkingLot).where(ParkingLot.owner_id == owner_id).with_only_columns(
-                __import__("sqlalchemy").func.count()
-            )
+            select(func.count(ParkingLot.id)).where(ParkingLot.owner_id == owner_id)
         ) or 0
 
     def toggle_subscription_status(self, subscription_id: int) -> OwnerSubscription:
-        from app.core.exceptions import NotFoundException
         sub = self.sub_repo.get(subscription_id)
         if not sub:
             raise NotFoundException("Subscription not found.")

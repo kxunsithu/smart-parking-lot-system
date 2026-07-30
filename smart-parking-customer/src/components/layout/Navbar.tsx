@@ -28,13 +28,13 @@ export default function Navbar() {
       if (refreshToken) {
         await authApi.logout(refreshToken)
       }
-      logout()
-      setLogoutDialogOpen(false)
-      toast.success("Logged out successfully")
-      navigate("/login")
     } catch (error) {
-      toast.error("Logout failed")
+      console.error("Logout API call failed, clearing local state anyway", error)
     }
+    logout()
+    setLogoutDialogOpen(false)
+    toast.success("Logged out successfully")
+    navigate("/login")
   }
 
   const navItems = [

@@ -26,11 +26,12 @@ const BREADCRUMB_CONFIG: Record<string, { label: string; parent?: string }> = {
 
 function getBreadcrumbs(pathname: string, role?: string): Array<{ label: string; href?: string }> {
   // Handle dynamic routes
-  const lotDetailMatch = pathname.match(/^\/owner\/lots\/(\d+)$/)
+  const lotDetailMatch = pathname.match(/^\/(admin|owner)\/lots\/(\d+)$/)
   if (lotDetailMatch) {
+    const prefix = lotDetailMatch[1]
     return [
       { label: "Dashboard", href: role === "OWNER" ? "/owner" : role === "ADMIN" ? "/admin" : "/staff" },
-      { label: "Parking Lots", href: "/owner/lots" },
+      { label: "Parking Lots", href: `/${prefix}/lots` },
       { label: "Lot Details" },
     ]
   }
@@ -87,9 +88,9 @@ export function Breadcrumbs() {
           <div key={index} className="flex items-center">
             <BreadcrumbItem>
               {crumb.href && index < breadcrumbs.length - 1 ? (
-                <Link to={crumb.href}>
-                  <BreadcrumbLink>{crumb.label}</BreadcrumbLink>
-                </Link>
+                <BreadcrumbLink render={<Link to={crumb.href} />}>
+                  {crumb.label}
+                </BreadcrumbLink>
               ) : (
                 <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
               )}

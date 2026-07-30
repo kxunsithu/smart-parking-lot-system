@@ -15,8 +15,10 @@ import {
 import { parkingSlotsApi } from "@/api/parkingSlots"
 import { parkingFloorsApi } from "@/api/parkingFloors"
 import { parkingLotsApi } from "@/api/parkingLots"
-import { slotStatusTone } from "@/utils/statusColors"
-import type { ParkingSlotOut, ParkingFloorOut, ParkingLotOut } from "@/types"
+import { parkingSessionsApi } from "@/api/parkingSessions"
+import { slotStatusTone, sessionStatusTone } from "@/utils/statusColors"
+import { formatDateTime, formatDuration, formatCurrency } from "@/utils/formatters"
+import type { ParkingSlotOut, ParkingFloorOut, ParkingLotOut, ParkingSessionOut } from "@/types"
 
 const CAR_PALETTE = [
   "#f43f5e", // Rose Red
@@ -112,9 +114,11 @@ function SelectedSlotAnimation({ sw, sd }: { sw: number; sd: number }) {
   const ringRef = useRef<THREE.Mesh>(null)
   const ringMatRef = useRef<THREE.MeshStandardMaterial>(null)
   const labelRef = useRef<THREE.Group>(null)
+  const timeRef = useRef(0)
 
-  useFrame((state) => {
-    const t = state.clock.getElapsedTime()
+  useFrame((_, delta) => {
+    timeRef.current += delta
+    const t = timeRef.current
 
     if (padMatRef.current) {
       padMatRef.current.emissiveIntensity = 0.6 + Math.sin(t * 4) * 0.4
@@ -180,7 +184,7 @@ function ParkingSlot3D({
   isHighlighted: boolean
 }) {
   const isOccupied = slot.status === "OCCUPIED"
-  const lw = 0.12
+  const lw = 0.18
   const lh = 0.08
 
   const padColor = isOccupied
@@ -278,9 +282,10 @@ function ParkingFloor3D({
 }) {
   const sw = 3.2
   const sd = 5.2
-  const sg = 0.12
+  const sg = 0.6
   const laneW = 6.0
   const spr = 5
+  const floorPad = 2
 
   const bySection = slots.reduce((acc, slot) => {
     const sec = slot.section || "Main"
@@ -298,8 +303,8 @@ function ParkingFloor3D({
     return layout
   })
 
-  const totalDepth = Math.max(zCursor, 10)
-  const totalWidth = spr * (sw + sg) + 4
+  const totalDepth = Math.max(zCursor, 10) + floorPad
+  const totalWidth = spr * (sw + sg) + 4 + floorPad
 
   const nightAsphalts = ["#090d16", "#0b0f19", "#0e1322", "#0a0e1c"]
   const dayAsphalts = ["#334155", "#374151", "#475569", "#3b4252"]
@@ -310,7 +315,7 @@ function ParkingFloor3D({
 
   return (
     <group position={[0, y, 0]}>
-      <Box args={[totalWidth, 0.12, totalDepth]} position={[0, 0, totalDepth / 2]}>
+      <Box args={[totalWidth, 0.12, totalDepth]} position={[0, 0, (totalDepth - floorPad) / 2]}>
         <meshStandardMaterial
           color={asphaltColor}
           roughness={isNightMode ? 0.9 : 0.8}
@@ -318,8 +323,9 @@ function ParkingFloor3D({
         />
       </Box>
 
+      {/* Floor label in neon cyan for night mode */}
       <Text
-        position={[-totalWidth / 2 - 0.8, 1.4, totalDepth / 2]}
+        position={[-totalWidth / 2 - 0.8, 1.4, (totalDepth - floorPad) / 2]}
         fontSize={1.0}
         color={isNightMode ? "#38bdf8" : "#475569"}
         anchorX="right"
@@ -468,6 +474,7 @@ export function SlotDetailPage() {
   const [lot, setLot] = useState<ParkingLotOut | null>(null)
   const [floors, setFloors] = useState<ParkingFloorOut[]>([])
   const [slotsByFloor, setSlotsByFloor] = useState<Record<number, ParkingSlotOut[]>>({})
+  const [sessions, setSessions] = useState<ParkingSessionOut[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [webGLError, setWebGLError] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -509,6 +516,8 @@ export function SlotDetailPage() {
           slotsData[f.id] = r.items
         }))
         setSlotsByFloor(slotsData)
+        const sessionsRes = await parkingSessionsApi.list({ slot_id: id, limit: 100 })
+        setSessions(sessionsRes.items)
       } catch (e) { console.error(e) }
       finally { setIsLoading(false) }
     }
@@ -602,6 +611,37 @@ export function SlotDetailPage() {
                   </div>
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Sessions ({sessions.length})
+                </p>
+              </div>
+              {sessions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No sessions for this slot.</p>
+              ) : (
+                <div className="space-y-3">
+                  {sessions.map((session) => (
+                    <div key={session.id} className="rounded-lg border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium">#{session.id}</span>
+                        <StatusBadge label={session.status} tone={sessionStatusTone(session.status)} />
+                      </div>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <p>Vehicle: {session.vehicle_id}</p>
+                        <p>Start: {formatDateTime(session.start_time)}</p>
+                        <p>End: {session.end_time ? formatDateTime(session.end_time) : "—"}</p>
+                        {session.duration != null && <p>Duration: {formatDuration(session.duration)}</p>}
+                        {session.fee != null && <p>Fee: {formatCurrency(session.fee)}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

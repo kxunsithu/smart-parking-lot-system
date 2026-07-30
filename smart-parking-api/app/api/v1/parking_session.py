@@ -19,11 +19,6 @@ from app.services.parking_session_service import ParkingSessionService
 router = APIRouter(prefix="/parking-sessions", tags=["Parking Sessions"])
 
 
-class BookingResponse(ParkingSessionOut):
-    """Session + pre-calculated fee returned when booking."""
-    pass
-
-
 # ─── Customer booking flow ────────────────────────────────────────────────────
 
 @router.post(
@@ -68,12 +63,13 @@ def start_session(
 def list_sessions(
     status_: str | None = Query(default=None, alias="status"),
     vehicle_id: int | None = Query(default=None),
+    slot_id: int | None = Query(default=None),
     params: PaginationParams = Depends(pagination_params),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     items, meta = ParkingSessionService(db).list_sessions(
-        params, status=status_, vehicle_id=vehicle_id, current_user=current_user
+        params, status=status_, vehicle_id=vehicle_id, slot_id=slot_id, current_user=current_user
     )
     return {"success": True, "message": "Parking sessions fetched successfully.", "data": items, "meta": meta}
 

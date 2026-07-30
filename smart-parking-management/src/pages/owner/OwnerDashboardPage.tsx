@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { toast } from "sonner"
 import { CreditCard, ParkingSquare, Timer, UserCog, Warehouse } from "lucide-react"
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 import { PageHeader } from "@/components/common/PageHeader"
@@ -8,12 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { dashboardApi } from "@/api/dashboard"
 import type { OwnerDashboardOut } from "@/types"
 import { formatCurrency } from "@/utils/formatters"
+import { getErrorMessage } from "@/api/client"
 
 const CHART_COLORS = ["var(--color-chart-1)", "var(--color-chart-2)"]
 
 export function OwnerDashboardPage() {
   const [data, setData] = useState<OwnerDashboardOut | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
     async function fetchData() {
@@ -22,6 +25,8 @@ export function OwnerDashboardPage() {
         setData(dashboardData)
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error)
+        toast.error(getErrorMessage(error))
+        setError(true)
       } finally {
         setIsLoading(false)
       }
@@ -35,6 +40,8 @@ export function OwnerDashboardPage() {
         { name: "Occupied", value: data.occupied_slots },
       ]
     : []
+
+  if (error) return <div className="text-center py-10 text-destructive">Failed to load dashboard data. Please try again.</div>
 
   return (
     <div className="space-y-6">

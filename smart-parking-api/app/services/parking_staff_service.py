@@ -100,7 +100,9 @@ class ParkingStaffService:
         if current_user.role.name != RoleName.ADMIN.value:
             owner = self.owner_repo.get_by_user_id(current_user.id)
             self.sub_service.check_subscription_required(owner.id)
-        data = payload.model_dump(exclude_unset=True)
+        if payload.is_active is not None and staff.user:
+            staff.user.is_active = payload.is_active
+        data = payload.model_dump(exclude_unset=True, exclude={"is_active"})
         return self.staff_repo.update(staff, data)
 
     def delete_staff(self, staff_id: int, current_user: User) -> None:

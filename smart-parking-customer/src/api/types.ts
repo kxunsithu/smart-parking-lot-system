@@ -21,12 +21,16 @@ export interface CustomerOut {
   user_id: number
   current_lat?: number | null
   current_lng?: number | null
+  phone?: string | null
+  address?: string | null
   user?: UserOut | null
 }
 
 export interface CustomerUpdate {
   current_lat?: number | null
   current_lng?: number | null
+  phone?: string | null
+  address?: string | null
 }
 
 export interface VehicleOut {

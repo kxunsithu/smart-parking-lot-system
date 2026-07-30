@@ -55,6 +55,6 @@ function homePath(role: RoleName): string {
     case "STAFF":
       return "/staff"
     default:
-      return "/"
+      return "/unauthorized"
   }
 }

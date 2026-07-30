@@ -4,13 +4,15 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Loader2, Plus, Edit, Trash2 } from "lucide-react"
+import { Loader2, Plus, Edit, Trash2, Power } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { SearchInput } from "@/components/common/SearchInput"
 import { DataPagination } from "@/components/common/DataPagination"
 import { EmptyState } from "@/components/common/EmptyState"
 import { TableSkeleton } from "@/components/common/LoadingBlock"
 import { FormField } from "@/components/common/FormField"
+import { StatusBadge } from "@/components/common/StatusBadge"
+import { activeStatusTone } from "@/utils/statusColors"
 import { ConfirmDialog } from "@/components/common/ConfirmDialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -62,6 +64,7 @@ export function StaffPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isToggling, setIsToggling] = useState(false)
 
   const fetchOwnerProfile = async () => {
     try {
@@ -167,6 +170,19 @@ export function StaffPage() {
     }
   }
 
+  const handleToggleActive = async (member: ParkingStaffOut) => {
+    try {
+      setIsToggling(true)
+      await parkingStaffApi.update(member.id, { is_active: !member.user?.is_active })
+      toast.success(`Staff member ${member.user?.is_active ? "deactivated" : "activated"}.`)
+      fetchStaff()
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setIsToggling(false)
+    }
+  }
+
   const staff = data?.items ?? []
 
   if (!isLoadingLots && lots.length === 0) {
@@ -239,6 +255,8 @@ export function StaffPage() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Contact</TableHead>
+                    <TableHead>Email Verified</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="w-12" />
                   </TableRow>
                 </TableHeader>
@@ -251,7 +269,31 @@ export function StaffPage() {
                         <div className="text-xs text-muted-foreground">{member.user?.phone}</div>
                       </TableCell>
                       <TableCell>
+                        <StatusBadge
+                          label={member.user?.is_verified ? "Verified" : "Not Verified"}
+                          tone={member.user?.is_verified ? "success" : "warning"}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge
+                          label={member.user?.is_active ? "Active" : "Inactive"}
+                          tone={activeStatusTone(member.user?.is_active ?? true)}
+                        />
+                      </TableCell>
+                      <TableCell>
                         <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            onClick={() => handleToggleActive(member)}
+                            disabled={isToggling}
+                            title={member.user?.is_active ? "Deactivate" : "Activate"}
+                          >
+                            <Power
+                              className={`size-4 ${member.user?.is_active ? "text-emerald-500" : "text-muted-foreground"}`}
+                            />
+                          </Button>
                           <Button variant="ghost" size="icon" className="size-8" onClick={() => setEditTarget(member)}>
                             <Edit className="size-4" />
                           </Button>

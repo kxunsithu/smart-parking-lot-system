@@ -27,6 +27,3 @@ class PaymentOut(BaseModel):
     status: str
     paid_at: datetime
 
-
-class PaymentStatusUpdate(BaseModel):
-    status: PaymentStatus

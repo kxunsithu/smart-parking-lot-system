@@ -33,6 +33,21 @@ def upgrade() -> None:
         batch_op.create_index(batch_op.f('ix_otps_email'), ['email'], unique=False)
         batch_op.create_index(batch_op.f('ix_otps_id'), ['id'], unique=False)
 
+    op.create_table('packages',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=100), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('price', sa.Float(), nullable=False),
+    sa.Column('duration_days', sa.Integer(), nullable=False),
+    sa.Column('max_lots', sa.Integer(), nullable=False),
+    sa.Column('max_staff', sa.Integer(), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    with op.batch_alter_table('packages', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_packages_id'), ['id'], unique=False)
+
     op.create_table('roles',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=50), nullable=False),
@@ -59,11 +74,10 @@ def upgrade() -> None:
     sa.Column('email', sa.String(length=100), nullable=False),
     sa.Column('password', sa.String(length=255), nullable=False),
     sa.Column('role_id', sa.Integer(), nullable=False),
-    sa.Column('created_by', sa.Integer(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('is_verified', sa.Boolean(), nullable=False),
+    sa.Column('phone', sa.String(length=20), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
-    sa.ForeignKeyConstraint(['created_by'], ['users.id'], ),
     sa.ForeignKeyConstraint(['role_id'], ['roles.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -87,7 +101,6 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('company_name', sa.String(length=100), nullable=True),
-    sa.Column('business_license', sa.String(length=100), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id')
@@ -99,20 +112,18 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('owner_id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=100), nullable=False),
-    sa.Column('type', sa.String(length=50), nullable=True),
-    sa.Column('address', sa.String(length=255), nullable=True),
-    sa.Column('latitude', sa.Float(), nullable=True),
-    sa.Column('longitude', sa.Float(), nullable=True),
     sa.Column('google_map_url', sa.Text(), nullable=True),
+    sa.Column('type', sa.String(length=50), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('rate_per_hour', sa.Float(), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.CheckConstraint("type IN ('PUBLIC', 'PRIVATE')", name='ck_parking_lots_type'),
     sa.ForeignKeyConstraint(['owner_id'], ['parking_owners.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('parking_lots', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_parking_lots_address'), ['address'], unique=False)
         batch_op.create_index(batch_op.f('ix_parking_lots_id'), ['id'], unique=False)
         batch_op.create_index(batch_op.f('ix_parking_lots_name'), ['name'], unique=False)
-        batch_op.create_index(batch_op.f('ix_parking_lots_type'), ['type'], unique=False)
 
     op.create_table('vehicles',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -128,6 +139,27 @@ def upgrade() -> None:
         batch_op.create_index(batch_op.f('ix_vehicles_id'), ['id'], unique=False)
         batch_op.create_index(batch_op.f('ix_vehicles_plate_number'), ['plate_number'], unique=True)
 
+    op.create_table('owner_subscriptions',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('owner_id', sa.Integer(), nullable=False),
+    sa.Column('package_id', sa.Integer(), nullable=False),
+    sa.Column('started_at', sa.DateTime(), nullable=False),
+    sa.Column('expires_at', sa.DateTime(), nullable=False),
+    sa.Column('status', sa.String(length=20), nullable=False),
+    sa.Column('payment_method', sa.String(length=50), nullable=False),
+    sa.Column('amount', sa.Float(), nullable=False),
+    sa.Column('transaction_ref', sa.String(length=100), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.CheckConstraint("status IN ('ACTIVE', 'EXPIRED', 'CANCELLED')", name='ck_owner_subscriptions_status'),
+    sa.ForeignKeyConstraint(['owner_id'], ['parking_owners.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['package_id'], ['packages.id'], ondelete='RESTRICT'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    with op.batch_alter_table('owner_subscriptions', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_owner_subscriptions_id'), ['id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_owner_subscriptions_owner_id'), ['owner_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_owner_subscriptions_package_id'), ['package_id'], unique=False)
+
     op.create_table('parking_floors',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('parking_lot_id', sa.Integer(), nullable=False),
@@ -142,8 +174,8 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('parking_lot_id', sa.Integer(), nullable=False),
-    sa.Column('employee_code', sa.String(length=50), nullable=True),
-    sa.Column('position', sa.String(length=50), nullable=True),
+    sa.Column('created_by', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['created_by'], ['users.id'], ),
     sa.ForeignKeyConstraint(['parking_lot_id'], ['parking_lots.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
@@ -160,13 +192,14 @@ def upgrade() -> None:
     sa.Column('latitude', sa.Float(), nullable=True),
     sa.Column('longitude', sa.Float(), nullable=True),
     sa.Column('status', sa.String(length=20), nullable=False),
+    sa.CheckConstraint("status IN ('AVAILABLE', 'OCCUPIED')", name='ck_parking_slots_status'),
     sa.ForeignKeyConstraint(['floor_id'], ['parking_floors.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('floor_id', 'slot_number', name='uq_parking_slots_floor_slot')
     )
     with op.batch_alter_table('parking_slots', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_parking_slots_id'), ['id'], unique=False)
         batch_op.create_index(batch_op.f('ix_parking_slots_status'), ['status'], unique=False)
-
 
     op.create_table('parking_sessions',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -177,6 +210,7 @@ def upgrade() -> None:
     sa.Column('duration', sa.Integer(), nullable=True),
     sa.Column('fee', sa.Float(), nullable=True),
     sa.Column('status', sa.String(length=20), nullable=False),
+    sa.CheckConstraint("status IN ('PENDING', 'ACTIVE', 'FINISHED')", name='ck_parking_sessions_status'),
     sa.ForeignKeyConstraint(['vehicle_id'], ['vehicles.id'], ),
     sa.ForeignKeyConstraint(['slot_id'], ['parking_slots.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -184,7 +218,8 @@ def upgrade() -> None:
     with op.batch_alter_table('parking_sessions', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_parking_sessions_id'), ['id'], unique=False)
         batch_op.create_index(batch_op.f('ix_parking_sessions_status'), ['status'], unique=False)
-
+        batch_op.create_index('ix_parking_sessions_vehicle_id', ['vehicle_id'], unique=False)
+        batch_op.create_index('ix_parking_sessions_vehicle_status', ['vehicle_id', 'status'], unique=False)
 
     op.create_table('payments',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -192,8 +227,11 @@ def upgrade() -> None:
     sa.Column('customer_id', sa.Integer(), nullable=False),
     sa.Column('amount', sa.Float(), nullable=False),
     sa.Column('payment_method', sa.String(length=50), nullable=False),
+    sa.Column('transaction_ref', sa.String(length=100), nullable=True),
     sa.Column('status', sa.String(length=20), nullable=False),
     sa.Column('paid_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.CheckConstraint("payment_method IN ('CASH', 'KBZPAY', 'WAVEPAY', 'AYAPAY', 'UABPAY')", name='ck_payments_payment_method'),
+    sa.CheckConstraint("status IN ('PENDING', 'PAID', 'REFUNDED')", name='ck_payments_status'),
     sa.ForeignKeyConstraint(['customer_id'], ['customers.id'], ),
     sa.ForeignKeyConstraint(['parking_session_id'], ['parking_sessions.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -201,7 +239,6 @@ def upgrade() -> None:
     with op.batch_alter_table('payments', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_payments_id'), ['id'], unique=False)
         batch_op.create_index(batch_op.f('ix_payments_status'), ['status'], unique=False)
-
     # ### end Alembic commands ###
 
 
@@ -213,6 +250,8 @@ def downgrade() -> None:
 
     op.drop_table('payments')
     with op.batch_alter_table('parking_sessions', schema=None) as batch_op:
+        batch_op.drop_index('ix_parking_sessions_vehicle_status')
+        batch_op.drop_index('ix_parking_sessions_vehicle_id')
         batch_op.drop_index(batch_op.f('ix_parking_sessions_status'))
         batch_op.drop_index(batch_op.f('ix_parking_sessions_id'))
 
@@ -230,16 +269,20 @@ def downgrade() -> None:
         batch_op.drop_index(batch_op.f('ix_parking_floors_id'))
 
     op.drop_table('parking_floors')
+    with op.batch_alter_table('owner_subscriptions', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_owner_subscriptions_package_id'))
+        batch_op.drop_index(batch_op.f('ix_owner_subscriptions_owner_id'))
+        batch_op.drop_index(batch_op.f('ix_owner_subscriptions_id'))
+
+    op.drop_table('owner_subscriptions')
     with op.batch_alter_table('vehicles', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_vehicles_plate_number'))
         batch_op.drop_index(batch_op.f('ix_vehicles_id'))
 
     op.drop_table('vehicles')
     with op.batch_alter_table('parking_lots', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_parking_lots_type'))
         batch_op.drop_index(batch_op.f('ix_parking_lots_name'))
         batch_op.drop_index(batch_op.f('ix_parking_lots_id'))
-        batch_op.drop_index(batch_op.f('ix_parking_lots_address'))
 
     op.drop_table('parking_lots')
     with op.batch_alter_table('parking_owners', schema=None) as batch_op:
@@ -265,6 +308,10 @@ def downgrade() -> None:
         batch_op.drop_index(batch_op.f('ix_roles_id'))
 
     op.drop_table('roles')
+    with op.batch_alter_table('packages', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_packages_id'))
+
+    op.drop_table('packages')
     with op.batch_alter_table('otps', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_otps_id'))
         batch_op.drop_index(batch_op.f('ix_otps_email'))

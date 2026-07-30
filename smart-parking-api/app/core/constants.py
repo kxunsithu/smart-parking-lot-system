@@ -40,6 +40,11 @@ class SubscriptionStatus(str, Enum):
     CANCELLED = "CANCELLED"
 
 
+class LotType(str, Enum):
+    PUBLIC = "PUBLIC"
+    PRIVATE = "PRIVATE"
+
+
 class SortOrder(str, Enum):
     ASC = "asc"
     DESC = "desc"

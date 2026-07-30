@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
 import { User, Mail, Phone, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,8 +33,8 @@ export default function Profile() {
       const response = await customerApi.getProfile()
       setCustomer(response)
       setFormData({
-        phone: "",
-        address: "",
+        phone: response.phone || "",
+        address: response.address || "",
       })
     } catch (error) {
       toast.error("Failed to load profile")
@@ -43,7 +46,10 @@ export default function Profile() {
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const response = await customerApi.updateProfile({ current_lat: null, current_lng: null })
+      const response = await customerApi.updateProfile({
+        phone: formData.phone || undefined,
+        address: formData.address || undefined,
+      })
       setCustomer(response)
       setEditing(false)
       toast.success("Profile updated successfully")
@@ -57,7 +63,11 @@ export default function Profile() {
       <div className="min-h-screen">
         <Navbar />
         <div className="flex items-center justify-center h-64">
-          <p>Loading...</p>
+          <div className="space-y-4 w-full max-w-md px-4">
+            <div className="h-8 bg-muted animate-pulse rounded-lg" />
+            <div className="h-4 bg-muted animate-pulse rounded-lg w-2/3" />
+            <div className="h-32 bg-muted animate-pulse rounded-xl" />
+          </div>
         </div>
       </div>
     )
@@ -135,33 +145,38 @@ export default function Profile() {
   )
 }
 
+const changePasswordSchema = z.object({
+  old_password: z.string().min(1, "Current password is required"),
+  new_password: z.string().min(8, "Password must be at least 8 characters"),
+  confirm_password: z.string(),
+}).refine((data) => data.new_password === data.confirm_password, {
+  message: "Passwords don't match",
+  path: ["confirm_password"],
+})
+
+type ChangePasswordFormData = z.infer<typeof changePasswordSchema>
+
 function ChangePasswordForm() {
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    old_password: "",
-    new_password: "",
-    confirm_password: "",
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ChangePasswordFormData>({
+    resolver: zodResolver(changePasswordSchema),
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (formData.new_password !== formData.confirm_password) {
-      toast.error("Passwords don't match")
-      return
-    }
-    if (formData.new_password.length < 6) {
-      toast.error("Password must be at least 6 characters")
-      return
-    }
-    
+  const onSubmit = async (data: ChangePasswordFormData) => {
     setLoading(true)
     try {
       await authApi.changePassword({
-        old_password: formData.old_password,
-        new_password: formData.new_password,
+        old_password: data.old_password,
+        new_password: data.new_password,
       })
       toast.success("Password changed successfully")
-      setFormData({ old_password: "", new_password: "", confirm_password: "" })
+      reset()
     } catch (error) {
       toast.error("Failed to change password")
     } finally {
@@ -170,36 +185,39 @@ function ChangePasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
         <Label htmlFor="old_password">Current Password</Label>
         <Input
           id="old_password"
           type="password"
-          value={formData.old_password}
-          onChange={(e) => setFormData({ ...formData, old_password: e.target.value })}
-          required
+          {...register("old_password")}
         />
+        {errors.old_password && (
+          <p className="text-sm text-destructive mt-1">{errors.old_password.message}</p>
+        )}
       </div>
       <div>
         <Label htmlFor="new_password">New Password</Label>
         <Input
           id="new_password"
           type="password"
-          value={formData.new_password}
-          onChange={(e) => setFormData({ ...formData, new_password: e.target.value })}
-          required
+          {...register("new_password")}
         />
+        {errors.new_password && (
+          <p className="text-sm text-destructive mt-1">{errors.new_password.message}</p>
+        )}
       </div>
       <div>
         <Label htmlFor="confirm_password">Confirm New Password</Label>
         <Input
           id="confirm_password"
           type="password"
-          value={formData.confirm_password}
-          onChange={(e) => setFormData({ ...formData, confirm_password: e.target.value })}
-          required
+          {...register("confirm_password")}
         />
+        {errors.confirm_password && (
+          <p className="text-sm text-destructive mt-1">{errors.confirm_password.message}</p>
+        )}
       </div>
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? "Changing..." : "Change Password"}

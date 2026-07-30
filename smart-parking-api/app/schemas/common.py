@@ -6,11 +6,6 @@ from pydantic import BaseModel, Field
 T = TypeVar("T")
 
 
-class ErrorDetail(BaseModel):
-    field: Optional[str] = None
-    message: str
-
-
 class Meta(BaseModel):
     page: int
     limit: int
@@ -23,12 +18,6 @@ class SuccessResponse(BaseModel, Generic[T]):
     message: str = "Success."
     data: Optional[T] = None
     meta: Optional[Meta] = None
-
-
-class ErrorResponse(BaseModel):
-    success: bool = False
-    message: str = "An error occurred."
-    errors: Optional[List[ErrorDetail]] = None
 
 
 class PaginationParams(BaseModel):

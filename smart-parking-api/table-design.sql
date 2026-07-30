@@ -59,11 +59,13 @@ CREATE TABLE IF NOT EXISTS parking_lots (
     owner_id INT NOT NULL,
     name VARCHAR(100) NOT NULL,
     google_map_url TEXT,
-    type VARCHAR(50) DEFAULT 'PUBLIC',
+    type VARCHAR(50) DEFAULT 'PUBLIC' CHECK (type IN ('PUBLIC', 'PRIVATE')),
     is_active BOOLEAN DEFAULT TRUE,
+    rate_per_hour DOUBLE PRECISION,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES parking_owners(id)
 );
+CREATE INDEX ix_parking_lots_name ON parking_lots(name);
 
 -- 8. Parking Staff
 CREATE TABLE IF NOT EXISTS parking_staff (
@@ -104,8 +106,10 @@ CREATE TABLE IF NOT EXISTS parking_slots (
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
     status VARCHAR(20) DEFAULT 'AVAILABLE' CHECK (status IN ('AVAILABLE', 'OCCUPIED')),
-    FOREIGN KEY (floor_id) REFERENCES parking_floors(id)
+    FOREIGN KEY (floor_id) REFERENCES parking_floors(id),
+    UNIQUE (floor_id, slot_number)
 );
+CREATE INDEX ix_parking_slots_status ON parking_slots(status);
 
 -- 12. Parking Sessions
 CREATE TABLE IF NOT EXISTS parking_sessions (
@@ -116,10 +120,13 @@ CREATE TABLE IF NOT EXISTS parking_sessions (
     end_time TIMESTAMP,
     duration INT,         -- minutes
     fee DOUBLE PRECISION,
-    status VARCHAR(20) DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'FINISHED')),
+    status VARCHAR(20) DEFAULT 'ACTIVE' CHECK (status IN ('PENDING', 'ACTIVE', 'FINISHED')),
     FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),
     FOREIGN KEY (slot_id) REFERENCES parking_slots(id)
 );
+CREATE INDEX ix_parking_sessions_status ON parking_sessions(status);
+CREATE INDEX ix_parking_sessions_vehicle_id ON parking_sessions(vehicle_id);
+CREATE INDEX ix_parking_sessions_vehicle_status ON parking_sessions(vehicle_id, status);
 
 -- 13. Payments (for Parking Sessions)
 CREATE TABLE IF NOT EXISTS payments (
@@ -127,13 +134,14 @@ CREATE TABLE IF NOT EXISTS payments (
     parking_session_id INT NOT NULL,
     customer_id INT NOT NULL,
     amount DOUBLE PRECISION NOT NULL,
-    payment_method VARCHAR(50) DEFAULT 'CASH',
+    payment_method VARCHAR(50) DEFAULT 'CASH' CHECK (payment_method IN ('CASH', 'KBZPAY', 'WAVEPAY', 'AYAPAY', 'UABPAY')),
     transaction_ref VARCHAR(100),
     status VARCHAR(20) DEFAULT 'PAID' CHECK (status IN ('PENDING', 'PAID', 'REFUNDED')),
     paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (parking_session_id) REFERENCES parking_sessions(id),
     FOREIGN KEY (customer_id) REFERENCES customers(id)
 );
+CREATE INDEX ix_payments_status ON payments(status);
 
 -- 14. Packages (Subscription tiers defined by Admin)
 CREATE TABLE IF NOT EXISTS packages (
@@ -163,4 +171,5 @@ CREATE TABLE IF NOT EXISTS owner_subscriptions (
     FOREIGN KEY (owner_id) REFERENCES parking_owners(id) ON DELETE CASCADE,
     FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE RESTRICT
 );
-
+CREATE INDEX ix_owner_subscriptions_owner_id ON owner_subscriptions(owner_id);
+CREATE INDEX ix_owner_subscriptions_package_id ON owner_subscriptions(package_id);

@@ -37,6 +37,7 @@ export function CustomersPage() {
       setData(result)
     } catch (error) {
       console.error("Failed to fetch users:", error)
+      toast.error(getErrorMessage(error))
     } finally {
       setIsLoading(false)
       setIsFetching(false)

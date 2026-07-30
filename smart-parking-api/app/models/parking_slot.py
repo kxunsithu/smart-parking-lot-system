@@ -1,7 +1,7 @@
 """SQLAlchemy model for a parking slot."""
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import Float, ForeignKey, String
+from sqlalchemy import Float, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.constants import SlotStatus
@@ -14,6 +14,9 @@ if TYPE_CHECKING:
 
 class ParkingSlot(Base):
     __tablename__ = "parking_slots"
+    __table_args__ = (
+        UniqueConstraint("floor_id", "slot_number", name="uq_parking_slots_floor_slot"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     floor_id: Mapped[int] = mapped_column(ForeignKey("parking_floors.id"), nullable=False)

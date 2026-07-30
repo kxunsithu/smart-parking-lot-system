@@ -416,6 +416,7 @@ function SessionCard({
   }) => void
 }) {
   const isActive = session.status === "ACTIVE"
+  const isPending = session.status === "PENDING"
   const startDate = new Date(session.start_time)
 
   interface LocationDetails {

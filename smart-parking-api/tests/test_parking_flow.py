@@ -149,7 +149,7 @@ def test_full_parking_flow(client, admin_user):
     assert payment_resp.json()["data"]["transaction_ref"] == "TXN123456"
 
     # List payments
-    list_resp = client.get("/api/v1/payments/", headers=owner_headers)
+    list_resp = client.get("/api/v1/payments", headers=owner_headers)
     assert list_resp.status_code == 200
     assert len(list_resp.json()["data"]) >= 1
     assert list_resp.json()["data"][0]["transaction_ref"] == "TXN123456"

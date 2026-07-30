@@ -38,7 +38,15 @@ export default function Login() {
       const tokens = await authApi.login(data)
       setTokens(tokens.access_token, tokens.refresh_token)
 
-      const user = await authApi.getMe()
+      let user
+      try {
+        user = await authApi.getMe()
+      } catch {
+        const { logout } = useAuthStore.getState()
+        logout()
+        toast.error("Failed to fetch user profile")
+        return
+      }
 
       // Check if user has customer role
       if (!user.role || user.role.name.toLowerCase() !== "customer") {
@@ -53,15 +61,12 @@ export default function Login() {
         try {
           await authApi.sendOTP({ email: user.email })
           toast.info("OTP sent to your email. Please verify to continue.")
-          // Set user and verification flag
           setUser(user)
           setVerifying(true)
           navigate("/verify-email")
           return
         } catch (otpError: any) {
           toast.error(otpError.response?.data?.message || "Failed to send OTP")
-          const { logout } = useAuthStore.getState()
-          logout()
           console.error("OTP send failed:", otpError)
           return
         }

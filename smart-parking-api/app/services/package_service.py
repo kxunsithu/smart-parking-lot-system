@@ -1,8 +1,9 @@
 """Business logic for Package management (Admin only)."""
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import NotFoundException
+from app.models.owner_subscription import OwnerSubscription
 from app.models.package import Package
 from app.repositories.package_repository import PackageRepository
 from app.schemas.common import PaginationParams, build_meta
@@ -54,9 +55,6 @@ class PackageService:
         return self.repo.update(pkg, {"is_active": True})
 
     def hard_delete_package(self, package_id: int) -> None:
-        from sqlalchemy import delete
-        from app.models.owner_subscription import OwnerSubscription
-        
         pkg = self.get_by_id(package_id)
         
         # Delete related subscriptions first

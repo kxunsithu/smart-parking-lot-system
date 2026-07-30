@@ -4,7 +4,7 @@ export type RoleName = "ADMIN" | "OWNER" | "STAFF" | "CUSTOMER"
 
 export type SlotStatus = "AVAILABLE" | "OCCUPIED"
 
-export type SessionStatus = "ACTIVE" | "FINISHED"
+export type SessionStatus = "PENDING" | "ACTIVE" | "FINISHED"
 
 export type PaymentStatus = "PENDING" | "PAID" | "REFUNDED"
 
@@ -342,6 +342,7 @@ export interface ParkingStaffCreate {
 
 export interface ParkingStaffUpdate {
   parking_lot_id?: number | null
+  is_active?: boolean | null
 }
 
 // Payment CRUD Types

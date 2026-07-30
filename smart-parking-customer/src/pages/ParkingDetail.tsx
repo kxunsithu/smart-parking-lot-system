@@ -198,8 +198,17 @@ export default function ParkingDetail() {
                   <div>
                     <CardTitle className="text-2xl">{lot.name}</CardTitle>
                     <CardDescription className="flex items-center mt-2">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      {lot.google_map_url ? "View on Map" : "Location not specified"}
+                      {lot.google_map_url ? (
+                        <a href={lot.google_map_url} target="_blank" rel="noopener noreferrer" className="flex items-center text-primary hover:underline">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          View on Map
+                        </a>
+                      ) : (
+                        <span className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          Location not specified
+                        </span>
+                      )}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
@@ -559,7 +568,10 @@ function FloorSection({
   useEffect(() => {
     parkingSlotsApi.list({ floor_id: floor.id, limit: 100 })
       .then(setSlots)
-      .catch(() => {})
+      .catch((e) => {
+        console.error("Failed to load slots:", e)
+        toast.error("Failed to load parking slots")
+      })
       .finally(() => setLoading(false))
   }, [floor.id])
 
