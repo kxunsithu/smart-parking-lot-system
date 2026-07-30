@@ -509,14 +509,11 @@ export function Lot3DViewPage() {
   const [isNightMode, setIsNightMode] = useState(false) // Default to Day Mode
   const [isAutoRotate, setIsAutoRotate] = useState(true) // Default to auto-rotate for 360 view
   const [canvasKey, setCanvasKey] = useState(0)
-  const [contextLost, setContextLost] = useState(false)
   const highlightedSlotId = searchParams.get("slotId") ? Number(searchParams.get("slotId")) : null
 
   const handleContextLost = useCallback(() => {
-    setContextLost(true)
     setTimeout(() => {
       setCanvasKey(k => k + 1)
-      setContextLost(false)
     }, 300)
   }, [])
 
