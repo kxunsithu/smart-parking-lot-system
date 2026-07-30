@@ -18,7 +18,7 @@ function patchThree(): Plugin {
           [/console\.log\s*\(\s*["'`]THREE\.WebGLRenderer:\s*Context\s+Lost\.?[^"'`]*["'`]\s*\)\s*;?\s*/g, "/* three: removed Context Lost log */"],
         ]
         let result = code
-        for (const [pattern, replacement] of patterns) {
+        for (const [pattern, replacement] of patterns as [RegExp, string][]) {
           result = result.replace(pattern, replacement)
         }
         if (result !== code) return result
