@@ -43,7 +43,7 @@ If you didn't request this code, please ignore this email.
                 port=self.smtp_port,
                 username=self.smtp_user,
                 password=self.smtp_password,
-                start_tls=self.use_tls,
+                use_tls=self.use_tls,
             )
             return True
         except Exception as e:
