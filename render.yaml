@@ -1,0 +1,99 @@
+services:
+  - type: web
+    name: smart-parking-api
+    runtime: python
+    repo: https://github.com/khun-si-thu/smart-parking-lot-system
+    plan: free
+    region: singapore
+    rootDir: smart-parking-api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: APP_NAME
+        value: Smart Parking Lot Management System
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "False"
+      - key: API_V1_PREFIX
+        value: /api/v1
+      - key: DATABASE_URL
+        fromDatabase:
+          name: smart-parking-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+      - key: REFRESH_TOKEN_EXPIRE_DAYS
+        value: "7"
+      - key: BACKEND_CORS_ORIGINS
+        value: '[ "https://smart-parking-customer.onrender.com", "https://smart-parking-management.onrender.com" ]'
+      - key: DEFAULT_PAGE_SIZE
+        value: "10"
+      - key: MAX_PAGE_SIZE
+        value: "100"
+      - key: DEFAULT_HOURLY_RATE
+        value: "1000.0"
+      - key: DEFAULT_ADMIN_NAME
+        value: System Admin
+      - key: DEFAULT_ADMIN_EMAIL
+        value: khunsithu350@gmail.com
+      - key: DEFAULT_ADMIN_PASSWORD
+        sync: false
+      - key: DEFAULT_ADMIN_PHONE
+        value: "+10000000000"
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
+      - key: SMTP_FROM_NAME
+        value: Smart Parking System
+      - key: SMTP_USE_TLS
+        value: "True"
+      - key: OTP_EXPIRE_MINUTES
+        value: "10"
+      - key: OTP_LENGTH
+        value: "6"
+
+  - type: web
+    name: smart-parking-customer
+    runtime: static
+    repo: https://github.com/khun-si-thu/smart-parking-lot-system
+    plan: free
+    region: singapore
+    rootDir: smart-parking-customer
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://smart-parking-api.onrender.com/api/v1
+
+  - type: web
+    name: smart-parking-management
+    runtime: static
+    repo: https://github.com/khun-si-thu/smart-parking-lot-system
+    plan: free
+    region: singapore
+    rootDir: smart-parking-management
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://smart-parking-api.onrender.com/api/v1
+
+databases:
+  - name: smart-parking-db
+    region: singapore
+    plan: free
+    databaseName: smart_parking
+    ipAllowList: []
