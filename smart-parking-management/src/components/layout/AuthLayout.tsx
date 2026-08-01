@@ -1,12 +1,12 @@
 import { Outlet } from "react-router-dom"
-import { ParkingSquare, ShieldCheck, Timer, Wallet } from "lucide-react"
+import { ParkingSquare, ShieldCheck, Timer } from "lucide-react"
 
 export function AuthLayout() {
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
       <div className="flex flex-col justify-between bg-primary p-10 text-primary-foreground max-lg:hidden">
         <div className="flex items-center gap-2">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary-foreground/15">
+          <div className="flex size-9 items-center justify-center rounded bg-primary-foreground/15">
             <ParkingSquare className="size-5" />
           </div>
           <span className="text-lg font-semibold">Smart Parking</span>
@@ -17,13 +17,13 @@ export function AuthLayout() {
             Manage parking lots with ease, from anywhere.
           </h1>
           <p className="max-w-md text-primary-foreground/80">
-            One platform for administrators, owners, and staff to manage lots, reservations, sessions, and
-            payments in real time.
+            One platform for administrators, owners, and staff to manage lots, reservations, and sessions
+            in real time.
           </p>
           <div className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-3">
             <Feature icon={ShieldCheck} label="Role-based access" />
             <Feature icon={Timer} label="Live sessions" />
-            <Feature icon={Wallet} label="Instant payments" />
+            <Feature icon={ParkingSquare} label="Smart parking" />
           </div>
         </div>
 

@@ -10,12 +10,6 @@ const SESSION_STATUS_TONE: Record<string, BadgeTone> = {
   FINISHED: "success",
 }
 
-const PAYMENT_STATUS_TONE: Record<string, BadgeTone> = {
-  PENDING: "warning",
-  PAID: "success",
-  REFUNDED: "danger",
-}
-
 const USER_STATUS_TONE: Record<string, BadgeTone> = {
   true: "success",
   false: "danger",
@@ -27,10 +21,6 @@ export function slotStatusTone(status: string): BadgeTone {
 
 export function sessionStatusTone(status: string): BadgeTone {
   return SESSION_STATUS_TONE[status] ?? "neutral"
-}
-
-export function paymentStatusTone(status: string): BadgeTone {
-  return PAYMENT_STATUS_TONE[status] ?? "neutral"
 }
 
 export function activeStatusTone(isActive: boolean): BadgeTone {

@@ -85,7 +85,7 @@ def test_owner_cannot_manage_other_owners_lot(client, admin_user):
     assert response.status_code == 403
 
 
-def test_vehicle_owned_by_another_customer_is_forbidden(client, admin_user):
+def test_car_owned_by_another_customer_is_forbidden(client, admin_user):
     client.post(
         "/api/v1/auth/register",
         json={"name": "Dave", "email": "dave@example.com", "password": "Customer@1234"},
@@ -97,11 +97,11 @@ def test_vehicle_owned_by_another_customer_is_forbidden(client, admin_user):
     dave_headers = auth_headers(client, "dave@example.com", "Customer@1234")
     eve_headers = auth_headers(client, "eve@example.com", "Customer@1234")
 
-    vehicle_id = client.post(
-        "/api/v1/vehicles", headers=dave_headers, json={"plate_number": "XYZ-999"}
+    car_id = client.post(
+        "/api/v1/cars", headers=dave_headers, json={"plate_number": "XYZ-999"}
     ).json()["data"]["id"]
 
     response = client.put(
-        f"/api/v1/vehicles/{vehicle_id}", headers=eve_headers, json={"color": "Red"}
+        f"/api/v1/cars/{car_id}", headers=eve_headers, json={"color": "Red"}
     )
     assert response.status_code == 403

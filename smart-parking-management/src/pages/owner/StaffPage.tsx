@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Loader2, Plus, Edit, Trash2, Power } from "lucide-react"
+import { Loader2, Plus, Edit, Trash2, Power, Building2 } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { SearchInput } from "@/components/common/SearchInput"
 import { DataPagination } from "@/components/common/DataPagination"
@@ -51,7 +51,7 @@ type UpdateStaffFormValues = z.infer<typeof updateStaffSchema>
 export function StaffPage() {
   const navigate = useNavigate()
   const { setPage, search, setSearch, params } = usePaginationState()
-  const [selectedLotId, setSelectedLotId] = useState<number | null>(null)
+  const [selectedLotId, setSelectedLotId] = useState<number | "all">("all")
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<ParkingStaffOut | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ParkingStaffOut | null>(null)
@@ -97,16 +97,12 @@ export function StaffPage() {
     fetchLots()
   }, [ownerProfile?.id])
 
-  useEffect(() => {
-    if (!selectedLotId && lots.length > 0) {
-      setSelectedLotId(lots[0].id)
-    }
-  }, [lots, selectedLotId])
-
-  const staffParams = useMemo(() => ({ ...params, parking_lot_id: selectedLotId ?? undefined }), [params, selectedLotId])
+  const staffParams = useMemo(
+    () => ({ ...params, parking_lot_id: selectedLotId === "all" ? undefined : selectedLotId }),
+    [params, selectedLotId]
+  )
 
   const fetchStaff = async () => {
-    if (!selectedLotId) return
     try {
       setIsFetching(true)
       const result = await parkingStaffApi.list(staffParams)
@@ -204,7 +200,7 @@ export function StaffPage() {
         title="Staff"
         description="Manage staff members for your parking lots."
         actions={
-          <Button onClick={() => setCreateOpen(true)} disabled={!selectedLotId}>
+          <Button onClick={() => setCreateOpen(true)} disabled={lots.length === 0}>
             <Plus className="size-4" />
             New Staff
           </Button>
@@ -217,13 +213,18 @@ export function StaffPage() {
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground whitespace-nowrap">Viewing staff for:</span>
               <Select
-                value={selectedLotId ? String(selectedLotId) : undefined}
-                onValueChange={(value) => setSelectedLotId(Number(value))}
+                value={String(selectedLotId)}
+                onValueChange={(value) => setSelectedLotId(value === "all" ? "all" : Number(value))}
+                items={[
+                  { value: "all", label: "All Parking Lots" },
+                  ...lots.map((lot) => ({ value: String(lot.id), label: lot.name })),
+                ]}
               >
                 <SelectTrigger className="w-56">
                   <SelectValue placeholder="Select a lot" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">All Parking Lots</SelectItem>
                   {lots.map((lot) => (
                     <SelectItem key={lot.id} value={String(lot.id)}>
                       {lot.name}
@@ -249,11 +250,12 @@ export function StaffPage() {
               }
             />
           ) : (
-            <div className="overflow-x-auto rounded-md border">
+            <div className="overflow-x-auto rounded border">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
+                    <TableHead>Parking Lot</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Email Verified</TableHead>
                     <TableHead>Status</TableHead>
@@ -264,6 +266,12 @@ export function StaffPage() {
                   {staff.map((member) => (
                     <TableRow key={member.id} className={isFetching ? "opacity-60" : undefined}>
                       <TableCell className="font-medium">{member.user?.name ?? "-"}</TableCell>
+                      <TableCell className="font-medium text-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <Building2 className="size-4 text-primary shrink-0" />
+                          <span>{member.parking_lot?.name ?? lots.find((l) => l.id === member.parking_lot_id)?.name ?? `Lot #${member.parking_lot_id}`}</span>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div>{member.user?.email}</div>
                         <div className="text-xs text-muted-foreground">{member.user?.phone}</div>
@@ -356,10 +364,12 @@ function CreateStaffDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
   lots: ParkingLotOut[]
-  defaultLotId: number | null
+  defaultLotId: number | "all" | null
   onSubmit: (values: CreateStaffFormValues) => void
   submitting: boolean
 }) {
+  const initialLotId = (typeof defaultLotId === "number" ? defaultLotId : lots[0]?.id) ?? 0
+
   const {
     register,
     handleSubmit,
@@ -374,7 +384,7 @@ function CreateStaffDialog({
       name: "",
       email: "",
       password: "",
-      parking_lot_id: defaultLotId ?? 0,
+      parking_lot_id: initialLotId,
     },
   })
 
@@ -420,6 +430,7 @@ function CreateStaffDialog({
             <Select
               value={watch("parking_lot_id") ? String(watch("parking_lot_id")) : undefined}
               onValueChange={(value) => setValue("parking_lot_id", Number(value), { shouldValidate: true })}
+              items={lots.map((lot) => ({ value: String(lot.id), label: lot.name }))}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a lot" />
@@ -473,8 +484,8 @@ function EditStaffDialog({
     resolver: zodResolver(updateStaffSchema),
     values: target
       ? {
-          parking_lot_id: target.parking_lot_id,
-        }
+        parking_lot_id: target.parking_lot_id,
+      }
       : undefined,
   })
 
@@ -495,6 +506,7 @@ function EditStaffDialog({
             <Select
               value={watch("parking_lot_id") ? String(watch("parking_lot_id")) : undefined}
               onValueChange={(value) => setValue("parking_lot_id", Number(value), { shouldValidate: true })}
+              items={lots.map((lot) => ({ value: String(lot.id), label: lot.name }))}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a lot" />

@@ -78,12 +78,11 @@ CREATE TABLE IF NOT EXISTS parking_staff (
     FOREIGN KEY (created_by) REFERENCES users(id)
 );
 
--- 9. Vehicles
-CREATE TABLE IF NOT EXISTS vehicles (
+-- 9. Cars
+CREATE TABLE IF NOT EXISTS cars (
     id SERIAL PRIMARY KEY,
     customer_id INT NOT NULL,
     plate_number VARCHAR(30) UNIQUE NOT NULL,
-    vehicle_type VARCHAR(50),
     brand VARCHAR(50),
     color VARCHAR(30),
     FOREIGN KEY (customer_id) REFERENCES customers(id)
@@ -114,36 +113,21 @@ CREATE INDEX ix_parking_slots_status ON parking_slots(status);
 -- 12. Parking Sessions
 CREATE TABLE IF NOT EXISTS parking_sessions (
     id SERIAL PRIMARY KEY,
-    vehicle_id INT NOT NULL,
+    car_id INT NOT NULL,
     slot_id INT NOT NULL,
     start_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP,
     duration INT,         -- minutes
     fee DOUBLE PRECISION,
     status VARCHAR(20) DEFAULT 'ACTIVE' CHECK (status IN ('PENDING', 'ACTIVE', 'FINISHED')),
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),
+    FOREIGN KEY (car_id) REFERENCES cars(id),
     FOREIGN KEY (slot_id) REFERENCES parking_slots(id)
 );
 CREATE INDEX ix_parking_sessions_status ON parking_sessions(status);
-CREATE INDEX ix_parking_sessions_vehicle_id ON parking_sessions(vehicle_id);
-CREATE INDEX ix_parking_sessions_vehicle_status ON parking_sessions(vehicle_id, status);
+CREATE INDEX ix_parking_sessions_car_id ON parking_sessions(car_id);
+CREATE INDEX ix_parking_sessions_car_status ON parking_sessions(car_id, status);
 
--- 13. Payments (for Parking Sessions)
-CREATE TABLE IF NOT EXISTS payments (
-    id SERIAL PRIMARY KEY,
-    parking_session_id INT NOT NULL,
-    customer_id INT NOT NULL,
-    amount DOUBLE PRECISION NOT NULL,
-    payment_method VARCHAR(50) DEFAULT 'CASH' CHECK (payment_method IN ('CASH', 'KBZPAY', 'WAVEPAY', 'AYAPAY', 'UABPAY')),
-    transaction_ref VARCHAR(100),
-    status VARCHAR(20) DEFAULT 'PAID' CHECK (status IN ('PENDING', 'PAID', 'REFUNDED')),
-    paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (parking_session_id) REFERENCES parking_sessions(id),
-    FOREIGN KEY (customer_id) REFERENCES customers(id)
-);
-CREATE INDEX ix_payments_status ON payments(status);
-
--- 14. Packages (Subscription tiers defined by Admin)
+-- 13. Packages (Subscription tiers defined by Admin)
 CREATE TABLE IF NOT EXISTS packages (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -156,7 +140,7 @@ CREATE TABLE IF NOT EXISTS packages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 15. Owner Subscriptions (purchased packages)
+-- 14. Owner Subscriptions (purchased packages)
 CREATE TABLE IF NOT EXISTS owner_subscriptions (
     id SERIAL PRIMARY KEY,
     owner_id INT NOT NULL,

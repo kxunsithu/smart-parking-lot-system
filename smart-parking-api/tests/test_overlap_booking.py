@@ -1,4 +1,4 @@
-"""Tests verifying the 2-hour overlap buffer logic for customer bookings and direct staff starts."""
+"""Tests verifying the 2-hour overlap buffer logic for customer bookings."""
 from datetime import datetime, timedelta, timezone
 from tests.conftest import auth_headers
 
@@ -51,19 +51,19 @@ def test_overlap_booking_buffer(client, admin_user):
     )
     staff_headers = auth_headers(client, "carol.overlap@example.com", "Staff@1234")
 
-    # Create customer and vehicle
+    # Create customer and car
     client.post(
         "/api/v1/auth/register",
         json={"name": "Dave Customer", "email": "dave.overlap@example.com", "password": "Customer@1234"},
     )
     customer_headers = auth_headers(client, "dave.overlap@example.com", "Customer@1234")
 
-    vehicle_resp = client.post(
-        "/api/v1/vehicles",
+    car_resp = client.post(
+        "/api/v1/cars",
         headers=customer_headers,
-        json={"plate_number": "YGN-777", "vehicle_type": "CAR"},
+        json={"plate_number": "YGN-777"},
     )
-    vehicle_id = vehicle_resp.json()["data"]["id"]
+    car_id = car_resp.json()["data"]["id"]
 
     # Let's define the base time for testing (say tomorrow at 3:00 PM UTC)
     tomorrow = datetime.now(timezone.utc).date() + timedelta(days=1)
@@ -76,11 +76,10 @@ def test_overlap_booking_buffer(client, admin_user):
         "/api/v1/parking-sessions/book",
         headers=customer_headers,
         json={
-            "vehicle_id": vehicle_id,
+            "car_id": car_id,
             "slot_id": slot_id,
             "start_time": start_time,
             "end_time": end_time,
-            "payment_method": "KBZPAY",
         }
     )
     assert book_resp.status_code == 201
@@ -92,11 +91,10 @@ def test_overlap_booking_buffer(client, admin_user):
         "/api/v1/parking-sessions/book",
         headers=customer_headers,
         json={
-            "vehicle_id": vehicle_id,
+            "car_id": car_id,
             "slot_id": slot_id,
             "start_time": start_time_ok,
             "end_time": end_time_ok,
-            "payment_method": "KBZPAY",
         }
     )
     assert book_ok_resp.status_code == 201
@@ -108,11 +106,10 @@ def test_overlap_booking_buffer(client, admin_user):
         "/api/v1/parking-sessions/book",
         headers=customer_headers,
         json={
-            "vehicle_id": vehicle_id,
+            "car_id": car_id,
             "slot_id": slot_id,
             "start_time": start_time_fail,
             "end_time": end_time_fail,
-            "payment_method": "KBZPAY",
         }
     )
     assert book_fail_resp.status_code == 400
@@ -125,11 +122,10 @@ def test_overlap_booking_buffer(client, admin_user):
         "/api/v1/parking-sessions/book",
         headers=customer_headers,
         json={
-            "vehicle_id": vehicle_id,
+            "car_id": car_id,
             "slot_id": slot_id,
             "start_time": start_time_post_ok,
             "end_time": end_time_post_ok,
-            "payment_method": "KBZPAY",
         }
     )
     assert book_post_ok_resp.status_code == 201
@@ -141,37 +137,104 @@ def test_overlap_booking_buffer(client, admin_user):
         "/api/v1/parking-sessions/book",
         headers=customer_headers,
         json={
-            "vehicle_id": vehicle_id,
+            "car_id": car_id,
             "slot_id": slot_id,
             "start_time": start_time_post_fail,
             "end_time": end_time_post_fail,
-            "payment_method": "KBZPAY",
         }
     )
     assert book_post_fail_resp.status_code == 400
     assert "conflicts" in book_post_fail_resp.json()["message"]
 
-    # 6. Try direct staff start when a booking is starting in less than 2 hours.
-    # We will temporarily book a session starting 1 hour from now for this check.
-    now = datetime.now(timezone.utc)
-    soon_start = (now + timedelta(minutes=90)).isoformat()  # 1.5 hours from now
-    soon_end = (now + timedelta(hours=3)).isoformat()
+
+def test_car_cannot_book_overlapping_session_on_different_slot(client, admin_user):
+    admin_headers = auth_headers(client, "admin@test.com", "Admin@12345")
+
+    resp_pkg = client.post(
+        "/api/v1/packages",
+        json={"name": "Basic", "price": 9900.0, "duration_days": 30, "max_lots": 5, "max_staff": 20},
+        headers=admin_headers,
+    )
+    pkg_id = resp_pkg.json()["data"]["id"]
+
     client.post(
+        "/api/v1/auth/register-owner",
+        json={
+            "name": "Bob Owner",
+            "email": "bob.car-overlap@example.com",
+            "password": "Owner@1234",
+            "confirm_password": "Owner@1234",
+            "company_name": "Car Overlap Parking",
+        },
+    )
+    owner_headers = auth_headers(client, "bob.car-overlap@example.com", "Owner@1234")
+    client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers)
+
+    lot_id = client.post(
+        "/api/v1/parking-lots", headers=owner_headers, json={"name": "Car Overlap Lot", "rate_per_hour": 1000}
+    ).json()["data"]["id"]
+    floor_id = client.post(
+        "/api/v1/parking-floors", headers=owner_headers, json={"parking_lot_id": lot_id, "floor_name": "Floor 1"}
+    ).json()["data"]["id"]
+    slot_a = client.post(
+        "/api/v1/parking-slots", headers=owner_headers, json={"floor_id": floor_id, "slot_number": "SL-A"}
+    ).json()["data"]["id"]
+    slot_b = client.post(
+        "/api/v1/parking-slots", headers=owner_headers, json={"floor_id": floor_id, "slot_number": "SL-B"}
+    ).json()["data"]["id"]
+
+    client.post(
+        "/api/v1/auth/register",
+        json={"name": "Dave Customer", "email": "dave.car-overlap@example.com", "password": "Customer@1234"},
+    )
+    customer_headers = auth_headers(client, "dave.car-overlap@example.com", "Customer@1234")
+
+    car_id = client.post(
+        "/api/v1/cars",
+        headers=customer_headers,
+        json={"plate_number": "YGN-888"},
+    ).json()["data"]["id"]
+
+    tomorrow = datetime.now(timezone.utc).date() + timedelta(days=1)
+    base_time = datetime(tomorrow.year, tomorrow.month, tomorrow.day, 15, 0, tzinfo=timezone.utc)
+
+    first_start = base_time.isoformat()
+    first_end = (base_time + timedelta(hours=2)).isoformat()
+    assert client.post(
         "/api/v1/parking-sessions/book",
         headers=customer_headers,
         json={
-            "vehicle_id": vehicle_id,
-            "slot_id": slot_id,
-            "start_time": soon_start,
-            "end_time": soon_end,
-            "payment_method": "KBZPAY",
-        }
+            "car_id": car_id,
+            "slot_id": slot_a,
+            "start_time": first_start,
+            "end_time": first_end,
+        },
+    ).status_code == 201
+
+    overlap_start = (base_time + timedelta(hours=1)).isoformat()
+    overlap_end = (base_time + timedelta(hours=3)).isoformat()
+    overlap_resp = client.post(
+        "/api/v1/parking-sessions/book",
+        headers=customer_headers,
+        json={
+            "car_id": car_id,
+            "slot_id": slot_b,
+            "start_time": overlap_start,
+            "end_time": overlap_end,
+        },
     )
-    # Now try to staff-start the slot directly.
-    staff_start_resp = client.post(
-        "/api/v1/parking-sessions/start",
-        headers=staff_headers,
-        json={"vehicle_id": vehicle_id, "slot_id": slot_id},
-    )
-    assert staff_start_resp.status_code == 400
-    assert "booking starts soon" in staff_start_resp.json()["message"]
+    assert overlap_resp.status_code == 400
+    assert "car already has a session" in overlap_resp.json()["message"].lower()
+
+    later_start = (base_time + timedelta(hours=3)).isoformat()
+    later_end = (base_time + timedelta(hours=5)).isoformat()
+    assert client.post(
+        "/api/v1/parking-sessions/book",
+        headers=customer_headers,
+        json={
+            "car_id": car_id,
+            "slot_id": slot_b,
+            "start_time": later_start,
+            "end_time": later_end,
+        },
+    ).status_code == 201

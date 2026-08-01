@@ -10,7 +10,7 @@ const Toast = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-4 pr-8 shadow-lg transition-all",
+        "pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded border p-4 pr-8 shadow-lg transition-all",
         className
       )}
       {...props}
@@ -26,7 +26,7 @@ const ToastClose = React.forwardRef<
   <button
     ref={ref}
     className={cn(
-      "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100",
+      "absolute right-2 top-2 rounded p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100",
       className
     )}
     {...props}

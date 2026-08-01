@@ -5,7 +5,7 @@ import { AppRouter } from "@/routes/AppRouter"
 
 function App() {
   return (
-    <ThemeProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <TooltipProvider>
         <AppRouter />
         <Toaster position="top-right" richColors closeButton />

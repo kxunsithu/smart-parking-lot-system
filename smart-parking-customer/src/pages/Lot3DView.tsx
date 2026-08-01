@@ -13,6 +13,7 @@ import {
 import { parkingLotsApi } from "@/api/parkingLots"
 import { parkingFloorsApi } from "@/api/parkingFloors"
 import { parkingSlotsApi } from "@/api/parkingSlots"
+import { parkingSessionsApi } from "@/api/parkingSessions"
 import type { ParkingLotOut } from "@/api/types"
 import type { ParkingFloorOut } from "@/api/parkingFloors"
 import type { ParkingSlotOut } from "@/api/types"
@@ -41,7 +42,7 @@ function adjustBrightness(hex: string, amount: number): string {
 function WebGLFallback({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center p-8 gap-4">
-      <div className="size-16 rounded-2xl bg-amber-500/10 flex items-center justify-center">
+      <div className="size-16 rounded bg-amber-500/10 flex items-center justify-center">
         <AlertCircle className="size-8 text-amber-500" />
       </div>
       <div>
@@ -117,12 +118,16 @@ function DashedCenterLine({
 }
 
 /** Animated highlight beacon for selected slot */
-function SelectedSlotAnimation({ sw, sd }: { sw: number; sd: number }) {
+function SelectedSlotAnimation({ sw, sd, isOccupied }: { sw: number; sd: number; isOccupied?: boolean }) {
   const padMatRef = useRef<THREE.MeshStandardMaterial>(null)
   const ringRef = useRef<THREE.Mesh>(null)
   const ringMatRef = useRef<THREE.MeshStandardMaterial>(null)
   const labelRef = useRef<THREE.Group>(null)
   const timeRef = useRef(0)
+
+  // Red for occupied slots, blue for available/reserved
+  const selColor = isOccupied ? "#ef4444" : "#3b82f6"
+  const selLabelColor = isOccupied ? "#fca5a5" : "#60a5fa"
 
   useFrame((_, delta) => {
     timeRef.current += delta
@@ -150,8 +155,8 @@ function SelectedSlotAnimation({ sw, sd }: { sw: number; sd: number }) {
       <Box args={[sw - 0.08, 0.05, sd - 0.08]} position={[0, 0.025, 0]}>
         <meshStandardMaterial
           ref={padMatRef}
-          color="#3b82f6"
-          emissive="#3b82f6"
+          color={selColor}
+          emissive={selColor}
           emissiveIntensity={0.7}
           transparent
           opacity={0.45}
@@ -162,8 +167,8 @@ function SelectedSlotAnimation({ sw, sd }: { sw: number; sd: number }) {
         <Box args={[sw + 0.2, 0.04, sd + 0.2]}>
           <meshStandardMaterial
             ref={ringMatRef}
-            color="#3b82f6"
-            emissive="#3b82f6"
+            color={selColor}
+            emissive={selColor}
             emissiveIntensity={0.9}
             transparent
             opacity={0.7}
@@ -172,7 +177,7 @@ function SelectedSlotAnimation({ sw, sd }: { sw: number; sd: number }) {
       </group>
 
       <group ref={labelRef} position={[0, 1.8, -sd / 2 - 0.5]}>
-        <Text fontSize={0.65} color="#60a5fa" anchorX="center" anchorY="middle" fontWeight="bold">
+        <Text fontSize={0.65} color={selLabelColor} anchorX="center" anchorY="middle" fontWeight="bold">
           Selected
         </Text>
       </group>
@@ -182,7 +187,7 @@ function SelectedSlotAnimation({ sw, sd }: { sw: number; sd: number }) {
 
 /** Single parking slot with full rectangular frame + pad tile */
 function ParkingSlot3D({
-  slot, position, sw, sd, isNightMode, onClick, isHighlighted,
+  slot, position, sw, sd, isNightMode, onClick, isHighlighted, isReserved,
 }: {
   slot: ParkingSlotOut
   position: [number, number, number]
@@ -191,21 +196,42 @@ function ParkingSlot3D({
   isNightMode: boolean
   onClick: () => void
   isHighlighted: boolean
+  isReserved?: boolean
 }) {
   const isOccupied = slot.status === "OCCUPIED"
   const lw = 0.18
   const lh = 0.08
 
-  // Consistent status colors (Red for occupied, Green for available)
+  // Red = Occupied (car present), Amber = Reserved (session active, no car yet), Green = Available
   const padColor = isOccupied
     ? (isNightMode ? "#dc2626" : "#ef4444")
-    : (isNightMode ? "#059669" : "#10b981")
+    : isReserved
+      ? (isNightMode ? "#d97706" : "#f59e0b")
+      : (isNightMode ? "#059669" : "#10b981")
 
   const padEmissive = isOccupied
     ? (isNightMode ? "#b91c1c" : "#dc2626")
-    : (isNightMode ? "#10b981" : "#10b981")
+    : isReserved
+      ? (isNightMode ? "#f59e0b" : "#d97706")
+      : (isNightMode ? "#10b981" : "#10b981")
 
-  const padOpacity = isNightMode ? (isOccupied ? 0.5 : 0.35) : (isOccupied ? 0.3 : 0.28)
+  const padEmissiveIntensity = isNightMode
+    ? (isOccupied ? 0.1 : isReserved ? 0.6 : 0.35)
+    : (isOccupied ? 0.1 : isReserved ? 0.4 : 0.1)
+
+  const padOpacity = isNightMode
+    ? (isOccupied ? 0.5 : isReserved ? 0.55 : 0.35)
+    : (isOccupied ? 0.3 : isReserved ? 0.45 : 0.28)
+
+  const frameEmissive = isHighlighted
+    ? "#f59e0b"
+    : isReserved
+      ? "#fbbf24"
+      : isNightMode
+        ? "#38bdf8"
+        : "#ffffff"
+
+  const frameEmissiveIntensity = isHighlighted ? 0.8 : isReserved ? 0.5 : isNightMode ? 0.5 : 0.08
 
   return (
     <group
@@ -215,46 +241,46 @@ function ParkingSlot3D({
       onPointerOut={() => { document.body.style.cursor = "default" }}
     >
       {isHighlighted ? (
-        <SelectedSlotAnimation sw={sw} sd={sd} />
+        <SelectedSlotAnimation sw={sw} sd={sd} isOccupied={isOccupied} />
       ) : (
         <Box args={[sw - 0.08, 0.04, sd - 0.08]} position={[0, 0.02, 0]}>
           <meshStandardMaterial
             color={padColor}
             emissive={padEmissive}
-            emissiveIntensity={isNightMode ? (isOccupied ? 0.1 : 0.35) : 0.1}
+            emissiveIntensity={padEmissiveIntensity}
             transparent
             opacity={padOpacity}
           />
         </Box>
       )}
 
-      {/* 4-sided full rectangle frame lines - Neon Cyan in Night Mode */}
+      {/* 4-sided full rectangle frame lines */}
       <Box args={[lw, lh, sd]} position={[-sw / 2, lh / 2, 0]}>
         <meshStandardMaterial
           color={isNightMode ? "#e0f2fe" : "#ffffff"}
-          emissive={isHighlighted ? "#f59e0b" : isNightMode ? "#38bdf8" : "#ffffff"}
-          emissiveIntensity={isHighlighted ? 0.8 : isNightMode ? 0.5 : 0.08}
+          emissive={frameEmissive}
+          emissiveIntensity={frameEmissiveIntensity}
         />
       </Box>
       <Box args={[lw, lh, sd]} position={[sw / 2, lh / 2, 0]}>
         <meshStandardMaterial
           color={isNightMode ? "#e0f2fe" : "#ffffff"}
-          emissive={isHighlighted ? "#f59e0b" : isNightMode ? "#38bdf8" : "#ffffff"}
-          emissiveIntensity={isHighlighted ? 0.8 : isNightMode ? 0.5 : 0.08}
+          emissive={frameEmissive}
+          emissiveIntensity={frameEmissiveIntensity}
         />
       </Box>
       <Box args={[sw, lh, lw]} position={[0, lh / 2, sd / 2]}>
         <meshStandardMaterial
           color={isNightMode ? "#e0f2fe" : "#ffffff"}
-          emissive={isHighlighted ? "#f59e0b" : isNightMode ? "#38bdf8" : "#ffffff"}
-          emissiveIntensity={isHighlighted ? 0.8 : isNightMode ? 0.5 : 0.08}
+          emissive={frameEmissive}
+          emissiveIntensity={frameEmissiveIntensity}
         />
       </Box>
       <Box args={[sw, lh, lw]} position={[0, lh / 2, -sd / 2]}>
         <meshStandardMaterial
           color={isNightMode ? "#e0f2fe" : "#ffffff"}
-          emissive={isHighlighted ? "#f59e0b" : isNightMode ? "#38bdf8" : "#ffffff"}
-          emissiveIntensity={isHighlighted ? 0.8 : isNightMode ? 0.5 : 0.08}
+          emissive={frameEmissive}
+          emissiveIntensity={frameEmissiveIntensity}
         />
       </Box>
 
@@ -270,7 +296,7 @@ function ParkingSlot3D({
         <Text
           position={[0, 0.35, 0]}
           fontSize={0.6}
-          color={isHighlighted ? "#fbbf24" : isNightMode ? "#f8fafc" : "#ffffff"}
+          color={isHighlighted ? "#fbbf24" : isReserved ? "#fbbf24" : isNightMode ? "#f8fafc" : "#ffffff"}
           anchorX="center"
           anchorY="middle"
           fontWeight="bold"
@@ -283,7 +309,7 @@ function ParkingSlot3D({
 }
 
 function ParkingFloor3D({
-  floor, slots, y, floorIndex, isNightMode, onSlotClick, highlightedSlotId,
+  floor, slots, y, floorIndex, isNightMode, onSlotClick, highlightedSlotId, reservedSlotIds,
 }: {
   floor: ParkingFloorOut
   slots: ParkingSlotOut[]
@@ -292,6 +318,7 @@ function ParkingFloor3D({
   isNightMode: boolean
   onSlotClick: (s: ParkingSlotOut) => void
   highlightedSlotId: number | null
+  reservedSlotIds: Set<number>
 }) {
   const sw = 3.2
   const sd = 5.2
@@ -388,6 +415,7 @@ function ParkingFloor3D({
                   isNightMode={isNightMode}
                   onClick={() => onSlotClick(slot)}
                   isHighlighted={slot.id === highlightedSlotId}
+                  isReserved={reservedSlotIds.has(slot.id)}
                 />
               )
             })}
@@ -399,7 +427,7 @@ function ParkingFloor3D({
 }
 
 function Scene3D({
-  floors, slotsByFloor, isNightMode, onSlotClick, highlightedSlotId, isAutoRotate,
+  floors, slotsByFloor, isNightMode, onSlotClick, highlightedSlotId, isAutoRotate, reservedSlotIds,
 }: {
   floors: ParkingFloorOut[]
   slotsByFloor: Record<number, ParkingSlotOut[]>
@@ -407,6 +435,7 @@ function Scene3D({
   onSlotClick: (s: ParkingSlotOut) => void
   highlightedSlotId: number | null
   isAutoRotate: boolean
+  reservedSlotIds: Set<number>
 }) {
   const { scene } = useThree()
 
@@ -462,6 +491,7 @@ function Scene3D({
             isNightMode={isNightMode}
             onSlotClick={onSlotClick}
             highlightedSlotId={highlightedSlotId}
+            reservedSlotIds={reservedSlotIds}
           />
         ))}
       </group>
@@ -505,6 +535,7 @@ export default function Lot3DView() {
   const [lot, setLot] = useState<ParkingLotOut | null>(null)
   const [floors, setFloors] = useState<ParkingFloorOut[]>([])
   const [slotsByFloor, setSlotsByFloor] = useState<Record<number, ParkingSlotOut[]>>({})
+  const [reservedSlotIds, setReservedSlotIds] = useState<Set<number>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
   const [webGLError, setWebGLError] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -547,13 +578,22 @@ export default function Lot3DView() {
     const fetchData = async () => {
       if (!Number.isFinite(lotId)) return
       try {
-        const [lotData, floorsData] = await Promise.all([
+        const [lotData, floorsData, sessionsData] = await Promise.all([
           parkingLotsApi.get(lotId),
           parkingFloorsApi.list({ parking_lot_id: lotId, limit: 100 }),
+          parkingSessionsApi.list({ limit: 1000 }).catch(() => []),
         ])
         setLot(lotData)
         const safeFloors = Array.isArray(floorsData) ? floorsData : []
         setFloors(safeFloors)
+        // Build set of slot IDs with active/pending sessions
+        const safeSessions = Array.isArray(sessionsData) ? sessionsData : []
+        const activeIds = new Set<number>(
+          safeSessions
+            .filter((s) => s.status === "ACTIVE" || s.status === "PENDING")
+            .map((s) => s.slot_id)
+        )
+        setReservedSlotIds(activeIds)
         const slotsData: Record<number, ParkingSlotOut[]> = {}
         await Promise.all(
           safeFloors.map(async (floor) => {
@@ -569,8 +609,9 @@ export default function Lot3DView() {
   }, [lotId])
 
   const allSlots = Object.values(slotsByFloor).flat()
-  const availableCount = allSlots.filter((s) => s.status === "AVAILABLE").length
   const occupiedCount = allSlots.filter((s) => s.status === "OCCUPIED").length
+  const reservedCount = allSlots.filter((s) => s.status !== "OCCUPIED" && reservedSlotIds.has(s.id)).length
+  const availableCount = allSlots.filter((s) => s.status === "AVAILABLE" && !reservedSlotIds.has(s.id)).length
 
   if (isLoading) return (
     <div className="min-h-screen bg-background">
@@ -625,9 +666,9 @@ export default function Lot3DView() {
         </div>
 
         {/* Stat row */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl border p-3 flex items-center gap-3">
-            <div className="size-9 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0">
+        <div className="grid grid-cols-4 gap-3">
+          <div className="rounded border p-3 flex items-center gap-3">
+            <div className="size-9 rounded bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0">
               <Layers className="size-5" />
             </div>
             <div>
@@ -635,8 +676,8 @@ export default function Lot3DView() {
               <p className="text-lg font-bold leading-tight">{floors.length}</p>
             </div>
           </div>
-          <div className="rounded-xl border p-3 flex items-center gap-3">
-            <div className="size-9 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
+          <div className="rounded border p-3 flex items-center gap-3">
+            <div className="size-9 rounded bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
               <ParkingSquare className="size-5" />
             </div>
             <div>
@@ -644,8 +685,17 @@ export default function Lot3DView() {
               <p className="text-lg font-bold leading-tight text-emerald-500">{availableCount}</p>
             </div>
           </div>
-          <div className="rounded-xl border p-3 flex items-center gap-3">
-            <div className="size-9 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500 shrink-0">
+          <div className="rounded border p-3 flex items-center gap-3">
+            <div className="size-9 rounded bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0">
+              <RotateCw className="size-5" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Reserved</p>
+              <p className="text-lg font-bold leading-tight text-amber-500">{reservedCount}</p>
+            </div>
+          </div>
+          <div className="rounded border p-3 flex items-center gap-3">
+            <div className="size-9 rounded bg-red-500/10 flex items-center justify-center text-red-500 shrink-0">
               <Car className="size-5" />
             </div>
             <div>
@@ -658,9 +708,8 @@ export default function Lot3DView() {
         {/* 3D Canvas Container */}
         <div
           ref={containerRef}
-          className={`relative w-full rounded-2xl overflow-hidden border shadow-xl transition-colors duration-300 ${
-            isFullscreen ? "fixed inset-0 z-50 h-screen w-screen rounded-none border-none" : "h-[600px]"
-          } ${isNightMode ? "bg-[#050814] border-slate-800" : "bg-slate-100 border-slate-200"}`}
+          className={`relative w-full rounded overflow-hidden border shadow-xl transition-colors duration-300 ${isFullscreen ? "fixed inset-0 z-50 h-screen w-screen rounded-none border-none" : "h-[600px]"
+            } ${isNightMode ? "bg-[#050814] border-slate-800" : "bg-slate-100 border-slate-200"}`}
         >
           {webGLError ? (
             <WebGLFallback message={webGLError} />
@@ -687,6 +736,7 @@ export default function Lot3DView() {
                   onSlotClick={handleSlotClick}
                   highlightedSlotId={highlightedSlotId}
                   isAutoRotate={isAutoRotate}
+                  reservedSlotIds={reservedSlotIds}
                 />
               </Canvas>
             </Suspense>
@@ -694,27 +744,29 @@ export default function Lot3DView() {
 
           {/* Floating legend */}
           <div
-            className={`absolute bottom-4 left-4 flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-medium backdrop-blur-md border transition-colors duration-300 ${
-              isNightMode
-                ? "bg-slate-950/80 border-slate-800 text-slate-100 shadow-xl"
-                : "bg-white/80 border-slate-200 text-slate-800 shadow-md"
-            }`}
+            className={`absolute bottom-4 left-4 flex items-center gap-3 px-4 py-2 rounded text-xs font-medium backdrop-blur-md border transition-colors duration-300 ${isNightMode
+              ? "bg-slate-950/80 border-slate-800 text-slate-100 shadow-xl"
+              : "bg-white/80 border-slate-200 text-slate-800 shadow-md"
+              }`}
           >
             <span className="flex items-center gap-1.5">
-              <span className={`size-3 rounded-sm inline-block shadow-sm ${isNightMode ? "bg-[#dc2626]" : "bg-[#ef4444]"}`} />
+              <span className={`size-3 rounded inline-block shadow-sm ${isNightMode ? "bg-[#dc2626]" : "bg-[#ef4444]"}`} />
               Occupied
             </span>
             <span className="flex items-center gap-1.5">
+              <span className={`size-3 rounded inline-block ${isNightMode ? "bg-[#d97706] shadow-[0_0_8px_rgba(245,158,11,0.6)]" : "bg-[#f59e0b]"}`} />
+              Reserved
+            </span>
+            <span className="flex items-center gap-1.5">
               <span
-                className={`size-3 rounded-sm border inline-block ${
-                  isNightMode ? "border-emerald-400 bg-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "border-emerald-600 bg-emerald-500/30"
-                }`}
+                className={`size-3 rounded border inline-block ${isNightMode ? "border-emerald-400 bg-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "border-emerald-600 bg-emerald-500/30"
+                  }`}
               />{" "}
               Available
             </span>
             {highlightedSlotId && (
               <span className="flex items-center gap-1.5">
-                <span className="size-3 rounded-sm bg-[#3b82f6] inline-block shadow-[0_0_8px_rgba(59,130,246,0.6)]" /> Selected
+                <span className="size-3 rounded bg-[#3b82f6] inline-block shadow-[0_0_8px_rgba(59,130,246,0.6)]" /> Selected
               </span>
             )}
             <span className={`hidden sm:block ml-1 ${isNightMode ? "text-slate-400" : "text-slate-500"}`}>
@@ -728,17 +780,19 @@ export default function Lot3DView() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {floors.map((floor, index) => {
               const fSlots = slotsByFloor[floor.id] || []
-              const avail = fSlots.filter((s) => s.status === "AVAILABLE").length
+              const avail = fSlots.filter((s) => s.status === "AVAILABLE" && !reservedSlotIds.has(s.id)).length
+              const res = fSlots.filter((s) => s.status !== "OCCUPIED" && reservedSlotIds.has(s.id)).length
               const occ = fSlots.filter((s) => s.status === "OCCUPIED").length
               return (
-                <div key={floor.id} className="rounded-xl border p-4 space-y-3 hover:shadow-md transition-shadow">
+                <div key={floor.id} className="rounded border p-4 space-y-3 hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold bg-muted px-2 py-0.5 rounded-md">F{index + 1}</span>
+                    <span className="text-xs font-semibold bg-muted px-2 py-0.5 rounded">F{index + 1}</span>
                     <p className="font-semibold text-sm">{floor.floor_name || `Floor ${index + 1}`}</p>
                     <span className="text-xs text-muted-foreground ml-auto">{fSlots.length} slots</span>
                   </div>
                   <div className="flex gap-3 text-xs">
                     <span className="text-emerald-500 font-medium">{avail} free</span>
+                    {res > 0 && <span className="text-amber-500 font-medium">{res} reserved</span>}
                     <span className="text-red-500 font-medium">{occ} occupied</span>
                   </div>
                   <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">

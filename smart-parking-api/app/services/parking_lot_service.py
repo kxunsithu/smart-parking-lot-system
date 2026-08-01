@@ -112,7 +112,8 @@ class ParkingLotService:
         self._assert_can_manage(lot, current_user)
         if current_user.role.name != RoleName.ADMIN.value:
             owner = self.owner_repo.get_by_user_id(current_user.id)
-            self.sub_service.check_subscription_required(owner.id)
+            if owner:
+                self.sub_service.check_subscription_required(owner.id)
         data = payload.model_dump(exclude_unset=True)
         return self.lot_repo.update(lot, data)
 
@@ -121,7 +122,8 @@ class ParkingLotService:
         self._assert_can_manage(lot, current_user)
         if current_user.role.name != RoleName.ADMIN.value:
             owner = self.owner_repo.get_by_user_id(current_user.id)
-            self.sub_service.check_subscription_required(owner.id)
+            if owner:
+                self.sub_service.check_subscription_required(owner.id)
         self.lot_repo.delete(lot)
 
     def toggle_lot_status(self, lot_id: int, current_user: User) -> ParkingLot:

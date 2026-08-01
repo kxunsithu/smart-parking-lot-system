@@ -5,7 +5,7 @@ import Login from "@/pages/Login"
 import Register from "@/pages/Register"
 import VerifyEmail from "@/pages/VerifyEmail"
 import Dashboard from "@/pages/Dashboard"
-import Vehicles from "@/pages/Vehicles"
+import Cars from "@/pages/Cars"
 import Sessions from "@/pages/Sessions"
 import Profile from "@/pages/Profile"
 import ParkingDetail from "@/pages/ParkingDetail"
@@ -39,14 +39,15 @@ function AuthOnlyRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <ThemeProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
           <Route path="/verify-email" element={<AuthOnlyRoute><VerifyEmail /></AuthOnlyRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/vehicles" element={<ProtectedRoute><Vehicles /></ProtectedRoute>} />
+          <Route path="/cars" element={<ProtectedRoute><Cars /></ProtectedRoute>} />
+          <Route path="/vehicles" element={<Navigate to="/cars" replace />} />
           <Route path="/sessions" element={<ProtectedRoute><Sessions /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/parking/:id" element={<ProtectedRoute><ParkingDetail /></ProtectedRoute>} />

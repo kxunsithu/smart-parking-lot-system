@@ -20,7 +20,7 @@ export function StatCard({ label, value, icon: Icon, hint, className }: StatCard
           {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
         </div>
         {Icon ? (
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded bg-primary/15 text-primary">
             <Icon className="size-5" />
           </div>
         ) : null}

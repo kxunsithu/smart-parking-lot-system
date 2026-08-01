@@ -9,29 +9,28 @@ import {
   Timer,
   CalendarDays,
   ChevronRight,
-  TrendingUp,
   Zap,
   History,
   AlertCircle,
   Filter,
-  CreditCard,
   Hourglass,
-  MapPin,
-  Loader2,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import Navbar from "@/components/layout/Navbar"
+import { LocationTrackBar } from "@/components/parking/LocationTrackBar"
+import { ParkingTrackModal } from "@/components/parking/ParkingTrackModal"
 import { parkingSessionsApi } from "@/api/parkingSessions"
-import { vehiclesApi } from "@/api/vehicles"
-import { parkingSlotsApi } from "@/api/parkingSlots"
-import { parkingFloorsApi } from "@/api/parkingFloors"
-import { parkingLotsApi } from "@/api/parkingLots"
+import { carsApi } from "@/api/cars"
 import { useParkingStore } from "@/store/parkingStore"
-import type { ParkingSessionOut, VehicleOut } from "@/api/types"
+import type { ParkingSessionOut, CarOut } from "@/api/types"
 import { toast } from "@/components/ui/toaster"
-import { format, formatDistanceToNow, differenceInMinutes, differenceInHours } from "date-fns"
+import { format, formatDistanceToNow, differenceInMinutes } from "date-fns"
 import { useNavigate } from "react-router-dom"
+import {
+  loadSlotTrackContext,
+  trackParkingSlot,
+  type ParkingTrackTarget,
+  type SlotTrackContext,
+} from "@/lib/parkingTrack"
 
 type FilterTab = "all" | "active" | "finished"
 
@@ -61,13 +60,13 @@ function LiveTimer({ startTime }: { startTime: string }) {
 // Confirmation modal for ending session
 function EndSessionModal({
   session,
-  vehiclePlate,
+  carPlate,
   onConfirm,
   onCancel,
   loading,
 }: {
   session: ParkingSessionOut
-  vehiclePlate: string
+  carPlate: string
   onConfirm: () => void
   onCancel: () => void
   loading: boolean
@@ -78,10 +77,10 @@ function EndSessionModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-sm shadow-2xl">
+      <div className="bg-card border border-border rounded w-full max-w-sm shadow-2xl">
         {/* Header */}
         <div className="flex items-center gap-3 p-5 border-b border-border">
-          <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+          <div className="w-10 h-10 rounded bg-destructive/10 flex items-center justify-center">
             <AlertCircle className="w-5 h-5 text-destructive" />
           </div>
           <div>
@@ -92,10 +91,10 @@ function EndSessionModal({
 
         {/* Body */}
         <div className="p-5 space-y-4">
-          <div className="rounded-xl bg-muted/60 p-4 space-y-3">
+          <div className="rounded bg-muted/60 p-4 space-y-3">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Vehicle</span>
-              <span className="font-medium">{vehiclePlate || `#${session.vehicle_id}`}</span>
+              <span className="text-muted-foreground">Car</span>
+              <span className="font-medium">{carPlate || `#${session.car_id}`}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Started</span>
@@ -117,14 +116,14 @@ function EndSessionModal({
         <div className="flex gap-3 p-5 pt-0">
           <button
             onClick={onCancel}
-            className="flex-1 h-10 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors"
+            className="flex-1 h-10 rounded border border-border text-sm font-medium hover:bg-muted transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
-            className="flex-1 h-10 rounded-xl bg-destructive text-white text-sm font-medium hover:bg-destructive/90 transition-colors disabled:opacity-60"
+            className="flex-1 h-10 rounded bg-destructive text-white text-sm font-medium hover:bg-destructive/90 transition-colors disabled:opacity-60"
           >
             {loading ? "Ending..." : "End Session"}
           </button>
@@ -138,26 +137,29 @@ export default function Sessions() {
   const navigate = useNavigate()
   const { sessions, setSessions, setActiveSession } = useParkingStore()
   const [loading, setLoading] = useState(true)
-  const [vehicles, setVehicles] = useState<VehicleOut[]>([])
+  const [cars, setCars] = useState<CarOut[]>([])
   const [filterTab, setFilterTab] = useState<FilterTab>("all")
   const [endingSession, setEndingSession] = useState<ParkingSessionOut | null>(null)
   const [endLoading, setEndLoading] = useState(false)
-  const [activeNavigation, setActiveNavigation] = useState<{
-    slotNumber: string
-    floorName: string
-    lotName: string
-    latitude: number
-    longitude: number
-  } | null>(null)
+  const [activeNavigation, setActiveNavigation] = useState<ParkingTrackTarget | null>(null)
+  const [activeSessionLocation, setActiveSessionLocation] = useState<SlotTrackContext | null>(null)
+
+  const handleTrack = useCallback((context: SlotTrackContext) => {
+    trackParkingSlot(
+      context,
+      { name: context.lotName, google_map_url: context.googleMapUrl },
+      setActiveNavigation
+    )
+  }, [])
 
   const loadSessions = useCallback(async () => {
     try {
-      const [sessionsRes, vehiclesRes] = await Promise.all([
+      const [sessionsRes, carsRes] = await Promise.all([
         parkingSessionsApi.list(),
-        vehiclesApi.list(),
+        carsApi.list(),
       ])
       setSessions(sessionsRes)
-      setVehicles(vehiclesRes)
+      setCars(carsRes)
       const active = sessionsRes.find((s: ParkingSessionOut) => s.status === "ACTIVE")
       if (active) setActiveSession(active)
       else setActiveSession(null)
@@ -171,6 +173,22 @@ export default function Sessions() {
   useEffect(() => {
     loadSessions()
   }, [loadSessions])
+
+  useEffect(() => {
+    const active = sessions.find((s) => s.status === "ACTIVE")
+    if (!active) {
+      setActiveSessionLocation(null)
+      return
+    }
+
+    let isMounted = true
+    loadSlotTrackContext(active.slot_id).then((context) => {
+      if (isMounted) setActiveSessionLocation(context)
+    })
+    return () => {
+      isMounted = false
+    }
+  }, [sessions])
 
   const handleFinishSession = async () => {
     if (!endingSession) return
@@ -187,8 +205,8 @@ export default function Sessions() {
     }
   }
 
-  const getVehiclePlate = (vehicleId: number) =>
-    vehicles.find((v) => v.id === vehicleId)?.plate_number ?? ""
+  const getCarPlate = (carId: number) =>
+    cars.find((c) => c.id === carId)?.plate_number ?? ""
 
   const filteredSessions = sessions.filter((s) => {
     if (filterTab === "active") return s.status === "ACTIVE"
@@ -203,11 +221,11 @@ export default function Sessions() {
   const avgDuration =
     finishedSessions.length > 0
       ? Math.round(
-          finishedSessions.reduce((sum, s) => {
-            if (!s.end_time) return sum
-            return sum + differenceInMinutes(new Date(s.end_time), new Date(s.start_time))
-          }, 0) / finishedSessions.length
-        )
+        finishedSessions.reduce((sum, s) => {
+          if (!s.end_time) return sum
+          return sum + differenceInMinutes(new Date(s.end_time), new Date(s.start_time))
+        }, 0) / finishedSessions.length
+      )
       : 0
 
   if (loading) {
@@ -216,7 +234,7 @@ export default function Sessions() {
         <Navbar />
         <div className="max-w-3xl mx-auto px-4 py-12 space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-36 rounded-2xl bg-muted animate-pulse" />
+            <div key={i} className="h-36 rounded bg-muted animate-pulse" />
           ))}
         </div>
       </div>
@@ -231,14 +249,14 @@ export default function Sessions() {
       {endingSession && (
         <EndSessionModal
           session={endingSession}
-          vehiclePlate={getVehiclePlate(endingSession.vehicle_id)}
+          carPlate={getCarPlate(endingSession.car_id)}
           onConfirm={handleFinishSession}
           onCancel={() => setEndingSession(null)}
           loading={endLoading}
         />
       )}
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
         {/* Page header */}
         <div className="flex items-start justify-between gap-4">
@@ -250,7 +268,7 @@ export default function Sessions() {
           </div>
           <button
             onClick={() => navigate("/dashboard")}
-            className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
           >
             <ParkingCircle className="w-4 h-4" />
             Find Parking
@@ -260,12 +278,12 @@ export default function Sessions() {
 
 
         {activeSessions.length > 0 && (
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/30 p-5">
+          <div className="relative overflow-hidden rounded bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/30 p-5">
             {/* Background accent */}
             <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/4 blur-2xl pointer-events-none" />
 
             <div className="relative flex items-start gap-4">
-              <div className="w-12 h-12 shrink-0 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
+              <div className="w-12 h-12 shrink-0 rounded bg-primary/20 border border-primary/30 flex items-center justify-center">
                 <Zap className="w-6 h-6 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
@@ -278,7 +296,7 @@ export default function Sessions() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Session #{activeSessions[0].id} &bull;{" "}
-                  {getVehiclePlate(activeSessions[0].vehicle_id) || `Vehicle #${activeSessions[0].vehicle_id}`}
+                  {getCarPlate(activeSessions[0].car_id) || `Car #${activeSessions[0].car_id}`}
                 </p>
                 <div className="flex items-center gap-1.5 mt-2">
                   <Timer className="w-3.5 h-3.5 text-primary" />
@@ -287,10 +305,20 @@ export default function Sessions() {
                   </span>
                   <span className="text-xs text-muted-foreground">elapsed</span>
                 </div>
+                {activeSessionLocation && (
+                  <div className="mt-3">
+                    <LocationTrackBar
+                      lotName={activeSessionLocation.lotName}
+                      floorName={activeSessionLocation.floorName}
+                      slotNumber={activeSessionLocation.slotNumber}
+                      onTrack={() => handleTrack(activeSessionLocation)}
+                    />
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => setEndingSession(activeSessions[0])}
-                className="shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors border border-destructive/20"
+                className="shrink-0 text-xs font-medium px-3 py-1.5 rounded bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors border border-destructive/20"
               >
                 End
               </button>
@@ -307,17 +335,16 @@ export default function Sessions() {
         )}
 
         {sessions.length > 0 && (
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60 border border-border w-fit">
+          <div className="flex items-center gap-1 p-1 rounded bg-muted/60 border border-border w-fit">
             <Filter className="w-3.5 h-3.5 ml-2 text-muted-foreground" />
             {(["all", "active", "finished"] as FilterTab[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setFilterTab(tab)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${
-                  filterTab === tab
-                    ? "bg-background text-foreground shadow-sm border border-border"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`px-4 py-1.5 rounded text-xs font-medium capitalize transition-all ${filterTab === tab
+                  ? "bg-background text-foreground shadow-sm border border-border"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 {tab}
                 {tab === "active" && activeSessions.length > 0 && (
@@ -342,9 +369,9 @@ export default function Sessions() {
                 <SessionCard
                   key={session.id}
                   session={session}
-                  vehiclePlate={getVehiclePlate(session.vehicle_id)}
+                  carPlate={getCarPlate(session.car_id)}
                   onEnd={() => setEndingSession(session)}
-                  onTrack={(loc) => setActiveNavigation(loc)}
+                  onTrack={handleTrack}
                 />
               ))}
           </div>
@@ -352,7 +379,7 @@ export default function Sessions() {
       </div>
 
       {activeNavigation && (
-        <NavigationModal
+        <ParkingTrackModal
           slotNumber={activeNavigation.slotNumber}
           floorName={activeNavigation.floorName}
           lotName={activeNavigation.lotName}
@@ -386,8 +413,8 @@ function StatCard({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
-      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${accentClasses[accent]}`}>
+    <div className="rounded border border-border bg-card p-3.5 space-y-2">
+      <div className={`w-7 h-7 rounded flex items-center justify-center ${accentClasses[accent]}`}>
         {icon}
       </div>
       <div>
@@ -400,56 +427,26 @@ function StatCard({
 
 function SessionCard({
   session,
-  vehiclePlate,
+  carPlate,
   onEnd,
   onTrack,
 }: {
   session: ParkingSessionOut
-  vehiclePlate: string
+  carPlate: string
   onEnd: () => void
-  onTrack: (location: {
-    slotNumber: string
-    floorName: string
-    lotName: string
-    latitude: number
-    longitude: number
-  }) => void
+  onTrack: (context: SlotTrackContext) => void
 }) {
   const isActive = session.status === "ACTIVE"
   const isPending = session.status === "PENDING"
   const startDate = new Date(session.start_time)
 
-  interface LocationDetails {
-    slotNumber: string
-    floorName: string
-    lotName: string
-    googleMapUrl?: string | null
-    latitude?: number | null
-    longitude?: number | null
-  }
-
-  const [location, setLocation] = useState<LocationDetails | null>(null)
+  const [location, setLocation] = useState<SlotTrackContext | null>(null)
 
   useEffect(() => {
     let isMounted = true
     async function loadLocation() {
-      try {
-        const slot = await parkingSlotsApi.get(session.slot_id)
-        const floor = await parkingFloorsApi.get(slot.floor_id)
-        const lot = await parkingLotsApi.get(floor.parking_lot_id)
-        if (isMounted) {
-          setLocation({
-            slotNumber: slot.slot_number,
-            floorName: floor.floor_name || `Floor ${floor.id}`,
-            lotName: lot.name,
-            googleMapUrl: lot.google_map_url,
-            latitude: slot.latitude,
-            longitude: slot.longitude,
-          })
-        }
-      } catch (e) {
-        console.error("Failed to load location details for session", e)
-      }
+      const context = await loadSlotTrackContext(session.slot_id)
+      if (isMounted && context) setLocation(context)
     }
     loadLocation()
     return () => {
@@ -459,9 +456,8 @@ function SessionCard({
 
   return (
     <div
-      className={`rounded-2xl border bg-card overflow-hidden transition-shadow hover:shadow-md ${
-        isActive ? "border-primary/30" : isPending ? "border-amber-400/40 bg-amber-500/5" : "border-border"
-      }`}
+      className={`rounded border bg-card overflow-hidden transition-shadow hover:shadow-md ${isActive ? "border-primary/30" : isPending ? "border-amber-400/40 bg-amber-500/5" : "border-border"
+        }`}
     >
       {/* Top accent bar */}
       {isActive && <div className="h-0.5 bg-gradient-to-r from-primary via-primary/60 to-transparent" />}
@@ -472,13 +468,12 @@ function SessionCard({
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
             <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                isActive
-                  ? "bg-primary/15 border border-primary/25"
-                  : isPending
+              className={`w-10 h-10 rounded flex items-center justify-center shrink-0 ${isActive
+                ? "bg-primary/15 border border-primary/25"
+                : isPending
                   ? "bg-amber-500/15 border border-amber-400/25 text-amber-500"
                   : "bg-muted border border-border"
-              }`}
+                }`}
             >
               {isActive ? (
                 <Zap className="w-5 h-5 text-primary" />
@@ -497,17 +492,16 @@ function SessionCard({
           </div>
 
           <span
-            className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${
-              isActive
-                ? "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20"
-                : isPending
+            className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${isActive
+              ? "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20"
+              : isPending
                 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-400/20"
                 : "bg-muted text-muted-foreground border border-border"
-            }`}
+              }`}
           >
             {isActive && <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
             {isPending && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />}
-            {isActive ? "Active" : isPending ? "Pending Payment" : "Completed"}
+            {isActive ? "Active" : isPending ? "Pending" : "Completed"}
           </span>
         </div>
 
@@ -515,8 +509,8 @@ function SessionCard({
         <div className="grid grid-cols-2 gap-3 mb-4">
           <DetailItem
             icon={<Car className="w-3.5 h-3.5" />}
-            label="Vehicle"
-            value={vehiclePlate || `#${session.vehicle_id}`}
+            label="Car"
+            value={carPlate || `#${session.car_id}`}
           />
           <DetailItem
             icon={<Clock className="w-3.5 h-3.5" />}
@@ -559,55 +553,14 @@ function SessionCard({
           />
         </div>
 
-        {location && (
-          <div className="mb-4 p-3 rounded-xl bg-muted/40 border border-border/40 flex items-center justify-between gap-3">
-            <div className="flex items-start gap-2 min-w-0">
-              <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none mb-1">
-                  Location
-                </p>
-                <p className="text-xs font-semibold text-foreground truncate">
-                  {location.lotName} — {location.floorName} (Slot {location.slotNumber})
-                </p>
-              </div>
-            </div>
-            {isActive && (
-              location.latitude != null && location.longitude != null ? (
-                <button
-                  onClick={() =>
-                    onTrack({
-                      slotNumber: location.slotNumber,
-                      floorName: location.floorName,
-                      lotName: location.lotName,
-                      latitude: location.latitude!,
-                      longitude: location.longitude!,
-                    })
-                  }
-                  className="shrink-0 text-xs font-semibold text-primary hover:underline flex items-center gap-1 bg-primary/10 hover:bg-primary/20 px-2.5 py-1.5 rounded-lg transition-colors border border-primary/20"
-                >
-                  Track
-                </button>
-              ) : location.googleMapUrl ? (
-                <a
-                  href={location.googleMapUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 text-xs font-semibold text-primary hover:underline flex items-center gap-1 bg-primary/10 hover:bg-primary/20 px-2.5 py-1.5 rounded-lg transition-colors border border-primary/20"
-                >
-                  Track
-                </a>
-              ) : (
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.lotName + " Parking")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 text-xs font-semibold text-primary hover:underline flex items-center gap-1 bg-primary/10 hover:bg-primary/20 px-2.5 py-1.5 rounded-lg transition-colors border border-primary/20"
-                >
-                  Track
-                </a>
-              )
-            )}
+        {location && isActive && (
+          <div className="mb-4">
+            <LocationTrackBar
+              lotName={location.lotName}
+              floorName={location.floorName}
+              slotNumber={location.slotNumber}
+              onTrack={() => onTrack(location)}
+            />
           </div>
         )}
 
@@ -622,7 +575,7 @@ function SessionCard({
           {isActive ? (
             <button
               onClick={onEnd}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors border border-destructive/20"
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors border border-destructive/20"
             >
               <XCircle className="w-3.5 h-3.5" />
               End Session
@@ -687,7 +640,7 @@ function EmptyState({
 
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-muted/80 border border-border flex items-center justify-center mb-4">
+      <div className="w-16 h-16 rounded bg-muted/80 border border-border flex items-center justify-center mb-4">
         <ParkingCircle className="w-8 h-8 text-muted-foreground" />
       </div>
       <h3 className="font-semibold mb-1">{msg.title}</h3>
@@ -695,156 +648,13 @@ function EmptyState({
       {filterTab === "all" && (
         <button
           onClick={onNavigate}
-          className="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
         >
           <ParkingCircle className="w-4 h-4" />
           Find Parking
           <ChevronRight className="w-4 h-4" />
         </button>
       )}
-    </div>
-  )
-}
-
-function NavigationModal({
-  slotNumber,
-  floorName,
-  lotName,
-  destLatitude,
-  destLongitude,
-  onClose,
-}: {
-  slotNumber: string
-  floorName: string
-  lotName: string
-  destLatitude: number
-  destLongitude: number
-  onClose: () => void
-}) {
-  const [origin, setOrigin] = useState<{ lat: number; lng: number } | null>(null)
-  const [status, setStatus] = useState<"locating" | "success" | "error">("locating")
-  const [errorMsg, setErrorMsg] = useState("")
-
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setStatus("error")
-      setErrorMsg("Geolocation is not supported by your browser.")
-      return
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setOrigin({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        })
-        setStatus("success")
-      },
-      (error) => {
-        console.error("Error getting location", error)
-        setStatus("error")
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            setErrorMsg("Location access denied by user.")
-            break
-          case error.POSITION_UNAVAILABLE:
-            setErrorMsg("Location information is unavailable.")
-            break
-          case error.TIMEOUT:
-            setErrorMsg("Request to get user location timed out.")
-            break
-          default:
-            setErrorMsg("An unknown error occurred while getting location.")
-            break
-        }
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    )
-  }, [])
-
-  // Construct embed URL
-  const embedUrl =
-    status === "success" && origin
-      ? `https://maps.google.com/maps?saddr=${origin.lat},${origin.lng}&daddr=${destLatitude},${destLongitude}&output=embed`
-      : `https://maps.google.com/maps?q=${destLatitude},${destLongitude}&t=&z=15&ie=UTF8&iwloc=&output=embed`
-
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-md md:p-6">
-      {/* Top Header Controls */}
-      <div className="flex items-center justify-between p-4 border-b bg-card shadow-sm md:rounded-t-2xl">
-        <div className="flex items-start gap-2 min-w-0">
-          <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-            <MapPin className="size-5 animate-bounce" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-sm md:text-base font-bold leading-tight truncate">
-              Live Routing to Slot #{slotNumber}
-            </h2>
-            <p className="text-xs text-muted-foreground truncate">
-              {lotName} — {floorName}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {status === "locating" && (
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Loader2 className="size-3.5 animate-spin" /> Locating you...
-            </span>
-          )}
-          {status === "success" && (
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-emerald-600 font-semibold bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">
-              Auto-Directions Active
-            </span>
-          )}
-          {status === "error" && (
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-amber-600 font-semibold bg-amber-500/10 px-2 py-1 rounded-full border border-amber-500/20">
-              {errorMsg || "Fallback: Destination Only"}
-            </span>
-          )}
-          <Button variant="outline" size="sm" onClick={onClose}>
-            Exit Navigation
-          </Button>
-        </div>
-      </div>
-
-      {/* Main Map Navigation Screen */}
-      <div className="flex-1 relative w-full overflow-hidden bg-muted md:rounded-b-2xl shadow-inner border border-t-0">
-        <iframe
-          src={embedUrl}
-          width="100%"
-          height="100%"
-          style={{ border: 0 }}
-          allowFullScreen
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          title="Slot Navigation"
-        />
-
-        {/* Small floating info card for smaller screens when status has warnings */}
-        {status !== "success" && (
-          <div className="absolute bottom-4 left-4 right-4 sm:left-4 sm:right-auto bg-card/90 backdrop-blur-md rounded-xl p-3 border shadow-lg text-xs space-y-1 max-w-sm">
-            <p className="font-semibold flex items-center gap-1 text-foreground">
-              {status === "locating" ? (
-                <>
-                  <Loader2 className="size-3.5 animate-spin text-primary" />
-                  Finding your GPS location...
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="size-3.5 text-amber-500" />
-                  Using destination location only
-                </>
-              )}
-            </p>
-            <p className="text-muted-foreground">
-              {status === "locating"
-                ? "Showing slot address until GPS lock is established."
-                : "Please enable location permission on your device to view automatic turn-by-turn routing directions."}
-            </p>
-          </div>
-        )}
-      </div>
     </div>
   )
 }

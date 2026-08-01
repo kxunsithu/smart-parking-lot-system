@@ -53,12 +53,12 @@ export function VerifyEmailPage() {
     try {
       const status = await authApi.getOtpStatus(user!.email)
       setIsUsed(status.is_used)
-      
+
       if (status.expires_at) {
         // Parse UTC timestamp and convert to local time
         const expiryDate = new Date(status.expires_at)
         setExpiresAt(expiryDate)
-        
+
         // Calculate time remaining using current time
         const now = new Date()
         const remaining = Math.max(0, Math.floor((expiryDate.getTime() - now.getTime()) / 1000))
@@ -85,7 +85,7 @@ export function VerifyEmailPage() {
       const now = new Date()
       const remaining = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000))
       setTimeLeft(remaining)
-      
+
       // Refresh OTP status every 30 seconds to sync with database
       if (remaining % 30 === 0) {
         fetchOtpExpiry()
@@ -107,23 +107,23 @@ export function VerifyEmailPage() {
     try {
       const tokens = await authApi.verifyOTP({ email: user!.email, code: otpValue })
       const { setTokens, setUser } = useAuthStore.getState()
-      
+
       // Set tokens BEFORE calling me() so the API call uses the new access token
       setTokens(tokens.access_token, tokens.refresh_token)
-      
+
       // Fetch the updated user data with the new token
       const updatedUser = await authApi.me()
       setUser(updatedUser)
-      
+
       toast.success("Email verified successfully! You are now logged in.")
-      
+
       // Check if user has a role assigned
       if (!updatedUser.role || !updatedUser.role.name) {
         console.error("User role is missing after OTP verification:", updatedUser)
         toast.error("Account setup incomplete. Please contact support.")
         return
       }
-      
+
       navigate(homePathForRole(updatedUser.role.name), { replace: true })
     } catch (error) {
       toast.error(getErrorMessage(error))
@@ -221,7 +221,7 @@ export function VerifyEmailPage() {
         </div>
       </form>
 
-      <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
+      <div className="rounded bg-muted p-4 text-sm text-muted-foreground">
         <p className="font-medium text-foreground mb-1">Why verify your email?</p>
         <p>Email verification helps protect your account and ensures you receive important notifications about your parking sessions.</p>
       </div>

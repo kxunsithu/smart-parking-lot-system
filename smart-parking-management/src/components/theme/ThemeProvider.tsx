@@ -1,7 +1,22 @@
 import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes"
 
-export function ThemeProvider({ children, ...props }: any) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>
+export function ThemeProvider({
+  children,
+  attribute = "class",
+  defaultTheme = "system",
+  enableSystem = true,
+  ...props
+}: any) {
+  return (
+    <NextThemesProvider
+      attribute={attribute}
+      defaultTheme={defaultTheme}
+      enableSystem={enableSystem}
+      {...props}
+    >
+      {children}
+    </NextThemesProvider>
+  )
 }
 
 export { useTheme }

@@ -21,7 +21,6 @@ import { ROLE_LABELS } from "@/utils/navConfig"
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  phone: z.string().optional(),
 })
 type ProfileFormValues = z.infer<typeof profileSchema>
 
@@ -48,7 +47,7 @@ export function ProfilePage() {
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    values: { name: user?.name ?? "", phone: user?.phone ?? "" },
+    values: { name: user?.name ?? "" },
   })
 
   const passwordForm = useForm<PasswordFormValues>({ resolver: zodResolver(passwordSchema) })
@@ -125,7 +124,7 @@ export function ProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle>Personal information</CardTitle>
-            <CardDescription>Update your name and phone number.</CardDescription>
+            <CardDescription>Update your full name.</CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -139,9 +138,6 @@ export function ProfilePage() {
                 required
               >
                 <Input id="name" {...profileForm.register("name")} />
-              </FormField>
-              <FormField label="Phone" htmlFor="phone" error={profileForm.formState.errors.phone?.message}>
-                <Input id="phone" {...profileForm.register("phone")} />
               </FormField>
               <Button type="submit" disabled={isUpdatingProfile}>
                 {isUpdatingProfile ? <Loader2 className="size-4 animate-spin" /> : null}

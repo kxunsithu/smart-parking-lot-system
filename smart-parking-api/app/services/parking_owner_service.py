@@ -9,7 +9,6 @@ from app.models.parking_owner import ParkingOwner
 from app.models.parking_session import ParkingSession
 from app.models.parking_slot import ParkingSlot
 from app.models.parking_staff import ParkingStaff
-from app.models.payment import Payment
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.common import PaginationParams, build_meta
@@ -61,13 +60,6 @@ class ParkingOwnerService:
         lot_ids = select(ParkingLot.id).where(ParkingLot.owner_id == owner_id)
         floor_ids = select(ParkingFloor.id).where(ParkingFloor.parking_lot_id.in_(lot_ids))
         slot_ids = select(ParkingSlot.id).where(ParkingSlot.floor_id.in_(floor_ids))
-
-        # Delete payments (reference sessions via slots)
-        self.db.execute(delete(Payment).where(
-            Payment.parking_session_id.in_(
-                select(ParkingSession.id).where(ParkingSession.slot_id.in_(slot_ids))
-            )
-        ))
 
         # Delete parking sessions (reference parking_slots)
         self.db.execute(delete(ParkingSession).where(ParkingSession.slot_id.in_(slot_ids)))

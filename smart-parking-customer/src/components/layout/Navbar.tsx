@@ -39,7 +39,7 @@ export default function Navbar() {
 
   const navItems = [
     { icon: ParkingCircle, label: "Parking", path: "/dashboard" },
-    { icon: Car, label: "My Vehicles", path: "/vehicles" },
+    { icon: Car, label: "My Cars", path: "/cars" },
     { icon: History, label: "Sessions", path: "/sessions" },
     { icon: User, label: "Profile", path: "/profile" },
   ]
@@ -53,7 +53,7 @@ export default function Navbar() {
               onClick={() => navigate("/dashboard")}
               className="flex items-center space-x-2"
             >
-              <div className="bg-primary p-2 rounded-lg">
+              <div className="bg-primary p-2 rounded">
                 <Car className="h-6 w-6 text-primary-foreground" />
               </div>
               <span className="text-xl font-bold">Smart Parking</span>

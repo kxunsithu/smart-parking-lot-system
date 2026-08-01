@@ -15,10 +15,7 @@ class Customer(Base):
     current_lng: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     user: Mapped["User"] = relationship("User", back_populates="customer_profile")
-    vehicles: Mapped[List["Vehicle"]] = relationship(
-        "Vehicle", back_populates="customer", cascade="all, delete-orphan"
-    )
-    payments: Mapped[List["Payment"]] = relationship(
-        "Payment", back_populates="customer", cascade="all, delete-orphan"
+    cars: Mapped[List["Car"]] = relationship(
+        "Car", back_populates="customer", cascade="all, delete-orphan"
     )
 

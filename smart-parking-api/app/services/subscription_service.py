@@ -117,9 +117,13 @@ class SubscriptionService:
 
     def list_all_subscriptions(self, params: PaginationParams):
         from sqlalchemy.orm import joinedload
+        from app.models.parking_owner import ParkingOwner
         stmt = (
             select(OwnerSubscription)
-            .options(joinedload(OwnerSubscription.package))
+            .options(
+                joinedload(OwnerSubscription.package),
+                joinedload(OwnerSubscription.owner).joinedload(ParkingOwner.user),
+            )
             .order_by(OwnerSubscription.created_at.desc())
         )
         items, total = self.sub_repo.paginate(

@@ -96,7 +96,7 @@ export function CustomersPage() {
           ) : users.length === 0 ? (
             <EmptyState title="No users found" description="Try adjusting your search or filters." />
           ) : (
-            <div className="overflow-x-auto rounded-md border">
+            <div className="overflow-x-auto rounded border">
               <Table>
                 <TableHeader>
                   <TableRow>

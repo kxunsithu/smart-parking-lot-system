@@ -1,4 +1,4 @@
-"""Parking session endpoints: book (customer), confirm payment, start (staff), list, get, finish."""
+"""Parking session endpoints: book (customer), start (staff), list, get, finish."""
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
@@ -13,8 +13,7 @@ from app.schemas.parking_session import (
     ParkingSessionOut,
     ParkingSessionStart,
 )
-from app.schemas.payment import PaymentOut
-from app.services.parking_session_service import ParkingSessionService
+from app.services.parking_session_service import ParkingSessionService, serialize_session
 
 router = APIRouter(prefix="/parking-sessions", tags=["Parking Sessions"])
 
@@ -25,18 +24,18 @@ router = APIRouter(prefix="/parking-sessions", tags=["Parking Sessions"])
     "/book",
     response_model=SuccessResponse[ParkingSessionOut],
     status_code=status.HTTP_201_CREATED,
-    summary="Customer: book a session with start/end time (creates ACTIVE session + PAID payment)",
+    summary="Customer: book a session with start/end time (creates ACTIVE session with calculated fee)",
 )
 def book_session(
     payload: ParkingSessionBook,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    session, payment = ParkingSessionService(db).book_session(payload, current_user)
+    session = ParkingSessionService(db).book_session(payload, current_user)
     return {
         "success": True,
         "message": f"Session booked and activated successfully. Calculated fee: {session.fee:.2f} MMK.",
-        "data": session,
+        "data": serialize_session(session),
     }
 
 
@@ -46,15 +45,15 @@ def book_session(
     "/start",
     response_model=SuccessResponse[ParkingSessionOut],
     status_code=status.HTTP_201_CREATED,
-    summary="Staff/Admin: directly start a session (immediately ACTIVE, no payment step)",
+    summary="Disabled: Only customers can create parking sessions",
 )
 def start_session(
     payload: ParkingSessionStart,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    session = ParkingSessionService(db).start_session(payload, current_user)
-    return {"success": True, "message": "Parking session started.", "data": session}
+    from fastapi import HTTPException
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only customers can create parking sessions.")
 
 
 # ─── Shared endpoints ─────────────────────────────────────────────────────────
@@ -62,14 +61,20 @@ def start_session(
 @router.get("", response_model=SuccessResponse[list[ParkingSessionOut]])
 def list_sessions(
     status_: str | None = Query(default=None, alias="status"),
-    vehicle_id: int | None = Query(default=None),
+    car_id: int | None = Query(default=None),
     slot_id: int | None = Query(default=None),
+    plate_number: str | None = Query(default=None, description="Filter by unique car license plate."),
     params: PaginationParams = Depends(pagination_params),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     items, meta = ParkingSessionService(db).list_sessions(
-        params, status=status_, vehicle_id=vehicle_id, slot_id=slot_id, current_user=current_user
+        params,
+        status=status_,
+        car_id=car_id,
+        slot_id=slot_id,
+        plate_number=plate_number,
+        current_user=current_user,
     )
     return {"success": True, "message": "Parking sessions fetched successfully.", "data": items, "meta": meta}
 
@@ -81,7 +86,7 @@ def get_session(
     current_user: User = Depends(get_current_user),
 ):
     session = ParkingSessionService(db).get_by_id(session_id)
-    return {"success": True, "message": "Parking session fetched successfully.", "data": session}
+    return {"success": True, "message": "Parking session fetched successfully.", "data": serialize_session(session)}
 
 
 @router.patch("/{session_id}/finish", response_model=SuccessResponse[ParkingSessionOut])
@@ -92,4 +97,4 @@ def finish_session(
     current_user: User = Depends(get_current_user),
 ):
     session = ParkingSessionService(db).finish_session(session_id, payload, current_user)
-    return {"success": True, "message": "Parking session finished.", "data": session}
+    return {"success": True, "message": "Parking session finished.", "data": serialize_session(session)}

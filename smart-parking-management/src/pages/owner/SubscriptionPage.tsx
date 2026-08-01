@@ -165,13 +165,12 @@ export function OwnerSubscriptionPage() {
         <Card className="animate-pulse h-28" />
       ) : activeSub ? (
         <Card
-          className={`border-l-4 ${
-            isExpiringSoon
-              ? "border-l-amber-500 bg-amber-50/5"
-              : activeSub.status === "ACTIVE"
+          className={`border-l-4 ${isExpiringSoon
+            ? "border-l-amber-500 bg-amber-50/5"
+            : activeSub.status === "ACTIVE"
               ? "border-l-emerald-500 bg-emerald-50/5"
               : "border-l-red-500 bg-red-50/5"
-          }`}
+            }`}
         >
           <CardContent className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-4">
@@ -229,9 +228,8 @@ export function OwnerSubscriptionPage() {
               return (
                 <Card
                   key={pkg.id}
-                  className={`relative overflow-hidden border-2 transition-all duration-300 hover:shadow-lg ${
-                    isCurrentPlan ? accentClass : "border-border"
-                  }`}
+                  className={`relative overflow-hidden border-2 transition-all duration-300 hover:shadow-lg ${isCurrentPlan ? accentClass : "border-border"
+                    }`}
                 >
                   {isCurrentPlan && (
                     <div className="absolute top-3 right-3">
@@ -315,7 +313,7 @@ export function OwnerSubscriptionPage() {
             ) : history.length === 0 ? (
               <EmptyState title="No subscription history" description="Your past subscriptions will appear here." />
             ) : (
-              <div className="overflow-x-auto rounded-md border">
+              <div className="overflow-x-auto rounded border">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -379,7 +377,7 @@ export function OwnerSubscriptionPage() {
           {selectedPkg && (
             <div className="space-y-5 py-2">
               {/* Order Summary Box */}
-              <div className="bg-slate-900 text-white rounded-lg p-4 space-y-2">
+              <div className="bg-slate-900 text-white rounded p-4 space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-sm opacity-80">Selected Package</span>
                   <Badge className="bg-indigo-500 text-white font-semibold">{selectedPkg.name}</Badge>
@@ -405,14 +403,13 @@ export function OwnerSubscriptionPage() {
                         key={method.id}
                         type="button"
                         onClick={() => setSelectedMethod(method.id)}
-                        className={`flex items-center justify-between p-3 rounded-lg border text-left transition-all ${
-                          isSelected
-                            ? "border-indigo-500 bg-indigo-50/10 ring-2 ring-indigo-500"
-                            : "border-border hover:bg-slate-800/40"
-                        }`}
+                        className={`flex items-center justify-between p-3 rounded border text-left transition-all ${isSelected
+                          ? "border-primary bg-primary/10 ring-2 ring-primary"
+                          : "border-border hover:bg-muted"
+                          }`}
                       >
                         <span className="text-xs font-semibold">{method.name}</span>
-                        {isSelected && <Check className="size-4 text-indigo-500 shrink-0" />}
+                        {isSelected && <Check className="size-4 text-primary shrink-0" />}
                       </button>
                     )
                   })}
@@ -420,9 +417,9 @@ export function OwnerSubscriptionPage() {
               </div>
 
               {/* Instructions & Simulated QR / Transfer Details */}
-              <div className="rounded-lg border p-4 bg-muted/30 space-y-3">
+              <div className="rounded border p-4 bg-muted/30 space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                  <div className="size-10 rounded bg-primary/10 text-primary flex items-center justify-center shrink-0">
                     <QrCode className="size-6" />
                   </div>
                   <div>

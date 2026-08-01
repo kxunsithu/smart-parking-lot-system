@@ -3,7 +3,7 @@ import type { ListParams, ListResult } from "@/api/types"
 import type { ApiSuccess, ParkingStaffOut, ParkingStaffCreate, ParkingStaffUpdate } from "@/types"
 
 export const parkingStaffApi = {
-  async list(params?: ListParams): Promise<ListResult<ParkingStaffOut>> {
+  async list(params?: ListParams & { parking_lot_id?: number }): Promise<ListResult<ParkingStaffOut>> {
     const res = await apiClient.get<ApiSuccess<ParkingStaffOut[]>>("/parking-staff", { params })
     return { items: res.data.data, meta: res.data.meta! }
   },

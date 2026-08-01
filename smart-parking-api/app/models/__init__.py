@@ -6,11 +6,10 @@ from app.models.parking_owner import ParkingOwner
 from app.models.parking_lot import ParkingLot
 from app.models.parking_staff import ParkingStaff
 from app.models.customer import Customer
-from app.models.vehicle import Vehicle
+from app.models.car import Car
 from app.models.parking_floor import ParkingFloor
 from app.models.parking_slot import ParkingSlot
 from app.models.parking_session import ParkingSession
-from app.models.payment import Payment
 from app.models.token_blacklist import TokenBlacklist
 from app.models.otp import OTP
 from app.models.package import Package
@@ -24,11 +23,10 @@ __all__ = [
     "ParkingLot",
     "ParkingStaff",
     "Customer",
-    "Vehicle",
+    "Car",
     "ParkingFloor",
     "ParkingSlot",
     "ParkingSession",
-    "Payment",
     "TokenBlacklist",
     "OTP",
     "Package",

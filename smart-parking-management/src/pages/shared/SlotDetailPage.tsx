@@ -16,8 +16,8 @@ import { parkingSlotsApi } from "@/api/parkingSlots"
 import { parkingFloorsApi } from "@/api/parkingFloors"
 import { parkingLotsApi } from "@/api/parkingLots"
 import { parkingSessionsApi } from "@/api/parkingSessions"
-import { slotStatusTone, sessionStatusTone } from "@/utils/statusColors"
-import { formatDateTime, formatDuration, formatCurrency } from "@/utils/formatters"
+import { SessionCardGrid } from "@/components/sessions/SessionCard"
+import { slotStatusTone } from "@/utils/statusColors"
 import type { ParkingSlotOut, ParkingFloorOut, ParkingLotOut, ParkingSessionOut } from "@/types"
 
 const CAR_PALETTE = [
@@ -43,7 +43,7 @@ function adjustBrightness(hex: string, amount: number): string {
 function WebGLFallback({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center p-8 gap-4">
-      <div className="size-16 rounded-2xl bg-amber-500/10 flex items-center justify-center">
+      <div className="size-16 rounded bg-amber-500/10 flex items-center justify-center">
         <AlertCircle className="size-8 text-amber-500" />
       </div>
       <div>
@@ -109,12 +109,16 @@ function DashedCenterLine({ totalWidth, z, isNightMode }: { totalWidth: number; 
   )
 }
 
-function SelectedSlotAnimation({ sw, sd }: { sw: number; sd: number }) {
+function SelectedSlotAnimation({ sw, sd, isOccupied }: { sw: number; sd: number; isOccupied?: boolean }) {
   const padMatRef = useRef<THREE.MeshStandardMaterial>(null)
   const ringRef = useRef<THREE.Mesh>(null)
   const ringMatRef = useRef<THREE.MeshStandardMaterial>(null)
   const labelRef = useRef<THREE.Group>(null)
   const timeRef = useRef(0)
+
+  // Red for occupied slots, blue for available/reserved
+  const selColor = isOccupied ? "#ef4444" : "#3b82f6"
+  const selLabelColor = isOccupied ? "#fca5a5" : "#60a5fa"
 
   useFrame((_, delta) => {
     timeRef.current += delta
@@ -142,8 +146,8 @@ function SelectedSlotAnimation({ sw, sd }: { sw: number; sd: number }) {
       <Box args={[sw - 0.08, 0.05, sd - 0.08]} position={[0, 0.025, 0]}>
         <meshStandardMaterial
           ref={padMatRef}
-          color="#3b82f6"
-          emissive="#3b82f6"
+          color={selColor}
+          emissive={selColor}
           emissiveIntensity={0.7}
           transparent
           opacity={0.45}
@@ -154,8 +158,8 @@ function SelectedSlotAnimation({ sw, sd }: { sw: number; sd: number }) {
         <Box args={[sw + 0.2, 0.04, sd + 0.2]}>
           <meshStandardMaterial
             ref={ringMatRef}
-            color="#3b82f6"
-            emissive="#3b82f6"
+            color={selColor}
+            emissive={selColor}
             emissiveIntensity={0.9}
             transparent
             opacity={0.7}
@@ -164,7 +168,7 @@ function SelectedSlotAnimation({ sw, sd }: { sw: number; sd: number }) {
       </group>
 
       <group ref={labelRef} position={[0, 1.8, -sd / 2 - 0.5]}>
-        <Text fontSize={0.65} color="#60a5fa" anchorX="center" anchorY="middle" fontWeight="bold">
+        <Text fontSize={0.65} color={selLabelColor} anchorX="center" anchorY="middle" fontWeight="bold">
           Target Slot
         </Text>
       </group>
@@ -173,7 +177,7 @@ function SelectedSlotAnimation({ sw, sd }: { sw: number; sd: number }) {
 }
 
 function ParkingSlot3D({
-  slot, position, sw, sd, isNightMode, onClick, isHighlighted,
+  slot, position, sw, sd, isNightMode, onClick, isHighlighted, isReserved,
 }: {
   slot: ParkingSlotOut
   position: [number, number, number]
@@ -182,20 +186,42 @@ function ParkingSlot3D({
   isNightMode: boolean
   onClick: () => void
   isHighlighted: boolean
+  isReserved?: boolean
 }) {
   const isOccupied = slot.status === "OCCUPIED"
   const lw = 0.18
   const lh = 0.08
 
+  // Red = Occupied (car present), Amber = Reserved (session active, no car yet), Green = Available
   const padColor = isOccupied
     ? (isNightMode ? "#dc2626" : "#ef4444")
-    : (isNightMode ? "#059669" : "#10b981")
+    : isReserved
+      ? (isNightMode ? "#d97706" : "#f59e0b")
+      : (isNightMode ? "#059669" : "#10b981")
 
   const padEmissive = isOccupied
     ? (isNightMode ? "#b91c1c" : "#dc2626")
-    : (isNightMode ? "#10b981" : "#10b981")
+    : isReserved
+      ? (isNightMode ? "#f59e0b" : "#d97706")
+      : (isNightMode ? "#10b981" : "#10b981")
 
-  const padOpacity = isNightMode ? (isOccupied ? 0.5 : 0.35) : (isOccupied ? 0.3 : 0.28)
+  const padEmissiveIntensity = isNightMode
+    ? (isOccupied ? 0.1 : isReserved ? 0.6 : 0.35)
+    : (isOccupied ? 0.1 : isReserved ? 0.4 : 0.1)
+
+  const padOpacity = isNightMode
+    ? (isOccupied ? 0.5 : isReserved ? 0.55 : 0.35)
+    : (isOccupied ? 0.3 : isReserved ? 0.45 : 0.28)
+
+  const frameEmissive = isHighlighted
+    ? "#f59e0b"
+    : isReserved
+      ? "#fbbf24"
+      : isNightMode
+        ? "#38bdf8"
+        : "#ffffff"
+
+  const frameEmissiveIntensity = isHighlighted ? 0.8 : isReserved ? 0.5 : isNightMode ? 0.5 : 0.08
 
   return (
     <group
@@ -205,13 +231,13 @@ function ParkingSlot3D({
       onPointerOut={() => { document.body.style.cursor = "default" }}
     >
       {isHighlighted ? (
-        <SelectedSlotAnimation sw={sw} sd={sd} />
+        <SelectedSlotAnimation sw={sw} sd={sd} isOccupied={isOccupied} />
       ) : (
         <Box args={[sw - 0.08, 0.04, sd - 0.08]} position={[0, 0.02, 0]}>
           <meshStandardMaterial
             color={padColor}
             emissive={padEmissive}
-            emissiveIntensity={isNightMode ? (isOccupied ? 0.1 : 0.35) : 0.1}
+            emissiveIntensity={padEmissiveIntensity}
             transparent
             opacity={padOpacity}
           />
@@ -221,29 +247,29 @@ function ParkingSlot3D({
       <Box args={[lw, lh, sd]} position={[-sw / 2, lh / 2, 0]}>
         <meshStandardMaterial
           color={isNightMode ? "#e0f2fe" : "#ffffff"}
-          emissive={isHighlighted ? "#f59e0b" : isNightMode ? "#38bdf8" : "#ffffff"}
-          emissiveIntensity={isHighlighted ? 0.8 : isNightMode ? 0.5 : 0.08}
+          emissive={frameEmissive}
+          emissiveIntensity={frameEmissiveIntensity}
         />
       </Box>
       <Box args={[lw, lh, sd]} position={[sw / 2, lh / 2, 0]}>
         <meshStandardMaterial
           color={isNightMode ? "#e0f2fe" : "#ffffff"}
-          emissive={isHighlighted ? "#f59e0b" : isNightMode ? "#38bdf8" : "#ffffff"}
-          emissiveIntensity={isHighlighted ? 0.8 : isNightMode ? 0.5 : 0.08}
+          emissive={frameEmissive}
+          emissiveIntensity={frameEmissiveIntensity}
         />
       </Box>
       <Box args={[sw, lh, lw]} position={[0, lh / 2, sd / 2]}>
         <meshStandardMaterial
           color={isNightMode ? "#e0f2fe" : "#ffffff"}
-          emissive={isHighlighted ? "#f59e0b" : isNightMode ? "#38bdf8" : "#ffffff"}
-          emissiveIntensity={isHighlighted ? 0.8 : isNightMode ? 0.5 : 0.08}
+          emissive={frameEmissive}
+          emissiveIntensity={frameEmissiveIntensity}
         />
       </Box>
       <Box args={[sw, lh, lw]} position={[0, lh / 2, -sd / 2]}>
         <meshStandardMaterial
           color={isNightMode ? "#e0f2fe" : "#ffffff"}
-          emissive={isHighlighted ? "#f59e0b" : isNightMode ? "#38bdf8" : "#ffffff"}
-          emissiveIntensity={isHighlighted ? 0.8 : isNightMode ? 0.5 : 0.08}
+          emissive={frameEmissive}
+          emissiveIntensity={frameEmissiveIntensity}
         />
       </Box>
 
@@ -257,7 +283,7 @@ function ParkingSlot3D({
         <Text
           position={[0, 0.35, 0]}
           fontSize={0.6}
-          color={isHighlighted ? "#fbbf24" : isNightMode ? "#f8fafc" : "#ffffff"}
+          color={isHighlighted ? "#fbbf24" : isReserved ? "#fbbf24" : isNightMode ? "#f8fafc" : "#ffffff"}
           anchorX="center"
           anchorY="middle"
           fontWeight="bold"
@@ -270,7 +296,7 @@ function ParkingSlot3D({
 }
 
 function ParkingFloor3D({
-  floor, slots, y, floorIndex, isNightMode, onSlotClick, highlightedSlotId,
+  floor, slots, y, floorIndex, isNightMode, onSlotClick, highlightedSlotId, reservedSlotIds,
 }: {
   floor: ParkingFloorOut
   slots: ParkingSlotOut[]
@@ -279,6 +305,7 @@ function ParkingFloor3D({
   isNightMode: boolean
   onSlotClick: (s: ParkingSlotOut) => void
   highlightedSlotId: number | null
+  reservedSlotIds: Set<number>
 }) {
   const sw = 3.2
   const sd = 5.2
@@ -372,6 +399,7 @@ function ParkingFloor3D({
                   isNightMode={isNightMode}
                   onClick={() => onSlotClick(slot)}
                   isHighlighted={slot.id === highlightedSlotId}
+                  isReserved={reservedSlotIds.has(slot.id)}
                 />
               )
             })}
@@ -383,13 +411,14 @@ function ParkingFloor3D({
 }
 
 function Slot3DScene({
-  floors, slotsByFloor, isNightMode, highlightedSlotId, isAutoRotate,
+  floors, slotsByFloor, isNightMode, highlightedSlotId, isAutoRotate, reservedSlotIds,
 }: {
   floors: ParkingFloorOut[]
   slotsByFloor: Record<number, ParkingSlotOut[]>
   isNightMode: boolean
   highlightedSlotId: number | null
   isAutoRotate: boolean
+  reservedSlotIds: Set<number>
 }) {
   const { scene } = useThree()
 
@@ -441,8 +470,9 @@ function Slot3DScene({
             y={index * 4}
             floorIndex={index}
             isNightMode={isNightMode}
-            onSlotClick={() => {}}
+            onSlotClick={() => { }}
             highlightedSlotId={highlightedSlotId}
+            reservedSlotIds={reservedSlotIds}
           />
         ))}
       </group>
@@ -528,20 +558,34 @@ export function SlotDetailPage() {
   if (!slot) return <EmptyState title="Slot not found" description="This slot may have been removed." />
 
   const isAvailable = slot.status === "AVAILABLE"
+  const activeSessions = sessions.filter(s => s.status === "ACTIVE" || s.status === "PENDING")
+  const sortedSessions = [...sessions].sort((a, b) => {
+    const aActive = a.status === "ACTIVE" || a.status === "PENDING" ? 0 : 1
+    const bActive = b.status === "ACTIVE" || b.status === "PENDING" ? 0 : 1
+    if (aActive !== bActive) return aActive - bActive
+    return new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
+  })
+  // Build reserved set from sessions of this slot for 3D view
+  const reservedSlotIds = new Set<number>(
+    activeSessions.map(s => s.slot_id)
+  )
 
   return (
     <div className="space-y-5">
+
+      {/* ── Top Header Bar ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Button variant="ghost" size="icon" className="size-8 -ml-2" onClick={() => navigate(-1)}>
+            <Button variant="ghost" size="icon" className="size-8 -ml-2 hover:bg-muted/80" onClick={() => navigate(-1)}>
               <ArrowLeft className="size-4" />
             </Button>
-            <h1 className="text-xl font-bold">Slot {slot.slot_number}</h1>
+            <h1 className="text-xl font-bold tracking-tight">Slot {slot.slot_number}</h1>
             <StatusBadge label={slot.status} tone={slotStatusTone(slot.status)} />
           </div>
-          <p className="text-sm text-muted-foreground pl-8">
-            {lot?.name} · {floor?.floor_name || `Floor ${floor?.id}`}
+          <p className="text-xs text-muted-foreground pl-8">
+            {lot?.name}
+            {floor ? ` · ${floor.floor_name || `Floor ${floor.id}`}` : ""}
             {slot.section ? ` · Section ${slot.section}` : ""}
           </p>
         </div>
@@ -562,96 +606,67 @@ export function SlotDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+
+        {/* ── Left Sidebar ── */}
         <div className="lg:col-span-1 space-y-4">
-          <div className={`rounded-2xl border p-4 space-y-3 ${isAvailable ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5"}`}>
+
+          {/* Status Hero Card */}
+          <div className={`rounded border p-5 space-y-4 transition-colors ${isAvailable
+            ? "border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5"
+            : "border-red-500/30 bg-gradient-to-br from-red-500/10 to-red-500/5"
+            }`}>
             <div className="flex items-center gap-3">
-              <div className={`size-12 rounded-xl flex items-center justify-center ${isAvailable ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"}`}>
+              <div className={`size-12 rounded flex items-center justify-center shadow-sm ${isAvailable ? "bg-emerald-500/20 text-emerald-500" : "bg-red-500/20 text-red-500"
+                }`}>
                 {isAvailable ? <ParkingSquare className="size-6" /> : <Car className="size-6" />}
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Current Status</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Status</p>
                 <p className={`text-lg font-bold leading-tight ${isAvailable ? "text-emerald-500" : "text-red-500"}`}>
                   {isAvailable ? "Available" : "Occupied"}
                 </p>
               </div>
             </div>
+            <div className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded ${isAvailable ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"
+              }`}>
+              <span className={`size-2 rounded-full animate-pulse ${isAvailable ? "bg-emerald-500" : "bg-red-500"}`} />
+              {isAvailable ? "Ready to accept cars" : `${activeSessions.length} active session${activeSessions.length !== 1 ? "s" : ""}`}
+            </div>
           </div>
 
+          {/* Slot Info Card */}
           <Card>
-            <CardContent className="pt-5 space-y-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Slot Info</p>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="size-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    <Hash className="size-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Slot Number</p>
-                    <p className="text-sm font-semibold">{slot.slot_number}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="size-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    <Layers className="size-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Floor</p>
-                    <p className="text-sm font-semibold">{floor?.floor_name || `Floor ${floor?.id}`}</p>
-                  </div>
-                </div>
-                {slot.section && (
-                  <div className="flex items-center gap-3">
-                    <div className="size-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                      <MapPin className="size-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Section</p>
-                      <p className="text-sm font-semibold">{slot.section}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+            <CardContent className="pt-4 pb-4 space-y-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Slot Details</p>
 
-          <Card>
-            <CardContent className="pt-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Sessions ({sessions.length})
-                </p>
-              </div>
-              {sessions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No sessions for this slot.</p>
-              ) : (
-                <div className="space-y-3">
-                  {sessions.map((session) => (
-                    <div key={session.id} className="rounded-lg border p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium">#{session.id}</span>
-                        <StatusBadge label={session.status} tone={sessionStatusTone(session.status)} />
-                      </div>
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <p>Vehicle: {session.vehicle_id}</p>
-                        <p>Start: {formatDateTime(session.start_time)}</p>
-                        <p>End: {session.end_time ? formatDateTime(session.end_time) : "—"}</p>
-                        {session.duration != null && <p>Duration: {formatDuration(session.duration)}</p>}
-                        {session.fee != null && <p>Fee: {formatCurrency(session.fee)}</p>}
-                      </div>
+              <div className="space-y-0.5">
+                {[
+                  { icon: <Hash className="size-3.5" />, label: "Slot Number", value: slot.slot_number },
+                  { icon: <Layers className="size-3.5" />, label: "Floor", value: floor?.floor_name || `Floor ${floor?.id}` },
+                  ...(slot.section ? [{ icon: <MapPin className="size-3.5" />, label: "Section", value: `Section ${slot.section}` }] : []),
+                  { icon: <ParkingSquare className="size-3.5" />, label: "Parking Lot", value: lot?.name || "—" },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-3 py-2.5 border-b border-border/40 last:border-0">
+                    <div className="size-7 rounded bg-muted flex items-center justify-center shrink-0 text-muted-foreground">
+                      {item.icon}
                     </div>
-                  ))}
-                </div>
-              )}
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-muted-foreground leading-none mb-0.5">{item.label}</p>
+                      <p className="text-xs font-semibold text-foreground truncate">{item.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>
 
+        {/* ── 3D Canvas Panel ── */}
         <div className="lg:col-span-3">
           <div
             ref={containerRef}
-            className={`relative w-full rounded-2xl overflow-hidden border shadow-xl transition-colors duration-300 ${
-              isFullscreen ? "fixed inset-0 z-50 h-screen w-screen rounded-none border-none" : "h-[560px]"
-            } ${isNightMode ? "bg-[#050814] border-slate-800" : "bg-slate-100 border-slate-200"}`}
+            className={`relative w-full rounded overflow-hidden border shadow-xl transition-colors duration-300 ${isFullscreen ? "fixed inset-0 z-50 h-screen w-screen rounded-none border-none" : "h-[560px]"
+              } ${isNightMode ? "bg-[#050814] border-slate-800" : "bg-slate-100 border-slate-200"}`}
           >
             {webGLError ? (
               <WebGLFallback message={webGLError} />
@@ -670,34 +685,71 @@ export function SlotDetailPage() {
                     isNightMode={isNightMode}
                     highlightedSlotId={id}
                     isAutoRotate={isAutoRotate}
+                    reservedSlotIds={reservedSlotIds}
                   />
                 </Canvas>
               </Suspense>
             )}
 
-            <div
-              className={`absolute bottom-4 left-4 flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium backdrop-blur-md border transition-colors duration-300 ${
-                isNightMode
-                  ? "bg-slate-950/80 border-slate-800 text-slate-100 shadow-xl"
-                  : "bg-white/80 border-slate-200 text-slate-800 shadow-md"
-              }`}
-            >
+            {/* Legend Pill */}
+            <div className={`absolute bottom-4 left-4 flex items-center gap-3 px-3.5 py-2 rounded text-xs font-medium backdrop-blur-md border transition-colors duration-300 ${isNightMode
+              ? "bg-slate-950/80 border-slate-800 text-slate-100 shadow-xl"
+              : "bg-white/80 border-slate-200 text-slate-800 shadow-md"
+              }`}>
               <span className="flex items-center gap-1.5">
-                <span className={`size-3 rounded-sm ${isNightMode ? "bg-[#dc2626]" : "bg-[#ef4444]"}`} />
+                <span className={`size-3 rounded ${isNightMode ? "bg-[#dc2626]" : "bg-[#ef4444]"}`} />
                 Occupied
               </span>
               <span className="flex items-center gap-1.5">
-                <span
-                  className={`size-3 rounded-sm border ${
-                    isNightMode ? "border-emerald-400 bg-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "border-emerald-600 bg-emerald-500/30"
-                  }`}
-                />{" "}
+                <span className={`size-3 rounded inline-block ${isNightMode ? "bg-[#d97706] shadow-[0_0_8px_rgba(245,158,11,0.6)]" : "bg-[#f59e0b]"}`} />
+                Reserved
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className={`size-3 rounded border ${isNightMode ? "border-emerald-400 bg-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "border-emerald-600 bg-emerald-500/30"
+                  }`} />
                 Available
               </span>
-              <span className="flex items-center gap-1.5"><span className="size-3 rounded-sm bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.6)]" /> Selected</span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
+                Selected
+              </span>
+            </div>
+
+            {/* Top-right slot badge HUD */}
+            <div className={`absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded text-xs font-semibold backdrop-blur-md border ${isNightMode ? "bg-slate-950/80 border-slate-700 text-slate-100" : "bg-white/90 border-slate-200 text-slate-800"
+              }`}>
+              <span className={`size-2 rounded-full ${isAvailable ? "bg-emerald-500" : "bg-red-500"}`} />
+              {slot.slot_number}
+              {slot.section ? ` · Section - ${slot.section}` : ""}
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── Session History (full list) ── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold tracking-tight">Session History</h2>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/60">
+              {sessions.length}
+            </span>
+          </div>
+          {activeSessions.length > 0 && (
+            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/30">
+              {activeSessions.length} active
+            </span>
+          )}
+        </div>
+
+        {sessions.length === 0 ? (
+          <EmptyState
+            title="No sessions yet"
+            description="This slot has no parking sessions yet."
+          />
+        ) : (
+          <SessionCardGrid sessions={sortedSessions} />
+        )}
       </div>
     </div>
   )

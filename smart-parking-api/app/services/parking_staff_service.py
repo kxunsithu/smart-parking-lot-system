@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.core.constants import RoleName
 from app.core.exceptions import ConflictException, ForbiddenException, NotFoundException
 from app.core.security import hash_password
+from app.models.parking_lot import ParkingLot
 from app.models.parking_staff import ParkingStaff
 from app.models.user import User
 from app.repositories.parking_lot_repository import ParkingLotRepository
@@ -72,16 +73,22 @@ class ParkingStaffService:
 
     def get_by_id(self, staff_id: int) -> ParkingStaff:
         staff = self.db.scalar(
-            select(ParkingStaff).options(joinedload(ParkingStaff.user)).where(ParkingStaff.id == staff_id)
+            select(ParkingStaff)
+            .options(joinedload(ParkingStaff.user), joinedload(ParkingStaff.parking_lot))
+            .where(ParkingStaff.id == staff_id)
         )
         if not staff:
             raise NotFoundException("Resource not found.")
         return staff
 
-    def list_staff(self, params: PaginationParams, parking_lot_id: int | None = None):
-        stmt = select(ParkingStaff).options(joinedload(ParkingStaff.user))
+    def list_staff(self, params: PaginationParams, parking_lot_id: int | None = None, current_user: User | None = None):
+        stmt = select(ParkingStaff).options(joinedload(ParkingStaff.user), joinedload(ParkingStaff.parking_lot))
         if parking_lot_id:
             stmt = stmt.where(ParkingStaff.parking_lot_id == parking_lot_id)
+        elif current_user and current_user.role.name == RoleName.OWNER.value:
+            owner = self.owner_repo.get_by_user_id(current_user.id)
+            if owner:
+                stmt = stmt.join(ParkingLot, ParkingStaff.parking_lot_id == ParkingLot.id).where(ParkingLot.owner_id == owner.id)
 
         items, total = self.staff_repo.paginate(
             stmt,

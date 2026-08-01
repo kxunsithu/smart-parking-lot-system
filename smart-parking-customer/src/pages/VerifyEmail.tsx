@@ -58,12 +58,12 @@ export default function VerifyEmail() {
     try {
       const status = await authApi.getOtpStatus(user.email)
       setIsUsed(status.is_used)
-      
+
       if (status.expires_at) {
         const expiryDate = new Date(status.expires_at)
         setExpiresAt(expiryDate)
         expiresAtRef.current = expiryDate
-        
+
         const now = new Date()
         const remaining = Math.max(0, Math.floor((expiryDate.getTime() - now.getTime()) / 1000))
         setTimeLeft(remaining)
@@ -109,13 +109,13 @@ export default function VerifyEmail() {
     try {
       const tokens = await authApi.verifyOTP({ email: user!.email, code: otpValue })
       const { setTokens, setUser, setVerifying } = useAuthStore.getState()
-      
+
       setTokens(tokens.access_token, tokens.refresh_token)
-      
+
       const updatedUser = await authApi.getMe()
       setUser(updatedUser)
       setVerifying(false)
-      
+
       toast.success("Email verified successfully!")
       navigate("/dashboard", { replace: true })
     } catch (error: any) {
@@ -149,7 +149,7 @@ export default function VerifyEmail() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 space-y-6">
+        <div className="bg-white dark:bg-gray-800 rounded shadow-lg p-8 space-y-6">
           <div className="space-y-1 text-center">
             <h2 className="text-2xl font-bold">Verify your email</h2>
             <p className="text-sm text-muted-foreground">
@@ -216,7 +216,7 @@ export default function VerifyEmail() {
             </div>
           </form>
 
-          <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
+          <div className="rounded bg-muted p-4 text-sm text-muted-foreground">
             <p className="font-medium text-foreground mb-1">Why verify your email?</p>
             <p>Email verification helps protect your account and ensures you receive important notifications about your parking sessions.</p>
           </div>

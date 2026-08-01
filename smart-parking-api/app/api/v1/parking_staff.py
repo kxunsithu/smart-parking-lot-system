@@ -31,8 +31,9 @@ def list_staff(
     parking_lot_id: Optional[int] = Query(default=None),
     params: PaginationParams = Depends(pagination_params),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    items, meta = ParkingStaffService(db).list_staff(params, parking_lot_id=parking_lot_id)
+    items, meta = ParkingStaffService(db).list_staff(params, parking_lot_id=parking_lot_id, current_user=current_user)
     return {"success": True, "message": "Parking staff fetched successfully.", "data": items, "meta": meta}
 
 

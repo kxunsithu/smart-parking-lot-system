@@ -1,4 +1,4 @@
-"""SQLAlchemy model for a customer vehicle."""
+"""SQLAlchemy model for a customer car."""
 from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import ForeignKey, String
@@ -11,15 +11,14 @@ if TYPE_CHECKING:
     from app.models.parking_session import ParkingSession
 
 
-class Vehicle(Base):
-    __tablename__ = "vehicles"
+class Car(Base):
+    __tablename__ = "cars"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), nullable=False)
     plate_number: Mapped[str] = mapped_column(String(30), unique=True, nullable=False, index=True)
-    vehicle_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     brand: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     color: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
 
-    customer: Mapped["Customer"] = relationship("Customer", back_populates="vehicles")
-    sessions: Mapped[List["ParkingSession"]] = relationship("ParkingSession", back_populates="vehicle")
+    customer: Mapped["Customer"] = relationship("Customer", back_populates="cars")
+    sessions: Mapped[List["ParkingSession"]] = relationship("ParkingSession", back_populates="car")

@@ -61,7 +61,7 @@ export function RegisterOwnerPage() {
 
       const user = await authApi.registerOwner(payload)
       setUser(user)
-      
+
       toast.success("Registration successful! Please verify your email to continue.")
       navigate("/verify-email", { replace: true })
     } catch (error) {
@@ -154,12 +154,12 @@ export function RegisterOwnerPage() {
         </div>
       </form>
 
-      <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
+      <div className="rounded bg-muted p-4 text-sm text-muted-foreground">
         <p className="font-medium text-foreground mb-1">Parking Owner Benefits</p>
         <ul className="list-disc list-inside space-y-1">
           <li>Manage multiple parking lots</li>
           <li>Track reservations and sessions</li>
-          <li>Monitor payments and revenue</li>
+          <li>Track sessions and revenue</li>
           <li>Manage staff assignments</li>
         </ul>
       </div>

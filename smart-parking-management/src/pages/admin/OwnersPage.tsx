@@ -93,16 +93,16 @@ export function OwnersPage() {
               description="Parking owners can register themselves through the registration page."
             />
           ) : (
-            <div className="overflow-x-auto rounded-md border">
+            <div className="overflow-x-auto rounded border">
               <Table>
                 <TableHeader>
-                    <TableRow>
-                      <TableHead>Company</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Email Verified</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="w-12" />
-                    </TableRow>
+                  <TableRow>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Email Verified</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-12" />
+                  </TableRow>
                 </TableHeader>
                 <TableBody>
                   {owners.map((owner) => (

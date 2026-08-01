@@ -34,6 +34,7 @@ class ParkingLotOut(BaseModel):
     rate_per_hour: Optional[float] = None
     created_at: datetime
     owner: Optional[ParkingOwnerOut] = None
+    staff_count: int = 0
 
 
 class ParkingLotWithStaffOut(BaseModel):

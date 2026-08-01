@@ -20,20 +20,6 @@ class SessionStatus(str, Enum):
     FINISHED = "FINISHED"
 
 
-class PaymentStatus(str, Enum):
-    PENDING = "PENDING"
-    PAID = "PAID"
-    REFUNDED = "REFUNDED"
-
-
-class PaymentMethod(str, Enum):
-    CASH = "CASH"
-    KBZPAY = "KBZPAY"
-    WAVEPAY = "WAVEPAY"
-    AYAPAY = "AYAPAY"
-    UABPAY = "UABPAY"
-
-
 class SubscriptionStatus(str, Enum):
     ACTIVE = "ACTIVE"
     EXPIRED = "EXPIRED"

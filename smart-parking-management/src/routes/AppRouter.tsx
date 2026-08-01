@@ -52,9 +52,6 @@ const OwnerStaffPage = lazy(() => import("@/pages/owner/StaffPage").then((m) => 
 const OwnerSessionsPage = lazy(() =>
   import("@/pages/owner/SessionsPage").then((m) => ({ default: m.OwnerSessionsPage }))
 )
-const OwnerPaymentsPage = lazy(() =>
-  import("@/pages/owner/PaymentsPage").then((m) => ({ default: m.PaymentsPage }))
-)
 const OwnerSubscriptionPage = lazy(() =>
   import("@/pages/owner/SubscriptionPage").then((m) => ({ default: m.OwnerSubscriptionPage }))
 )
@@ -131,7 +128,6 @@ const router = createBrowserRouter([
               { path: "/owner/slots/:slotId", element: withSuspense(<SlotDetailPage />) },
               { path: "/owner/staff", element: withSuspense(<OwnerStaffPage />) },
               { path: "/owner/sessions", element: withSuspense(<OwnerSessionsPage />) },
-              { path: "/owner/payments", element: withSuspense(<OwnerPaymentsPage />) },
             ],
           },
           {

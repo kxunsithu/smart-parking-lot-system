@@ -2,6 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.schemas.parking_lot import ParkingLotOut
 from app.schemas.user import UserOut
 
 
@@ -27,3 +28,4 @@ class ParkingStaffOut(BaseModel):
     parking_lot_id: int
     created_by: Optional[int] = None
     user: Optional[UserOut] = None
+    parking_lot: Optional[ParkingLotOut] = None

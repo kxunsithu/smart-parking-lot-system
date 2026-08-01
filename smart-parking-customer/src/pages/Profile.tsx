@@ -64,9 +64,9 @@ export default function Profile() {
         <Navbar />
         <div className="flex items-center justify-center h-64">
           <div className="space-y-4 w-full max-w-md px-4">
-            <div className="h-8 bg-muted animate-pulse rounded-lg" />
-            <div className="h-4 bg-muted animate-pulse rounded-lg w-2/3" />
-            <div className="h-32 bg-muted animate-pulse rounded-xl" />
+            <div className="h-8 bg-muted animate-pulse rounded" />
+            <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
+            <div className="h-32 bg-muted animate-pulse rounded" />
           </div>
         </div>
       </div>
@@ -106,11 +106,6 @@ export default function Profile() {
                   <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
                   <span className="text-muted-foreground">Email:</span>
                   <span className="ml-2">{user?.email}</span>
-                </div>
-                <div className="flex items-center text-sm">
-                  <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span className="text-muted-foreground">Phone:</span>
-                  <span className="ml-2">{user?.phone || "Not provided"}</span>
                 </div>
               </div>
             </CardContent>

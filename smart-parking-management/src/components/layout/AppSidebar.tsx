@@ -15,7 +15,7 @@ export function AppSidebar({ role, onNavigate }: AppSidebarProps) {
   return (
     <div className="flex h-full w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
       <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <div className="flex size-8 items-center justify-center rounded bg-primary text-primary-foreground">
           <ParkingSquare className="size-5" />
         </div>
         <div className="leading-tight">
@@ -33,7 +33,7 @@ export function AppSidebar({ role, onNavigate }: AppSidebarProps) {
             onClick={onNavigate}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-4 rounded p-3 mb-3 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-sidebar-primary text-sidebar-primary-foreground"
                   : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"

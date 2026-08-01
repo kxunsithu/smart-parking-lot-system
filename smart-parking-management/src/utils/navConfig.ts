@@ -1,6 +1,5 @@
 import {
   Building2,
-  CreditCard,
   LayoutDashboard,
   LayoutGrid,
   Package,
@@ -35,7 +34,6 @@ export const NAV_CONFIG: Record<RoleName, NavItem[]> = {
     { label: "Parking Lots", to: "/owner/lots", icon: ParkingSquare },
     { label: "Staff", to: "/owner/staff", icon: UserCog },
     { label: "Sessions", to: "/owner/sessions", icon: Timer },
-    { label: "Payments", to: "/owner/payments", icon: CreditCard },
   ],
   STAFF: [
     { label: "Dashboard", to: "/staff", icon: LayoutDashboard, end: true },

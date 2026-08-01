@@ -4,7 +4,7 @@ import type { ApiSuccess, ParkingSessionOut, ParkingSessionBook, ParkingSessionS
 export const parkingSessionsApi = {
   list: async (params?: {
     status?: string
-    vehicle_id?: number
+    car_id?: number
     page?: number
     limit?: number
   }): Promise<ParkingSessionOut[]> => {
@@ -17,18 +17,9 @@ export const parkingSessionsApi = {
     return response.data.data
   },
 
-  /** Customer booking: creates a PENDING session with pre-calculated fee */
+  /** Customer booking: creates an ACTIVE session with a calculated fee */
   book: async (data: ParkingSessionBook): Promise<ParkingSessionOut> => {
     const response = await apiClient.post<ApiSuccess<ParkingSessionOut>>("/parking-sessions/book", data)
-    return response.data.data
-  },
-
-  /** Confirm payment → session becomes ACTIVE and slot becomes OCCUPIED */
-  confirmPayment: async (id: number): Promise<ParkingSessionOut> => {
-    const response = await apiClient.post<ApiSuccess<ParkingSessionOut>>(
-      `/parking-sessions/${id}/confirm-payment`,
-      {}
-    )
     return response.data.data
   },
 

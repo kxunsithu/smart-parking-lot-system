@@ -40,13 +40,13 @@ class Settings(BaseSettings):
     DEFAULT_ADMIN_PHONE: str
 
     # Email / SMTP Configuration
-    SMTP_HOST: str
-    SMTP_PORT: int
-    SMTP_USER: str
-    SMTP_PASSWORD: str
-    SMTP_FROM_EMAIL: str
-    SMTP_FROM_NAME: str
-    SMTP_USE_TLS: bool
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = ""
+    SMTP_FROM_NAME: str = "Smart Parking System"
+    SMTP_USE_TLS: bool = True
 
     # OTP Configuration
     OTP_EXPIRE_MINUTES: int

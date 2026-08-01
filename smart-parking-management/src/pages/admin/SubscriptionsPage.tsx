@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { Calendar, CreditCard, Clock, Package } from "lucide-react"
+import { Calendar, CreditCard, Clock, Package, User, Building2, Mail, Phone } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { EmptyState } from "@/components/common/EmptyState"
 import { TableSkeleton } from "@/components/common/LoadingBlock"
@@ -92,7 +92,7 @@ export function AdminSubscriptionsPage() {
 
       <Card>
         <CardContent className="space-y-4">
-          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v || "all"); setPage(1) }}>
+          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v || "all"); setPage(1) }} items={STATUS_OPTIONS}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
@@ -118,7 +118,7 @@ export function AdminSubscriptionsPage() {
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">
-                          <Package className="size-5 text-muted-foreground" />
+                          <Package className="size-5 text-primary" />
                           <CardTitle className="text-lg">{sub.package?.name ?? `#${sub.package_id}`}</CardTitle>
                         </div>
                         {sub.status !== "EXPIRED" ? (
@@ -131,7 +131,33 @@ export function AdminSubscriptionsPage() {
                           <StatusBadge label={sub.status} tone={subscriptionStatusTone(sub.status as SubscriptionStatus)} />
                         )}
                       </div>
-                      <div className="text-sm text-muted-foreground">Owner ID: {sub.owner_id}</div>
+                      
+                      <div className="mt-2 pt-2 border-t border-border/50 space-y-1 text-sm">
+                        <div className="flex items-center gap-1.5 font-medium text-foreground">
+                          <Building2 className="size-4 text-primary shrink-0" />
+                          <span>{sub.owner?.company_name || "Independent Owner"}</span>
+                        </div>
+                        {sub.owner?.user && (
+                          <div className="space-y-0.5 pl-5 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1.5 font-medium text-foreground/80">
+                              <User className="size-3.5 text-muted-foreground shrink-0" />
+                              <span>{sub.owner.user.name} <span className="text-muted-foreground font-mono">(Owner #{sub.owner_id})</span></span>
+                            </div>
+                            {sub.owner.user.email && (
+                              <div className="flex items-center gap-1.5">
+                                <Mail className="size-3.5 text-muted-foreground shrink-0" />
+                                <span>{sub.owner.user.email}</span>
+                              </div>
+                            )}
+                            {sub.owner.user.phone && (
+                              <div className="flex items-center gap-1.5">
+                                <Phone className="size-3.5 text-muted-foreground shrink-0" />
+                                <span>{sub.owner.user.phone}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex items-center justify-between">

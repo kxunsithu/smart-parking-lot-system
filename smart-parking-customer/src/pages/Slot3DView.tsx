@@ -4,16 +4,20 @@ import { Canvas, useThree, useFrame } from "@react-three/fiber"
 import { OrbitControls, Text, Box } from "@react-three/drei"
 import * as THREE from "three"
 import Navbar from "@/components/layout/Navbar"
+import { LocationTrackBar } from "@/components/parking/LocationTrackBar"
+import { ParkingTrackModal } from "@/components/parking/ParkingTrackModal"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   ArrowLeft, AlertCircle, Sun, Moon, Maximize2, Minimize2,
-  RotateCw, Layers, Hash, MapPin, ParkingSquare, Car
+  RotateCw, Layers, Hash, MapPin, ParkingSquare, Car, Navigation2,
 } from "lucide-react"
+import { trackParkingSlot, type ParkingTrackTarget } from "@/lib/parkingTrack"
 import { parkingSlotsApi } from "@/api/parkingSlots"
 import { parkingFloorsApi } from "@/api/parkingFloors"
 import { parkingLotsApi } from "@/api/parkingLots"
+import { parkingSessionsApi } from "@/api/parkingSessions"
 import type { ParkingSlotOut } from "@/api/types"
 import type { ParkingFloorOut } from "@/api/parkingFloors"
 import type { ParkingLotOut } from "@/api/types"
@@ -41,7 +45,7 @@ function adjustBrightness(hex: string, amount: number): string {
 function WebGLFallback({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center p-8 gap-4">
-      <div className="size-16 rounded-2xl bg-amber-500/10 flex items-center justify-center">
+      <div className="size-16 rounded bg-amber-500/10 flex items-center justify-center">
         <AlertCircle className="size-8 text-amber-500" />
       </div>
       <div>
@@ -171,7 +175,7 @@ function SelectedSlotAnimation({ sw, sd }: { sw: number; sd: number }) {
 }
 
 function ParkingSlot3D({
-  slot, position, sw, sd, isNightMode, onClick, isHighlighted,
+  slot, position, sw, sd, isNightMode, onClick, isHighlighted, isReserved,
 }: {
   slot: ParkingSlotOut
   position: [number, number, number]
@@ -180,20 +184,42 @@ function ParkingSlot3D({
   isNightMode: boolean
   onClick: () => void
   isHighlighted: boolean
+  isReserved?: boolean
 }) {
   const isOccupied = slot.status === "OCCUPIED"
   const lw = 0.18
   const lh = 0.08
 
+  // Red = Occupied (car present), Amber = Reserved (session active, no car yet), Green = Available
   const padColor = isOccupied
     ? (isNightMode ? "#dc2626" : "#ef4444")
-    : (isNightMode ? "#059669" : "#10b981")
+    : isReserved
+      ? (isNightMode ? "#d97706" : "#f59e0b")
+      : (isNightMode ? "#059669" : "#10b981")
 
   const padEmissive = isOccupied
     ? (isNightMode ? "#b91c1c" : "#dc2626")
-    : (isNightMode ? "#10b981" : "#10b981")
+    : isReserved
+      ? (isNightMode ? "#f59e0b" : "#d97706")
+      : (isNightMode ? "#10b981" : "#10b981")
 
-  const padOpacity = isNightMode ? (isOccupied ? 0.5 : 0.35) : (isOccupied ? 0.3 : 0.28)
+  const padEmissiveIntensity = isNightMode
+    ? (isOccupied ? 0.1 : isReserved ? 0.6 : 0.35)
+    : (isOccupied ? 0.1 : isReserved ? 0.4 : 0.1)
+
+  const padOpacity = isNightMode
+    ? (isOccupied ? 0.5 : isReserved ? 0.55 : 0.35)
+    : (isOccupied ? 0.3 : isReserved ? 0.45 : 0.28)
+
+  const frameEmissive = isHighlighted
+    ? "#f59e0b"
+    : isReserved
+      ? "#fbbf24"
+      : isNightMode
+        ? "#38bdf8"
+        : "#ffffff"
+
+  const frameEmissiveIntensity = isHighlighted ? 0.8 : isReserved ? 0.5 : isNightMode ? 0.5 : 0.08
 
   return (
     <group
@@ -209,39 +235,40 @@ function ParkingSlot3D({
           <meshStandardMaterial
             color={padColor}
             emissive={padEmissive}
-            emissiveIntensity={isNightMode ? (isOccupied ? 0.1 : 0.35) : 0.1}
+            emissiveIntensity={padEmissiveIntensity}
             transparent
             opacity={padOpacity}
           />
         </Box>
       )}
 
+      {/* 4-sided full rectangle frame lines */}
       <Box args={[lw, lh, sd]} position={[-sw / 2, lh / 2, 0]}>
         <meshStandardMaterial
           color={isNightMode ? "#e0f2fe" : "#ffffff"}
-          emissive={isHighlighted ? "#f59e0b" : isNightMode ? "#38bdf8" : "#ffffff"}
-          emissiveIntensity={isHighlighted ? 0.8 : isNightMode ? 0.5 : 0.08}
+          emissive={frameEmissive}
+          emissiveIntensity={frameEmissiveIntensity}
         />
       </Box>
       <Box args={[lw, lh, sd]} position={[sw / 2, lh / 2, 0]}>
         <meshStandardMaterial
           color={isNightMode ? "#e0f2fe" : "#ffffff"}
-          emissive={isHighlighted ? "#f59e0b" : isNightMode ? "#38bdf8" : "#ffffff"}
-          emissiveIntensity={isHighlighted ? 0.8 : isNightMode ? 0.5 : 0.08}
+          emissive={frameEmissive}
+          emissiveIntensity={frameEmissiveIntensity}
         />
       </Box>
       <Box args={[sw, lh, lw]} position={[0, lh / 2, sd / 2]}>
         <meshStandardMaterial
           color={isNightMode ? "#e0f2fe" : "#ffffff"}
-          emissive={isHighlighted ? "#f59e0b" : isNightMode ? "#38bdf8" : "#ffffff"}
-          emissiveIntensity={isHighlighted ? 0.8 : isNightMode ? 0.5 : 0.08}
+          emissive={frameEmissive}
+          emissiveIntensity={frameEmissiveIntensity}
         />
       </Box>
       <Box args={[sw, lh, lw]} position={[0, lh / 2, -sd / 2]}>
         <meshStandardMaterial
           color={isNightMode ? "#e0f2fe" : "#ffffff"}
-          emissive={isHighlighted ? "#f59e0b" : isNightMode ? "#38bdf8" : "#ffffff"}
-          emissiveIntensity={isHighlighted ? 0.8 : isNightMode ? 0.5 : 0.08}
+          emissive={frameEmissive}
+          emissiveIntensity={frameEmissiveIntensity}
         />
       </Box>
 
@@ -255,7 +282,7 @@ function ParkingSlot3D({
         <Text
           position={[0, 0.35, 0]}
           fontSize={0.6}
-          color={isHighlighted ? "#fbbf24" : isNightMode ? "#f8fafc" : "#ffffff"}
+          color={isHighlighted ? "#fbbf24" : isReserved ? "#fbbf24" : isNightMode ? "#f8fafc" : "#ffffff"}
           anchorX="center"
           anchorY="middle"
           fontWeight="bold"
@@ -268,7 +295,7 @@ function ParkingSlot3D({
 }
 
 function ParkingFloor3D({
-  floor, slots, y, floorIndex, isNightMode, onSlotClick, highlightedSlotId,
+  floor, slots, y, floorIndex, isNightMode, onSlotClick, highlightedSlotId, reservedSlotIds,
 }: {
   floor: ParkingFloorOut
   slots: ParkingSlotOut[]
@@ -277,6 +304,7 @@ function ParkingFloor3D({
   isNightMode: boolean
   onSlotClick: (s: ParkingSlotOut) => void
   highlightedSlotId: number | null
+  reservedSlotIds: Set<number>
 }) {
   const sw = 3.2
   const sd = 5.2
@@ -370,6 +398,7 @@ function ParkingFloor3D({
                   isNightMode={isNightMode}
                   onClick={() => onSlotClick(slot)}
                   isHighlighted={slot.id === highlightedSlotId}
+                  isReserved={reservedSlotIds.has(slot.id)}
                 />
               )
             })}
@@ -381,13 +410,14 @@ function ParkingFloor3D({
 }
 
 function Slot3DScene({
-  floors, slotsByFloor, isNightMode, highlightedSlotId, isAutoRotate,
+  floors, slotsByFloor, isNightMode, highlightedSlotId, isAutoRotate, reservedSlotIds,
 }: {
   floors: ParkingFloorOut[]
   slotsByFloor: Record<number, ParkingSlotOut[]>
   isNightMode: boolean
   highlightedSlotId: number | null
   isAutoRotate: boolean
+  reservedSlotIds: Set<number>
 }) {
   const { scene } = useThree()
 
@@ -439,8 +469,9 @@ function Slot3DScene({
             y={index * 4}
             floorIndex={index}
             isNightMode={isNightMode}
-            onSlotClick={() => {}}
+            onSlotClick={() => { }}
             highlightedSlotId={highlightedSlotId}
+            reservedSlotIds={reservedSlotIds}
           />
         ))}
       </group>
@@ -472,11 +503,13 @@ export default function Slot3DView() {
   const [lot, setLot] = useState<ParkingLotOut | null>(null)
   const [floors, setFloors] = useState<ParkingFloorOut[]>([])
   const [slotsByFloor, setSlotsByFloor] = useState<Record<number, ParkingSlotOut[]>>({})
+  const [reservedSlotIds, setReservedSlotIds] = useState<Set<number>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
   const [webGLError, setWebGLError] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isNightMode, setIsNightMode] = useState(false)
   const [isAutoRotate, setIsAutoRotate] = useState(true)
+  const [activeNavigation, setActiveNavigation] = useState<ParkingTrackTarget | null>(null)
 
   useEffect(() => {
     if (!checkWebGLSupport()) setWebGLError("WebGL is not supported in your browser")
@@ -505,9 +538,20 @@ export default function Slot3DView() {
         setFloor(floorData)
         const lotData = await parkingLotsApi.get(floorData.parking_lot_id)
         setLot(lotData)
-        const floorsData = await parkingFloorsApi.list({ parking_lot_id: lotData.id, limit: 100 })
+        const [floorsData, sessionsData] = await Promise.all([
+          parkingFloorsApi.list({ parking_lot_id: lotData.id, limit: 100 }),
+          parkingSessionsApi.list({ limit: 1000 }).catch(() => []),
+        ])
         const safeFloors = Array.isArray(floorsData) ? floorsData : []
         setFloors(safeFloors)
+        // Build reserved set from active/pending sessions
+        const safeSessions = Array.isArray(sessionsData) ? sessionsData : []
+        const activeIds = new Set<number>(
+          safeSessions
+            .filter((s) => s.status === "ACTIVE" || s.status === "PENDING")
+            .map((s) => s.slot_id)
+        )
+        setReservedSlotIds(activeIds)
         const slotsData: Record<number, ParkingSlotOut[]> = {}
         await Promise.all(safeFloors.map(async (f) => {
           const r = await parkingSlotsApi.list({ floor_id: f.id, limit: 100 })
@@ -536,6 +580,21 @@ export default function Slot3DView() {
   )
 
   const isAvailable = slot.status === "AVAILABLE"
+  const floorName = floor?.floor_name || `Floor ${floor?.id}`
+
+  const handleTrackSlot = () => {
+    if (!lot || !slot) return
+    trackParkingSlot(
+      {
+        slotNumber: slot.slot_number,
+        floorName,
+        latitude: slot.latitude,
+        longitude: slot.longitude,
+      },
+      lot,
+      setActiveNavigation
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -575,9 +634,9 @@ export default function Slot3DView() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
           <div className="lg:col-span-1 space-y-4">
-            <div className={`rounded-2xl border p-4 space-y-3 ${isAvailable ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5"}`}>
+            <div className={`rounded border p-4 space-y-3 ${isAvailable ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5"}`}>
               <div className="flex items-center gap-3">
-                <div className={`size-12 rounded-xl flex items-center justify-center ${isAvailable ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"}`}>
+                <div className={`size-12 rounded flex items-center justify-center ${isAvailable ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"}`}>
                   {isAvailable ? <ParkingSquare className="size-6" /> : <Car className="size-6" />}
                 </div>
                 <div>
@@ -587,23 +646,47 @@ export default function Slot3DView() {
                   </p>
                 </div>
               </div>
-              {isAvailable && lot && (
+              {lot && floor && (
                 <Button
                   className="w-full gap-2 mt-2"
-                  onClick={() => navigate(`/parking/${lot.id}`)}
+                  onClick={() => navigate(`/parking/${lot.id}?slotId=${slot.id}&floorId=${floor.id}`)}
                 >
                   <ParkingSquare className="size-4" />
                   Book This Slot
                 </Button>
               )}
+              {!isAvailable && lot && floor && (
+                <p className="text-[11px] text-amber-600 text-center leading-snug">
+                  Currently occupied — pick a future start time when booking.
+                </p>
+              )}
+              {lot && floor && (
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={handleTrackSlot}
+                >
+                  <Navigation2 className="size-4" />
+                  Track This Slot
+                </Button>
+              )}
             </div>
+
+            {lot && floor && (
+              <LocationTrackBar
+                lotName={lot.name}
+                floorName={floorName}
+                slotNumber={slot.slot_number}
+                onTrack={handleTrackSlot}
+              />
+            )}
 
             <Card>
               <CardContent className="pt-5 space-y-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Slot Info</p>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="size-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <div className="size-8 rounded bg-muted flex items-center justify-center shrink-0">
                       <Hash className="size-4 text-muted-foreground" />
                     </div>
                     <div>
@@ -612,7 +695,7 @@ export default function Slot3DView() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="size-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <div className="size-8 rounded bg-muted flex items-center justify-center shrink-0">
                       <Layers className="size-4 text-muted-foreground" />
                     </div>
                     <div>
@@ -622,7 +705,7 @@ export default function Slot3DView() {
                   </div>
                   {slot.section && (
                     <div className="flex items-center gap-3">
-                      <div className="size-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                      <div className="size-8 rounded bg-muted flex items-center justify-center shrink-0">
                         <MapPin className="size-4 text-muted-foreground" />
                       </div>
                       <div>
@@ -639,9 +722,8 @@ export default function Slot3DView() {
           <div className="lg:col-span-3">
             <div
               ref={containerRef}
-              className={`relative w-full rounded-2xl overflow-hidden border shadow-xl transition-colors duration-300 ${
-                isFullscreen ? "fixed inset-0 z-50 h-screen w-screen rounded-none border-none" : "h-[560px]"
-              } ${isNightMode ? "bg-[#050814] border-slate-800" : "bg-slate-100 border-slate-200"}`}
+              className={`relative w-full rounded overflow-hidden border shadow-xl transition-colors duration-300 ${isFullscreen ? "fixed inset-0 z-50 h-screen w-screen rounded-none border-none" : "h-[560px]"
+                } ${isNightMode ? "bg-[#050814] border-slate-800" : "bg-slate-100 border-slate-200"}`}
             >
               {webGLError ? (
                 <WebGLFallback message={webGLError} />
@@ -660,36 +742,50 @@ export default function Slot3DView() {
                       isNightMode={isNightMode}
                       highlightedSlotId={id}
                       isAutoRotate={isAutoRotate}
+                      reservedSlotIds={reservedSlotIds}
                     />
                   </Canvas>
                 </Suspense>
               )}
 
               <div
-                className={`absolute bottom-4 left-4 flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium backdrop-blur-md border transition-colors duration-300 ${
-                  isNightMode
-                    ? "bg-slate-950/80 border-slate-800 text-slate-100 shadow-xl"
-                    : "bg-white/80 border-slate-200 text-slate-800 shadow-md"
-                }`}
+                className={`absolute bottom-4 left-4 flex items-center gap-3 px-3.5 py-2 rounded text-xs font-medium backdrop-blur-md border transition-colors duration-300 ${isNightMode
+                  ? "bg-slate-950/80 border-slate-800 text-slate-100 shadow-xl"
+                  : "bg-white/80 border-slate-200 text-slate-800 shadow-md"
+                  }`}
               >
                 <span className="flex items-center gap-1.5">
-                  <span className={`size-3 rounded-sm ${isNightMode ? "bg-[#dc2626]" : "bg-[#ef4444]"}`} />
+                  <span className={`size-3 rounded ${isNightMode ? "bg-[#dc2626]" : "bg-[#ef4444]"}`} />
                   Occupied
                 </span>
                 <span className="flex items-center gap-1.5">
+                  <span className={`size-3 rounded inline-block ${isNightMode ? "bg-[#d97706] shadow-[0_0_8px_rgba(245,158,11,0.6)]" : "bg-[#f59e0b]"}`} />
+                  Reserved
+                </span>
+                <span className="flex items-center gap-1.5">
                   <span
-                    className={`size-3 rounded-sm border ${
-                      isNightMode ? "border-emerald-400 bg-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "border-emerald-600 bg-emerald-500/30"
-                    }`}
+                    className={`size-3 rounded border ${isNightMode ? "border-emerald-400 bg-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "border-emerald-600 bg-emerald-500/30"
+                      }`}
                   />{" "}
                   Available
                 </span>
-                <span className="flex items-center gap-1.5"><span className="size-3 rounded-sm bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.6)]" /> Selected</span>
+                <span className="flex items-center gap-1.5"><span className="size-3 rounded bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.6)]" /> Selected</span>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {activeNavigation && (
+        <ParkingTrackModal
+          slotNumber={activeNavigation.slotNumber}
+          floorName={activeNavigation.floorName}
+          lotName={activeNavigation.lotName}
+          destLatitude={activeNavigation.latitude}
+          destLongitude={activeNavigation.longitude}
+          onClose={() => setActiveNavigation(null)}
+        />
+      )}
     </div>
   )
 }

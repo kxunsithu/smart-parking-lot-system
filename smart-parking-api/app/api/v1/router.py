@@ -12,10 +12,9 @@ from app.api.v1 import (
     parking_session,
     parking_slot,
     parking_staff,
-    payment,
     subscription,
     users,
-    vehicle,
+    car,
 )
 
 api_router = APIRouter()
@@ -25,12 +24,11 @@ api_router.include_router(users.router)
 api_router.include_router(parking_owner.router)
 api_router.include_router(parking_staff.router)
 api_router.include_router(customer.router)
-api_router.include_router(vehicle.router)
+api_router.include_router(car.router)
 api_router.include_router(parking_lot.router)
 api_router.include_router(parking_floor.router)
 api_router.include_router(parking_slot.router)
 api_router.include_router(parking_session.router)
-api_router.include_router(payment.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(package.router)
 api_router.include_router(subscription.router)

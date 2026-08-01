@@ -33,26 +33,23 @@ export interface CustomerUpdate {
   address?: string | null
 }
 
-export interface VehicleOut {
+export interface CarOut {
   id: number
   customer_id: number
   plate_number: string
-  vehicle_type?: string | null
   brand?: string | null
   color?: string | null
 }
 
-export interface VehicleCreate {
+export interface CarCreate {
   plate_number: string
-  vehicle_type?: string | null
   brand?: string | null
   color?: string | null
   customer_id?: number | null
 }
 
-export interface VehicleUpdate {
+export interface CarUpdate {
   plate_number?: string | null
-  vehicle_type?: string | null
   brand?: string | null
   color?: string | null
 }
@@ -83,7 +80,7 @@ export type SessionStatus = "PENDING" | "ACTIVE" | "FINISHED"
 
 export interface ParkingSessionOut {
   id: number
-  vehicle_id: number
+  car_id: number
   slot_id: number
   start_time: string
   end_time?: string | null
@@ -93,35 +90,19 @@ export interface ParkingSessionOut {
 }
 
 export interface ParkingSessionStart {
-  vehicle_id: number
+  car_id: number
   slot_id: number
 }
 
 export interface ParkingSessionBook {
-  vehicle_id: number
+  car_id: number
   slot_id: number
   start_time: string  // ISO datetime string
   end_time: string    // ISO datetime string
-  payment_method: PaymentMethod
 }
 
 export interface ParkingSessionFinish {
   rate_per_hour?: number | null
-}
-
-export type PaymentStatus = "PENDING" | "PAID" | "REFUNDED"
-
-export type PaymentMethod = "CASH" | "KBZPAY" | "WAVEPAY" | "AYAPAY" | "UABPAY"
-
-export interface PaymentOut {
-  id: number
-  parking_session_id: number
-  customer_id: number
-  amount: number
-  payment_method: PaymentMethod
-  transaction_ref?: string | null
-  status: PaymentStatus
-  paid_at: string
 }
 
 export interface ApiMeta {

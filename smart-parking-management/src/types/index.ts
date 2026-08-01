@@ -6,10 +6,6 @@ export type SlotStatus = "AVAILABLE" | "OCCUPIED"
 
 export type SessionStatus = "PENDING" | "ACTIVE" | "FINISHED"
 
-export type PaymentStatus = "PENDING" | "PAID" | "REFUNDED"
-
-export type PaymentMethod = "CASH" | "KBZPAY" | "WAVEPAY" | "AYAPAY" | "UABPAY"
-
 export type SubscriptionStatus = "ACTIVE" | "EXPIRED" | "CANCELLED"
 
 export interface PackageOut {
@@ -31,11 +27,12 @@ export interface SubscriptionOut {
   started_at: string
   expires_at: string
   status: SubscriptionStatus
-  payment_method: PaymentMethod | string
+  payment_method: string
   amount: number
   transaction_ref?: string | null
   created_at: string
   package?: PackageOut | null
+  owner?: ParkingOwnerOut | null
 }
 
 export interface ApiMeta {
@@ -103,6 +100,7 @@ export interface ParkingLotOut {
   is_active: boolean
   created_at: string
   owner?: ParkingOwnerOut | null
+  staff_count?: number
 }
 
 export interface ParkingLotWithStaffOut extends ParkingLotOut {
@@ -115,13 +113,13 @@ export interface ParkingStaffOut {
   parking_lot_id: number
   created_by?: number | null
   user?: UserOut | null
+  parking_lot?: ParkingLotOut | null
 }
 
-export interface VehicleOut {
+export interface CarOut {
   id: number
   customer_id: number
   plate_number: string
-  vehicle_type?: string | null
   brand?: string | null
   color?: string | null
 }
@@ -144,24 +142,23 @@ export interface ParkingSlotOut {
 
 export interface ParkingSessionOut {
   id: number
-  vehicle_id: number
+  car_id: number
   slot_id: number
+  slot_number?: string | null
   start_time: string
   end_time?: string | null
   duration?: number | null
   fee?: number | null
   status: SessionStatus
+  car?: CarOut | null
+  customer?: SessionCustomerInfo | null
 }
 
-export interface PaymentOut {
+export interface SessionCustomerInfo {
   id: number
-  parking_session_id: number
-  customer_id: number
-  amount: number
-  payment_method: PaymentMethod
-  transaction_ref?: string | null
-  status: PaymentStatus
-  paid_at: string
+  name: string
+  email: string
+  phone?: string | null
 }
 
 export interface AdminDashboardOut {
@@ -304,7 +301,7 @@ export interface ParkingOwnerUpdate {
 
 // Parking Session CRUD Types
 export interface ParkingSessionStart {
-  vehicle_id: number
+  car_id: number
   slot_id: number
 }
 
@@ -345,19 +342,6 @@ export interface ParkingStaffUpdate {
   is_active?: boolean | null
 }
 
-// Payment CRUD Types
-export interface PaymentCreate {
-  parking_session_id: number
-  customer_id?: number | null
-  amount: number
-  payment_method: PaymentMethod
-  transaction_ref?: string | null
-}
-
-export interface PaymentStatusUpdate {
-  status: PaymentStatus
-}
-
 // User CRUD Types
 export interface UserCreate {
   name: string
@@ -373,18 +357,16 @@ export interface UserUpdate {
   is_active?: boolean | null
 }
 
-// Vehicle CRUD Types
-export interface VehicleCreate {
+// Car CRUD Types
+export interface CarCreate {
   plate_number: string
-  vehicle_type?: string | null
   brand?: string | null
   color?: string | null
   customer_id?: number | null
 }
 
-export interface VehicleUpdate {
+export interface CarUpdate {
   plate_number?: string | null
-  vehicle_type?: string | null
   brand?: string | null
   color?: string | null
 }
@@ -393,6 +375,6 @@ export interface VehicleUpdate {
 export interface SubscriptionPurchase {
   package_id: number
   owner_id?: number | null
-  payment_method: PaymentMethod | string
+  payment_method: string
   transaction_ref?: string | null
 }

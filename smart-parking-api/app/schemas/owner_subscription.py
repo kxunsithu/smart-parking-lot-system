@@ -5,6 +5,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from app.schemas.package import PackageOut
+from app.schemas.parking_owner import ParkingOwnerOut
 
 
 class SubscriptionPurchase(BaseModel):
@@ -26,5 +27,6 @@ class SubscriptionOut(BaseModel):
     transaction_ref: Optional[str] = None
     created_at: datetime
     package: Optional[PackageOut] = None
+    owner: Optional[ParkingOwnerOut] = None
 
     model_config = {"from_attributes": True}

@@ -1,19 +1,16 @@
 import { useState, useEffect, useMemo } from "react"
 import { toast } from "sonner"
-import { Plus, MoreHorizontal, Loader2 } from "lucide-react"
+import { Loader2, Filter, RotateCcw, Search } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { PageHeader } from "@/components/common/PageHeader"
 import { DataPagination } from "@/components/common/DataPagination"
 import { EmptyState } from "@/components/common/EmptyState"
-import { TableSkeleton } from "@/components/common/LoadingBlock"
-import { StatusBadge } from "@/components/common/StatusBadge"
 import { FormField } from "@/components/common/FormField"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
@@ -23,32 +20,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { parkingSessionsApi } from "@/api/parkingSessions"
 import { getErrorMessage } from "@/api/client"
 import { usePaginationState } from "@/hooks/usePaginationState"
-import { sessionStatusTone } from "@/utils/statusColors"
-import { formatCurrency, formatDateTime, formatDuration } from "@/utils/formatters"
-import { SessionPaymentModal } from "@/components/sessions/SessionPaymentModal"
-import type { ParkingSessionOut, ParkingSessionStart as StartSessionPayload, ParkingSessionFinish as FinishSessionPayload } from "@/types"
+import {
+  SessionCardGrid,
+  SessionCardSkeleton,
+} from "@/components/sessions/SessionCard"
+import type { ParkingSessionOut, ParkingSessionFinish as FinishSessionPayload } from "@/types"
 import type { ListResult } from "@/api/types"
 
 const STATUS_FILTER_OPTIONS: { label: string; value: string }[] = [
-  { label: "All statuses", value: "all" },
+  { label: "All Statuses", value: "all" },
   { label: "Active", value: "ACTIVE" },
   { label: "Finished", value: "FINISHED" },
 ]
-
-const startSessionSchema = z.object({
-  vehicle_id: z.string().min(1, "Vehicle ID is required"),
-  slot_id: z.string().min(1, "Slot ID is required"),
-})
-type StartSessionFormValues = z.infer<typeof startSessionSchema>
 
 const finishSessionSchema = z.object({
   rate_per_hour: z
@@ -61,15 +47,20 @@ type FinishSessionFormValues = z.infer<typeof finishSessionSchema>
 export function StaffSessionsPage() {
   const { setPage, params } = usePaginationState()
   const [statusFilter, setStatusFilter] = useState("all")
+  const [searchQuery, setSearchQuery] = useState("")
   const [finishTarget, setFinishTarget] = useState<ParkingSessionOut | null>(null)
-  const [payTarget, setPayTarget] = useState<ParkingSessionOut | null>(null)
-  const [isStartOpen, setIsStartOpen] = useState(false)
   const [data, setData] = useState<ListResult<ParkingSessionOut> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isFetching, setIsFetching] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const queryParams = useMemo(() => ({ ...params, status: statusFilter === "all" ? undefined : statusFilter }), [params, statusFilter])
+  const queryParams = useMemo(
+    () => ({
+      ...params,
+      status: statusFilter === "all" ? undefined : statusFilter,
+    }),
+    [params, statusFilter]
+  )
 
   const fetchData = async () => {
     try {
@@ -88,24 +79,6 @@ export function StaffSessionsPage() {
     fetchData()
   }, [queryParams])
 
-  const handleStart = async (values: StartSessionFormValues) => {
-    try {
-      setIsSubmitting(true)
-      const payload: StartSessionPayload = {
-        vehicle_id: Number(values.vehicle_id),
-        slot_id: Number(values.slot_id),
-      }
-      await parkingSessionsApi.start(payload)
-      toast.success("Parking session started.")
-      setIsStartOpen(false)
-      fetchData()
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   const handleFinish = async (id: number, values: FinishSessionFormValues) => {
     try {
       setIsSubmitting(true)
@@ -123,106 +96,102 @@ export function StaffSessionsPage() {
     }
   }
 
-  const sessions = data?.items ?? []
+  const rawSessions = data?.items ?? []
+
+  // Client-side text search filter for plate number or customer name
+  const sessions = useMemo(() => {
+    if (!searchQuery.trim()) return rawSessions
+    const q = searchQuery.trim().toLowerCase()
+    return rawSessions.filter(
+      (s) =>
+        (s.car?.plate_number ?? "").toLowerCase().includes(q) ||
+        (s.customer?.name ?? "").toLowerCase().includes(q)
+    )
+  }, [rawSessions, searchQuery])
+
+  const isFiltered =
+    statusFilter !== "all" || searchQuery.trim() !== ""
+
+  const handleReset = () => {
+    setStatusFilter("all")
+    setSearchQuery("")
+  }
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Parking Sessions"
-        description="Monitor and manage active/completed parking sessions."
-        actions={
-          <Button onClick={() => setIsStartOpen(true)}>
-            <Plus className="mr-2 size-4" /> Start session
-          </Button>
-        }
+        description="Monitor and manage active/completed parking sessions booked by customers."
       />
 
-      <Card>
-        <CardContent className="space-y-4">
-          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value ?? "all")}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_FILTER_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* Filter Controls Bar */}
+      <Card className="border border-border/80 shadow-sm rounded">
+        <CardContent className="p-4 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between flex-wrap">
+          <div className="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-wider shrink-0">
+            <Filter className="size-4 text-primary" />
+            <span>Filter Sessions:</span>
+          </div>
 
-          {isLoading ? (
-            <TableSkeleton />
-          ) : sessions.length === 0 ? (
-            <EmptyState title="No sessions found" description="Try adjusting your filters or start a new session." />
-          ) : (
-            <div className="overflow-x-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Vehicle ID</TableHead>
-                    <TableHead>Slot ID</TableHead>
-                    <TableHead>Start Time</TableHead>
-                    <TableHead>End Time</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Fee</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-12" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sessions.map((session) => (
-                    <TableRow key={session.id} className={isFetching ? "opacity-60" : undefined}>
-                      <TableCell className="font-medium">#{session.id}</TableCell>
-                      <TableCell>{session.vehicle_id}</TableCell>
-                      <TableCell>{session.slot_id}</TableCell>
-                      <TableCell>{formatDateTime(session.start_time)}</TableCell>
-                      <TableCell>{session.end_time ? formatDateTime(session.end_time) : "—"}</TableCell>
-                      <TableCell>{session.duration ? formatDuration(session.duration) : "—"}</TableCell>
-                      <TableCell>{session.fee != null ? formatCurrency(session.fee) : "—"}</TableCell>
-                      <TableCell>
-                        <StatusBadge label={session.status} tone={sessionStatusTone(session.status)} />
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8">
-                              <MoreHorizontal className="size-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {session.status === "ACTIVE" && (
-                              <DropdownMenuItem onClick={() => setFinishTarget(session)}>
-                                Finish session
-                              </DropdownMenuItem>
-                            )}
-                            {session.status === "FINISHED" && session.fee != null && (
-                              <DropdownMenuItem onClick={() => setPayTarget(session)}>
-                                Collect fee
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 flex-wrap">
+            {/* General Search */}
+            <div className="relative flex-1 min-w-[160px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Search plate or customer..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9 text-xs rounded"
+              />
             </div>
-          )}
 
-          <DataPagination meta={data?.meta} onPageChange={setPage} />
+            {/* Status Filter */}
+            <div className="min-w-[140px]">
+              <Select value={statusFilter} onValueChange={(val) => val && setStatusFilter(val)} items={STATUS_FILTER_OPTIONS}>
+                <SelectTrigger className="h-9 text-xs rounded">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_FILTER_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value} className="text-xs">
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Reset Button */}
+            {isFiltered && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleReset}
+                className="h-9 px-3 text-xs gap-1.5 text-muted-foreground hover:text-foreground rounded shrink-0"
+              >
+                <RotateCcw className="size-3.5" />
+                Reset
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
-      <StartSessionDialog
-        open={isStartOpen}
-        onOpenChange={setIsStartOpen}
-        onSubmit={handleStart}
-        submitting={isSubmitting}
-      />
+      {isLoading ? (
+        <SessionCardSkeleton />
+      ) : sessions.length === 0 ? (
+        <EmptyState
+          title="No sessions found"
+          description={isFiltered ? "No sessions match your filter criteria." : "No customer parking sessions found."}
+        />
+      ) : (
+        <SessionCardGrid
+          sessions={sessions}
+          isFetching={isFetching}
+          onFinish={setFinishTarget}
+        />
+      )}
+
+      <DataPagination meta={data?.meta} onPageChange={setPage} />
 
       <FinishSessionDialog
         open={Boolean(finishTarget)}
@@ -231,70 +200,7 @@ export function StaffSessionsPage() {
         onSubmit={(values) => finishTarget && handleFinish(finishTarget.id, values)}
         submitting={isSubmitting}
       />
-
-      <SessionPaymentModal
-        open={Boolean(payTarget)}
-        onOpenChange={(open) => !open && setPayTarget(null)}
-        session={payTarget}
-        onSuccess={fetchData}
-      />
     </div>
-  )
-}
-
-function StartSessionDialog({
-  open,
-  onOpenChange,
-  onSubmit,
-  submitting,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSubmit: (values: StartSessionFormValues) => void
-  submitting: boolean
-}) {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<StartSessionFormValues>({
-    resolver: zodResolver(startSessionSchema),
-  })
-
-  function handleOpenChange(next: boolean) {
-    if (!next) reset()
-    onOpenChange(next)
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Start Parking Session</DialogTitle>
-          <DialogDescription>
-            Enter the vehicle ID and assigned slot ID to begin a parking session.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <FormField label="Vehicle ID" htmlFor="vehicle_id" error={errors.vehicle_id?.message}>
-            <Input id="vehicle_id" type="number" placeholder="e.g. 1" {...register("vehicle_id")} />
-          </FormField>
-          <FormField label="Slot ID" htmlFor="slot_id" error={errors.slot_id?.message}>
-            <Input id="slot_id" type="number" placeholder="e.g. 5" {...register("slot_id")} />
-          </FormField>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
-              Start session
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   )
 }
 

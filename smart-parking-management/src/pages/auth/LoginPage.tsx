@@ -39,14 +39,14 @@ export function LoginPage() {
       const user = await authApi.me()
       setUser(user)
 
-            // Check if user has customer role
+      // Check if user has customer role
       if (!user.role || user.role.name.toLowerCase() == "customer") {
         toast.error("Access denied. This is a management portal.")
         const { logout } = useAuthStore.getState()
         logout()
         return
       }
-      
+
       // Check if email is verified
       if (!user.is_verified) {
         try {
@@ -63,9 +63,9 @@ export function LoginPage() {
         }
         return
       }
-      
+
       toast.success(`Welcome back, ${user.name}!`)
-      
+
       navigate(homePathForRole(user.role!.name), { replace: true })
     } catch (error) {
       toast.error(getErrorMessage(error))
@@ -77,7 +77,7 @@ export function LoginPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2 lg:hidden">
-        <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <div className="flex size-10 items-center justify-center rounded bg-primary text-primary-foreground">
           <ParkingSquare className="size-5" />
         </div>
       </div>

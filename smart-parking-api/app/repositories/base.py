@@ -32,8 +32,7 @@ class BaseRepository(Generic[ModelType]):
 
     def update(self, obj: ModelType, data: dict[str, Any]) -> ModelType:
         for key, value in data.items():
-            if value is not None:
-                setattr(obj, key, value)
+            setattr(obj, key, value)
         self.db.commit()
         self.db.refresh(obj)
         return obj
@@ -65,5 +64,5 @@ class BaseRepository(Generic[ModelType]):
             stmt = stmt.order_by(column.desc() if order == "desc" else column.asc())
 
         stmt = stmt.offset((page - 1) * limit).limit(limit)
-        items = list(self.db.scalars(stmt).all())
+        items = list(self.db.scalars(stmt).unique().all())
         return items, total

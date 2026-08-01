@@ -4,7 +4,18 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Loader2, Plus, Edit, Trash2 } from "lucide-react"
+import {
+  Loader2,
+  Plus,
+  Edit,
+  Trash2,
+  Building2,
+  MapPin,
+  DollarSign,
+  Eye,
+  Box,
+  Users,
+} from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { SearchInput } from "@/components/common/SearchInput"
 import { DataPagination } from "@/components/common/DataPagination"
@@ -15,7 +26,8 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -74,7 +86,7 @@ export function LotsPage() {
     if (!ownerProfile?.id) return
     try {
       setIsFetching(true)
-      const queryParams = { ...params, owner_id: ownerProfile.id }
+      const queryParams = { ...params, owner_id: ownerProfile.id, with_staff_count: true }
       const result = await parkingLotsApi.list(queryParams)
       setData(result)
     } catch (error) {
@@ -154,83 +166,170 @@ export function LotsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Parking Lots"
-        description="Manage your parking lots."
+        description="Manage your parking lots portfolio."
         actions={
-          <Button onClick={() => setCreateOpen(true)}>
+          <Button onClick={() => setCreateOpen(true)} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-sm">
             <Plus className="size-4" />
             New Lot
           </Button>
         }
       />
 
-      <Card>
-        <CardContent className="space-y-4">
-          <SearchInput value={search} onChange={setSearch} placeholder="Search by name..." className="max-w-sm" />
+      <div className="space-y-4">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by name..." className="max-w-sm" />
 
-          {isLoading ? (
-            <CardGridSkeleton count={4} />
-          ) : lots.length === 0 ? (
-            <EmptyState
-              title="No parking lots yet"
-              description="Create your first parking lot to get started."
-              action={
-                <Button size="sm" onClick={() => setCreateOpen(true)}>
-                  <Plus className="size-4" />
-                  New Lot
-                </Button>
-              }
-            />
-          ) : (
-            <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 ${isFetching ? "opacity-60" : ""}`}>
-              {lots.map((lot) => (
-                <Card
-                  key={lot.id}
-                  className="cursor-pointer transition-shadow hover:shadow-md"
-                  onClick={() => navigate(`/owner/lots/${lot.id}`)}
-                >
-                  <CardHeader className="flex-row items-start justify-between">
-                    <div>
-                      <CardTitle>{lot.name}</CardTitle>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8"
-                        onClick={(e) => { e.stopPropagation(); setEditTarget(lot) }}
-                      >
-                        <Edit className="size-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 text-destructive hover:text-destructive"
-                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(lot) }}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">Status:</span>
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <Switch
-                          checked={lot.is_active}
-                          onCheckedChange={() => handleToggleStatus(lot.id)}
-                          disabled={togglingId === lot.id}
-                        />
+        {isLoading ? (
+          <CardGridSkeleton count={4} />
+        ) : lots.length === 0 ? (
+          <EmptyState
+            title="No parking lots yet"
+            description="Create your first parking lot to get started."
+            action={
+              <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-2">
+                <Plus className="size-4" />
+                New Lot
+              </Button>
+            }
+          />
+        ) : (
+          <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 ${isFetching ? "opacity-60" : ""}`}>
+            {lots.map((lot) => (
+              <Card
+                key={lot.id}
+                className="group relative overflow-hidden border border-border/80 shadow-sm hover:shadow-xl hover:border-primary/50 transition-all duration-300 rounded flex flex-col justify-between"
+              >
+                <CardContent className="p-5 space-y-4 flex-1 flex flex-col justify-between">
+                  <div className="space-y-4">
+                    {/* Header Row: Icon + Name + Active Switch */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="size-11 rounded bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-sm">
+                          <Building2 className="size-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <h3
+                            className="font-bold text-base text-foreground leading-tight truncate group-hover:text-primary transition-colors cursor-pointer"
+                            onClick={() => navigate(`/owner/lots/${lot.id}`)}
+                          >
+                            {lot.name}
+                          </h3>
+                          <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                            <span>ID: #{lot.id}</span>
+                            <span>·</span>
+                            <span>{new Date(lot.created_at).toLocaleDateString()}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 hover:bg-muted text-muted-foreground hover:text-foreground rounded"
+                          onClick={() => setEditTarget(lot)}
+                          title="Edit Lot"
+                        >
+                          <Edit className="size-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 text-destructive/80 hover:text-destructive hover:bg-destructive/10 rounded"
+                          onClick={() => setDeleteTarget(lot)}
+                          title="Delete Lot"
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
 
-          <DataPagination meta={data?.meta} onPageChange={setPage} />
-        </CardContent>
-      </Card>
+                    {/* Status & Rate Badge Info Row */}
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className="rounded bg-muted/30 border border-border/40 p-2 space-y-1">
+                        <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                          <Users className="size-3 text-primary" /> Staff
+                        </span>
+                        <p className="font-bold text-foreground text-xs">
+                          {lot.staff_count ?? 0}
+                        </p>
+                      </div>
+
+                      <div className="rounded bg-muted/30 border border-border/40 p-2 space-y-1">
+                        <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                          <DollarSign className="size-3 text-emerald-500" /> Rate
+                        </span>
+                        <p className="font-bold text-emerald-600 dark:text-emerald-400 text-xs truncate" title={lot.rate_per_hour != null ? `${lot.rate_per_hour.toLocaleString()} MMK` : "Default"}>
+                          {lot.rate_per_hour != null ? `${lot.rate_per_hour.toLocaleString()}` : "Default"}
+                        </p>
+                      </div>
+
+                      <div className="rounded bg-muted/30 border border-border/40 p-2 space-y-1">
+                        <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                          <Switch
+                            checked={lot.is_active}
+                            onCheckedChange={() => handleToggleStatus(lot.id)}
+                            disabled={togglingId === lot.id}
+                            className="scale-75 -ml-1"
+                          />
+                          <span>{lot.is_active ? "Active" : "Closed"}</span>
+                        </span>
+                        <Badge
+                          variant={lot.is_active ? "default" : "secondary"}
+                          className={`text-[9px] uppercase font-bold tracking-wider px-1.5 py-0 rounded w-fit ${lot.is_active
+                            ? "bg-emerald-500/15 text-emerald-600 border border-emerald-500/30"
+                            : "bg-slate-500/15 text-slate-600 border border-slate-500/30"
+                            }`}
+                        >
+                          {lot.is_active ? "Open" : "Off"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions Footer */}
+                  <div className="pt-4 border-t border-border/40 flex items-center gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="flex-1 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold rounded shadow-sm"
+                      onClick={() => navigate(`/owner/lots/${lot.id}`)}
+                    >
+                      <Eye className="size-3.5" />
+                      Manage Lot
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs gap-1.5 rounded border-border/80 hover:bg-muted"
+                      onClick={() => navigate(`/3d/${lot.id}`)}
+                      title="3D View"
+                    >
+                      <Box className="size-3.5 text-primary" />
+                      3D View
+                    </Button>
+
+                    {lot.google_map_url && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs gap-1.5 rounded border-border/80 hover:bg-muted"
+                        onClick={() => navigate(`/map/${lot.id}`)}
+                        title="Map View"
+                      >
+                        <MapPin className="size-3.5 text-primary" />
+                        Map
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        <DataPagination meta={data?.meta} onPageChange={setPage} />
+      </div>
 
       <LotFormDialog
         open={createOpen}
@@ -297,10 +396,10 @@ function LotFormDialog({
     resolver: zodResolver(lotSchema),
     values: defaultValues
       ? {
-          name: defaultValues.name,
-          google_map_url: defaultValues.google_map_url ?? "",
-          rate_per_hour: defaultValues.rate_per_hour ?? undefined,
-        }
+        name: defaultValues.name,
+        google_map_url: defaultValues.google_map_url ?? "",
+        rate_per_hour: defaultValues.rate_per_hour ?? undefined,
+      }
       : undefined,
   })
 

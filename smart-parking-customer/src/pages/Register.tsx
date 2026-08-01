@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Car, Lock, Mail, User } from "lucide-react"
+import { Car, Lock, Mail, User, Eye, EyeOff, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { authApi } from "@/api/auth"
+import { useAuthStore } from "@/store/authStore"
 import { toast } from "@/components/ui/toaster"
 
 const registerSchema = z.object({
@@ -25,7 +26,10 @@ type RegisterForm = z.infer<typeof registerSchema>
 
 export default function Register() {
   const navigate = useNavigate()
+  const { setTokens, setUser, setVerifying } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const {
     register,
@@ -40,8 +44,23 @@ export default function Register() {
     try {
       const { confirmPassword, ...registerData } = data
       await authApi.register(registerData)
-      toast.success("Registration successful! Please sign in.")
-      navigate("/login")
+
+      // Auto login to start verification flow
+      const tokens = await authApi.login({ email: data.email, password: data.password })
+      setTokens(tokens.access_token, tokens.refresh_token)
+
+      const user = await authApi.getMe()
+      setUser(user)
+
+      try {
+        await authApi.sendOTP({ email: user.email })
+        setVerifying(true)
+        toast.success("Account created! Verification OTP sent to your email.")
+        navigate("/verify-email")
+      } catch {
+        toast.success("Account created! Please sign in to verify your email.")
+        navigate("/login")
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Registration failed")
     } finally {
@@ -55,15 +74,15 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="bg-primary p-3 rounded-full">
-              <Car className="h-8 w-8 text-primary-foreground" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-background p-4 sm:p-6">
+      <Card className="w-full max-w-md border-border/60 shadow-xl backdrop-blur-sm bg-card/95">
+        <CardHeader className="space-y-2 text-center pb-4">
+          <div className="flex justify-center mb-2">
+            <div className="bg-primary/10 border border-primary/20 p-3.5 rounded text-primary shadow-inner">
+              <Car className="h-8 w-8" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
+          <CardTitle className="text-2xl font-extrabold tracking-tight">Create Account</CardTitle>
           <CardDescription>Sign up to start using Smart Parking</CardDescription>
         </CardHeader>
         <CardContent>
@@ -80,12 +99,12 @@ export default function Register() {
                 />
               </div>
               {errors.name && (
-                <p className="text-sm text-destructive">{errors.name.message}</p>
+                <p className="text-xs text-destructive mt-1">{errors.name.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email Address</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -97,7 +116,7 @@ export default function Register() {
                 />
               </div>
               {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
+                <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
               )}
             </div>
 
@@ -107,14 +126,21 @@ export default function Register() {
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pl-10"
+                  className="pl-10 pr-10"
                   {...register("password")}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
               {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
+                <p className="text-xs text-destructive mt-1">{errors.password.message}</p>
               )}
             </div>
 
@@ -124,27 +150,40 @@ export default function Register() {
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="confirmPassword"
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pl-10"
+                  className="pl-10 pr-10"
                   {...register("confirmPassword")}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
               {errors.confirmPassword && (
-                <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+                <p className="text-xs text-destructive mt-1">{errors.confirmPassword.message}</p>
               )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Sign Up"}
+            <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" /> Creating Account...
+                </>
+              ) : (
+                "Sign Up"
+              )}
             </Button>
 
-            <div className="text-center text-sm">
+            <div className="text-center text-sm pt-2">
               <span className="text-muted-foreground">Already have an account? </span>
               <button
                 type="button"
                 onClick={() => navigate("/login")}
-                className="text-primary hover:underline font-medium"
+                className="text-primary hover:underline font-semibold"
               >
                 Sign in
               </button>
@@ -155,3 +194,4 @@ export default function Register() {
     </div>
   )
 }
+

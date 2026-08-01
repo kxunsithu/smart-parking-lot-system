@@ -1,35 +1,32 @@
 import { useEffect, useState } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useSearchParams } from "react-router-dom"
 import {
-  ArrowLeft, MapPin, RotateCw, Car as CarIcon, Clock, DollarSign,
-  CheckCircle2, CreditCard, Loader2, CalendarDays, ChevronRight, AlertCircle,
+  ArrowLeft, MapPin, RotateCw, CheckCircle2, Loader2,
+  CalendarDays, ChevronRight, Filter, Search, Layers, RotateCcw,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import Navbar from "@/components/layout/Navbar"
+import { LocationTrackBar } from "@/components/parking/LocationTrackBar"
+import { ParkingTrackModal } from "@/components/parking/ParkingTrackModal"
 import { parkingLotsApi } from "@/api/parkingLots"
-import { vehiclesApi } from "@/api/vehicles"
+import { carsApi } from "@/api/cars"
 import { parkingSessionsApi } from "@/api/parkingSessions"
 import { parkingFloorsApi } from "@/api/parkingFloors"
 import { parkingSlotsApi } from "@/api/parkingSlots"
-import { useVehicleStore } from "@/store/vehicleStore"
-import type { ParkingLotOut, VehicleOut, ParkingSlotOut, PaymentMethod } from "@/api/types"
+import { useCarStore } from "@/store/carStore"
+import type { ParkingLotOut, ParkingSlotOut, ParkingSessionOut } from "@/api/types"
 import type { ParkingFloorOut } from "@/api/parkingFloors"
 import { toast } from "@/components/ui/toaster"
-import { differenceInMinutes, format, addHours } from "date-fns"
+import { format, addHours } from "date-fns"
+import { trackParkingSlot, type ParkingTrackTarget, type SlotTrackDetails } from "@/lib/parkingTrack"
+import { findCarSessionOverlap } from "@/lib/sessionSchedule"
 
-type BookingStep = "select" | "schedule" | "pay" | "success"
-
-const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: string }[] = [
-  { value: "CASH", label: "Cash", icon: "💵" },
-  { value: "KBZPAY", label: "KBZ Pay", icon: "📱" },
-  { value: "WAVEPAY", label: "Wave Pay", icon: "🌊" },
-  { value: "AYAPAY", label: "AYA Pay", icon: "💳" },
-  { value: "UABPAY", label: "UAB Pay", icon: "🏦" },
-]
+type BookingStep = "select" | "schedule" | "success"
 
 function toLocalDatetimeValue(date: Date): string {
   // Returns "YYYY-MM-DDTHH:MM" for datetime-local input
@@ -48,17 +45,44 @@ function calcFee(start: string, end: string, ratePerHour: number): number {
   return Math.round((mins / 60) * ratePerHour * 100) / 100
 }
 
+function getEmbedUrl(mapUrl?: string | null): string | null {
+  if (!mapUrl) return null
+  const str = mapUrl.trim()
+  if (str.toLowerCase().includes("<iframe")) {
+    const match = str.match(/src=["']([^"']+)["']/i)
+    if (match && match[1]) return match[1]
+  }
+  if (str.includes("maps/embed") || str.includes("output=embed")) {
+    return str
+  }
+  if (str.includes("pb=")) {
+    const match = str.match(/[?&]pb=([^&]+)/)
+    if (match) return `https://www.google.com/maps/embed?pb=${match[1]}`
+  }
+  if (str.startsWith("http://") || str.startsWith("https://")) {
+    return `https://maps.google.com/maps?q=${encodeURIComponent(str)}&output=embed`
+  }
+  return null
+}
+
 export default function ParkingDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { vehicles } = useVehicleStore()
+  const [searchParams] = useSearchParams()
+  const { cars } = useCarStore()
   const [lot, setLot] = useState<ParkingLotOut | null>(null)
   const [floors, setFloors] = useState<ParkingFloorOut[]>([])
-  const [selectedVehicle, setSelectedVehicle] = useState<number | null>(null)
+  const [lotSections, setLotSections] = useState<string[]>([])
+  const [selectedCar, setSelectedCar] = useState<number | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadingFloors, setLoadingFloors] = useState(true)
   const [step, setStep] = useState<BookingStep>("select")
+
+  // Slot filters
+  const [selectedFloorId, setSelectedFloorId] = useState<string>("all")
+  const [selectedSection, setSelectedSection] = useState<string>("all")
+  const [slotSearchQuery, setSlotSearchQuery] = useState("")
 
   // Scheduling
   const defaultStart = toLocalDatetimeValue(new Date())
@@ -66,18 +90,92 @@ export default function ParkingDetail() {
   const [startTime, setStartTime] = useState(defaultStart)
   const [endTime, setEndTime] = useState(defaultEnd)
 
-  // Payment
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH")
+  // Booking state
   const [previewFee, setPreviewFee] = useState<number>(0)
+  const [bookedSession, setBookedSession] = useState<ParkingSessionOut | null>(null)
   const [booking, setBooking] = useState(false)
+  const [selectedSlotDetails, setSelectedSlotDetails] = useState<SlotTrackDetails | null>(null)
+  const [activeNavigation, setActiveNavigation] = useState<ParkingTrackTarget | null>(null)
+  const [carSessions, setCarSessions] = useState<ParkingSessionOut[]>([])
 
   useEffect(() => {
     if (id) {
       loadParkingLot(id)
-      loadVehicles()
+      loadCars()
       loadFloors(parseInt(id))
     }
   }, [id])
+
+  useEffect(() => {
+    const slotIdParam = searchParams.get("slotId")
+    if (slotIdParam) {
+      const slotId = Number(slotIdParam)
+      if (Number.isFinite(slotId)) {
+        setSelectedSlot(slotId)
+        setStep("select")
+      }
+    }
+
+    const floorIdParam = searchParams.get("floorId")
+    if (floorIdParam) {
+      setSelectedFloorId(floorIdParam)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    if (!selectedSlot) {
+      setSelectedSlotDetails(null)
+      return
+    }
+
+    let isMounted = true
+    async function loadSelectedSlotDetails() {
+      try {
+        const slot = await parkingSlotsApi.get(selectedSlot)
+        const floor = await parkingFloorsApi.get(slot.floor_id)
+        if (isMounted) {
+          setSelectedSlotDetails({
+            slotNumber: slot.slot_number,
+            floorName: floor.floor_name || `Floor ${floor.id}`,
+            latitude: slot.latitude,
+            longitude: slot.longitude,
+          })
+        }
+      } catch (e) {
+        console.error("Failed to load selected slot details", e)
+      }
+    }
+
+    loadSelectedSlotDetails()
+    return () => {
+      isMounted = false
+    }
+  }, [selectedSlot])
+
+  useEffect(() => {
+    if (!selectedCar) {
+      setCarSessions([])
+      return
+    }
+
+    let isMounted = true
+    parkingSessionsApi.list({ car_id: selectedCar, limit: 100 })
+      .then((sessions) => {
+        if (isMounted) setCarSessions(sessions)
+      })
+      .catch((error) => {
+        console.error("Failed to load car sessions", error)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [selectedCar])
+
+  const handleTrackSlot = (details: SlotTrackDetails) => {
+    if (!lot) return
+    trackParkingSlot(details, lot, setActiveNavigation)
+  }
 
   const loadParkingLot = async (lotId: string) => {
     try {
@@ -91,12 +189,12 @@ export default function ParkingDetail() {
     }
   }
 
-  const loadVehicles = async () => {
+  const loadCars = async () => {
     try {
-      const response = await vehiclesApi.list()
-      if (response?.length > 0) setSelectedVehicle(response[0].id)
+      const response = await carsApi.list()
+      if (response?.length > 0) setSelectedCar(response[0].id)
     } catch {
-      console.error("Failed to load vehicles")
+      console.error("Failed to load cars")
     }
   }
 
@@ -111,42 +209,68 @@ export default function ParkingDetail() {
     }
   }
 
+  useEffect(() => {
+    if (floors.length === 0) return
+    let cancelled = false
+    Promise.all(floors.map((f) => parkingSlotsApi.list({ floor_id: f.id, limit: 100 })))
+      .then((results) => {
+        if (cancelled) return
+        setLotSections(
+          Array.from(
+            new Set(
+              results
+                .flatMap((r) => r.map((s) => s.section?.trim()).filter((x): x is string => Boolean(x)))
+            )
+          ).sort((a, b) => a.localeCompare(b))
+        )
+      })
+      .catch((e) => console.error("Failed to load sections:", e))
+    return () => {
+      cancelled = true
+    }
+  }, [floors])
+
   // Step 1 → Step 2: validate selection then go to schedule
   const handleProceedToSchedule = () => {
-    if (!selectedVehicle) { toast.error("Please select a vehicle"); return }
-    if (!selectedSlot) { toast.error("Please select an available slot"); return }
+    if (!selectedCar) { toast.error("Please select a car"); return }
+    if (!selectedSlot) { toast.error("Please select a parking slot"); return }
     setStep("schedule")
   }
 
-  // Step 2 → Step 3: validate times then go to payment
-  const handleProceedToPayment = () => {
+  // Step 2 → Book: validate times, check overlap, then create ACTIVE session
+  const handleProceedToBook = async () => {
+    if (!lot || !selectedCar || !selectedSlot) return
+
     const start = new Date(startTime)
     const end = new Date(endTime)
     const now = new Date()
     if (start <= now) { toast.error("Start time must be in the future"); return }
     if (end <= start) { toast.error("End time must be after start time"); return }
+
+    const overlappingSession = findCarSessionOverlap(start, end, carSessions)
+    if (overlappingSession) {
+      toast.error(
+        `This car already has a session during that time (${format(new Date(overlappingSession.start_time), "MMM d, hh:mm a")}${overlappingSession.end_time ? ` – ${format(new Date(overlappingSession.end_time), "hh:mm a")}` : ""}).`
+      )
+      return
+    }
+
     const rate = lot?.rate_per_hour ?? 1000
     setPreviewFee(calcFee(toISOUTC(startTime), toISOUTC(endTime), rate))
-    setStep("pay")
-  }
-
-  // Step 3: Book (directly creates ACTIVE session + PAID payment)
-  const handleConfirmPayment = async () => {
-    if (!lot || !selectedVehicle || !selectedSlot) return
 
     setBooking(true)
     try {
-      await parkingSessionsApi.book({
-        vehicle_id: selectedVehicle,
+      const booked = await parkingSessionsApi.book({
+        car_id: selectedCar,
         slot_id: selectedSlot,
         start_time: toISOUTC(startTime),
         end_time: toISOUTC(endTime),
-        payment_method: paymentMethod,
       })
-      toast.success("Payment confirmed! Your parking session is now ACTIVE.")
+      setBookedSession(booked)
+      toast.success("Your parking session is now ACTIVE.")
       setStep("success")
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to process booking and payment")
+      toast.error(err.response?.data?.message || "Failed to book parking session")
     } finally {
       setBooking(false)
     }
@@ -199,12 +323,12 @@ export default function ParkingDetail() {
                     <CardTitle className="text-2xl">{lot.name}</CardTitle>
                     <CardDescription className="flex items-center mt-2">
                       {lot.google_map_url ? (
-                        <a href={lot.google_map_url} target="_blank" rel="noopener noreferrer" className="flex items-center text-primary hover:underline">
+                        <span className="flex items-center text-primary font-medium text-xs">
                           <MapPin className="h-4 w-4 mr-1" />
-                          View on Map
-                        </a>
+                          Location Configured
+                        </span>
                       ) : (
-                        <span className="flex items-center">
+                        <span className="flex items-center text-muted-foreground text-xs">
                           <MapPin className="h-4 w-4 mr-1" />
                           Location not specified
                         </span>
@@ -235,6 +359,27 @@ export default function ParkingDetail() {
                     </p>
                   </div>
                 </div>
+
+                {getEmbedUrl(lot.google_map_url) && (
+                  <div className="pt-2">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
+                      <MapPin className="size-3.5 text-primary" /> Location Map
+                    </p>
+                    <div className="relative w-full h-56 rounded overflow-hidden border border-border shadow-sm bg-slate-950">
+                      <iframe
+                        src={getEmbedUrl(lot.google_map_url)!}
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title={`${lot.name} Embedded Map`}
+                        className="w-full h-full"
+                      />
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -243,22 +388,27 @@ export default function ParkingDetail() {
           <div>
             {/* Step indicator */}
             <div className="flex items-center gap-2 mb-4">
-              {(["select", "schedule", "pay", "success"] as BookingStep[]).map((s, i) => (
-                <div key={s} className="flex items-center gap-2">
-                  <div
-                    className={`w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold transition-colors ${
-                      step === s
+              {(() => {
+                const steps: BookingStep[] = ["select", "schedule", "success"]
+                const stepIndex = steps.indexOf(step)
+                return steps.map((s, i) => (
+                  <div key={s} className="flex items-center gap-2">
+                    <div
+                      className={`w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold transition-colors ${step === s
                         ? "bg-primary text-primary-foreground"
-                        : ["success", "pay", "schedule"].slice(0, ["select","schedule","pay","success"].indexOf(step)).includes(s)
+                        : i < stepIndex
                           ? "bg-green-500 text-white"
                           : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {i + 1}
+                        }`}
+                    >
+                      {i + 1}
+                    </div>
+                    {i < steps.length - 1 && (
+                      <div className={`h-0.5 w-4 ${stepIndex > i ? "bg-green-500" : "bg-muted"}`} />
+                    )}
                   </div>
-                  {i < 3 && <div className={`h-0.5 w-4 ${["select","schedule","pay","success"].indexOf(step) > i ? "bg-green-500" : "bg-muted"}`} />}
-                </div>
-              ))}
+                ))
+              })()}
             </div>
 
             {/* ── Step 1: Select ─── */}
@@ -266,30 +416,30 @@ export default function ParkingDetail() {
               <Card>
                 <CardHeader>
                   <CardTitle>Book Parking</CardTitle>
-                  <CardDescription>Select your vehicle and an available slot</CardDescription>
+                  <CardDescription>Select your car and a slot — occupied slots can still be booked for a future time</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="vehicle">Select Vehicle</Label>
+                    <Label htmlFor="car">Select Car</Label>
                     <Select
-                      id="vehicle"
-                      value={selectedVehicle?.toString() || ""}
-                      onChange={(e) => setSelectedVehicle(parseInt(e.target.value))}
+                      id="car"
+                      value={selectedCar?.toString() || ""}
+                      onChange={(e) => setSelectedCar(parseInt(e.target.value))}
                     >
-                      <option value="">Choose a vehicle...</option>
-                      {vehicles.map((vehicle) => (
-                        <option key={vehicle.id} value={vehicle.id.toString()}>
-                          {vehicle.plate_number} — {vehicle.brand || "Unknown"} {vehicle.color || ""}
+                      <option value="">Choose a car...</option>
+                      {cars.map((car) => (
+                        <option key={car.id} value={car.id.toString()}>
+                          {car.plate_number} — {car.brand || "Unknown"} {car.color || ""}
                         </option>
                       ))}
                     </Select>
                   </div>
 
-                  {vehicles.length === 0 && (
+                  {cars.length === 0 && (
                     <p className="text-sm text-muted-foreground">
-                      No vehicles.{" "}
-                      <button onClick={() => navigate("/vehicles")} className="text-primary hover:underline">
-                        Add a vehicle
+                      No cars.{" "}
+                      <button onClick={() => navigate("/cars")} className="text-primary hover:underline">
+                        Add a car
                       </button>
                     </p>
                   )}
@@ -297,7 +447,13 @@ export default function ParkingDetail() {
                   <div className="space-y-1 pt-3 border-t">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Selected Slot</span>
-                      <span className="font-medium">{selectedSlot ? `Slot #${selectedSlot}` : "None"}</span>
+                      <span className="font-medium">
+                        {selectedSlotDetails
+                          ? `Slot ${selectedSlotDetails.slotNumber}`
+                          : selectedSlot
+                            ? `#${selectedSlot}`
+                            : "None"}
+                      </span>
                     </div>
                     {lot.rate_per_hour != null && (
                       <div className="flex justify-between text-sm">
@@ -307,9 +463,18 @@ export default function ParkingDetail() {
                     )}
                   </div>
 
+                  {selectedSlotDetails && (
+                    <LocationTrackBar
+                      lotName={lot.name}
+                      floorName={selectedSlotDetails.floorName}
+                      slotNumber={selectedSlotDetails.slotNumber}
+                      onTrack={() => handleTrackSlot(selectedSlotDetails)}
+                    />
+                  )}
+
                   <Button
                     className="w-full"
-                    disabled={!lot.is_active || !selectedVehicle || !selectedSlot}
+                    disabled={!lot.is_active || !selectedCar || !selectedSlot}
                     onClick={handleProceedToSchedule}
                   >
                     Next: Set Schedule
@@ -339,7 +504,7 @@ export default function ParkingDetail() {
                     <input
                       id="start-time"
                       type="datetime-local"
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm mt-1"
+                      className="flex h-9 w-full rounded border border-input bg-transparent px-3 py-1 text-sm shadow-sm mt-1"
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
                       min={toLocalDatetimeValue(new Date())}
@@ -350,7 +515,7 @@ export default function ParkingDetail() {
                     <input
                       id="end-time"
                       type="datetime-local"
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm mt-1"
+                      className="flex h-9 w-full rounded border border-input bg-transparent px-3 py-1 text-sm shadow-sm mt-1"
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
                       min={startTime}
@@ -358,7 +523,7 @@ export default function ParkingDetail() {
                   </div>
 
                   {durationMins > 0 && (
-                    <div className="rounded-xl bg-primary/10 border border-primary/20 p-4 space-y-2">
+                    <div className="rounded bg-primary/10 border border-primary/20 p-4 space-y-2">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Fee Preview</p>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Duration</span>
@@ -378,96 +543,15 @@ export default function ParkingDetail() {
                   )}
 
                   <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1" onClick={() => setStep("select")}>
+                    <Button variant="outline" className="flex-1" onClick={() => setStep("select")} disabled={booking}>
                       Back
                     </Button>
-                    <Button className="flex-1" onClick={handleProceedToPayment} disabled={durationMins <= 0}>
-                      Next: Payment
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* ── Step 3: Pay ─── */}
-            {step === "pay" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-primary" />
-                    Confirm Payment
-                  </CardTitle>
-                  <CardDescription>Review your booking and select payment method</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Booking summary */}
-                  <div className="rounded-xl border bg-muted/40 p-4 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Slot</span>
-                      <span className="font-medium">#{selectedSlot}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Vehicle</span>
-                      <span className="font-medium">
-                        {vehicles.find(v => v.id === selectedVehicle)?.plate_number || `#${selectedVehicle}`}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Start</span>
-                      <span className="font-medium">{format(new Date(startTime), "MMM d, hh:mm a")}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">End</span>
-                      <span className="font-medium">{format(new Date(endTime), "MMM d, hh:mm a")}</span>
-                    </div>
-                    <div className="flex justify-between text-base font-bold border-t pt-2 mt-1">
-                      <span>Total Fee</span>
-                      <span className="text-primary">{previewFee.toLocaleString()} MMK</span>
-                    </div>
-                  </div>
-
-                  {/* Payment method */}
-                  <div>
-                    <Label>Payment Method</Label>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      {PAYMENT_METHODS.map((m) => (
-                        <button
-                          key={m.value}
-                          onClick={() => setPaymentMethod(m.value)}
-                          className={`flex items-center gap-2 p-2.5 rounded-xl border text-sm transition-all ${
-                            paymentMethod === m.value
-                              ? "border-primary bg-primary/10 font-medium"
-                              : "border-border hover:border-primary/50"
-                          }`}
-                        >
-                          <span className="text-base">{m.icon}</span>
-                          {m.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-3 flex gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <p className="text-xs text-emerald-700 dark:text-emerald-400">
-                      Your booking and payment will be processed immediately. Once confirmed, your session will be ACTIVE.
-                    </p>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1" onClick={() => setStep("schedule")} disabled={booking}>
-                      Back
-                    </Button>
-                    <Button
-                      className="flex-1"
-                      onClick={handleConfirmPayment}
-                      disabled={booking}
-                    >
+                    <Button className="flex-1" onClick={handleProceedToBook} disabled={booking || durationMins <= 0}>
                       {booking ? (
-                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing payment...</>
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Booking...</>
                       ) : (
-                        <>Pay {previewFee.toLocaleString()} MMK & Activate</>
+                        <>Confirm & Book
+                          <ChevronRight className="h-4 w-4 ml-1" /></>
                       )}
                     </Button>
                   </div>
@@ -475,7 +559,7 @@ export default function ParkingDetail() {
               </Card>
             )}
 
-            {/* ── Step 4: Success ─── */}
+            {/* ── Step 3: Success ─── */}
             {step === "success" && (
               <Card className="border-green-500/30 bg-green-500/5">
                 <CardContent className="pt-8 pb-6 text-center space-y-4">
@@ -488,20 +572,30 @@ export default function ParkingDetail() {
                       Your parking session is now <span className="text-green-600 font-semibold">ACTIVE</span>
                     </p>
                   </div>
-                  <div className="rounded-xl bg-card border p-3 space-y-1.5 text-sm text-left">
+                  <div className="rounded bg-card border p-3 space-y-1.5 text-sm text-left">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Slot</span>
                       <span className="font-medium">#{selectedSlot}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Duration</span>
+                      <span className="text-muted-foreground">Car</span>
                       <span className="font-medium">
-                        {format(new Date(startTime), "hh:mm a")} → {format(new Date(endTime), "hh:mm a")}
+                        {cars.find(c => c.id === selectedCar)?.plate_number || `#${selectedCar}`}
                       </span>
                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Start</span>
+                      <span className="font-medium">{format(new Date(startTime), "MMM d, hh:mm a")}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">End</span>
+                      <span className="font-medium">{format(new Date(endTime), "MMM d, hh:mm a")}</span>
+                    </div>
                     <div className="flex justify-between font-bold border-t pt-1.5 mt-1">
-                      <span>Fee Paid</span>
-                      <span className="text-primary">{previewFee.toLocaleString()} MMK</span>
+                      <span>Parking Fee</span>
+                      <span className="text-primary">
+                        {(bookedSession?.fee ?? previewFee).toLocaleString()} MMK
+                      </span>
                     </div>
                   </div>
                   <Button className="w-full" onClick={() => navigate("/sessions")}>
@@ -513,8 +607,83 @@ export default function ParkingDetail() {
           </div>
 
           {/* Floors and Slots */}
-          <div className="lg:col-span-2">
-            <h2 className="text-lg font-semibold tracking-tight mb-4">Floors & Parking Slots</h2>
+          <div className="lg:col-span-2 space-y-4">
+            <h2 className="text-lg font-semibold tracking-tight">Floors & Parking Slots</h2>
+
+            {floors.length > 0 && (
+              <Card className="border border-border/80 shadow-sm rounded">
+                <CardContent className="p-4 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between flex-wrap">
+                  <div className="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-wider shrink-0">
+                    <Filter className="size-4 text-primary" />
+                    <span>Filter Slots:</span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 flex-wrap">
+                    <div className="relative flex-1 min-w-[180px]">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                      <Input
+                        placeholder="Search slot number..."
+                        value={slotSearchQuery}
+                        onChange={(e) => setSlotSearchQuery(e.target.value)}
+                        className="pl-9 h-9 text-xs rounded"
+                      />
+                    </div>
+
+                    <div className="min-w-[150px]">
+                      <div className="relative">
+                        <Layers className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none z-10" />
+                        <Select
+                          value={selectedFloorId}
+                          onChange={(e) => setSelectedFloorId(e.target.value)}
+                          className="pl-9 h-9 text-xs rounded"
+                        >
+                          <option value="all">All Floors ({floors.length})</option>
+                          {floors.map((floor) => (
+                            <option key={floor.id} value={String(floor.id)}>
+                              {floor.floor_name || `Floor ${floor.id}`}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="min-w-[150px]">
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none z-10" />
+                        <Select
+                          value={selectedSection}
+                          onChange={(e) => setSelectedSection(e.target.value)}
+                          className="pl-9 h-9 text-xs rounded"
+                        >
+                          <option value="all">All Sections ({lotSections.length})</option>
+                          <option value="none">No Section (—)</option>
+                          {lotSections.map((sec) => (
+                            <option key={sec} value={sec}>Section {sec}</option>
+                          ))}
+                        </Select>
+                      </div>
+                    </div>
+
+                    {(selectedFloorId !== "all" || selectedSection !== "all" || slotSearchQuery.trim() !== "") && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedFloorId("all")
+                          setSelectedSection("all")
+                          setSlotSearchQuery("")
+                        }}
+                        className="h-9 px-3 text-xs gap-1.5 text-muted-foreground hover:text-foreground rounded shrink-0"
+                      >
+                        <RotateCcw className="size-3.5" />
+                        Reset
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {loadingFloors ? (
               <div className="flex items-center gap-2 text-muted-foreground py-4">
                 <Loader2 className="h-4 w-4 animate-spin" /> Loading floors...
@@ -527,24 +696,40 @@ export default function ParkingDetail() {
               </Card>
             ) : (
               <div className="space-y-4">
-                {floors.map((floor) => (
-                  <FloorSection
-                    key={floor.id}
-                    floor={floor}
-                    selectedSlot={selectedSlot}
-                    onSelectSlot={(id) => {
-                      setSelectedSlot(id)
-                      if (step !== "select") setStep("select")
-                    }}
-                    onSlotClick={(id) => navigate(`/slots/${id}`)}
-                    disabled={step !== "select"}
-                  />
-                ))}
+                {floors
+                  .filter((floor) => selectedFloorId === "all" || String(floor.id) === selectedFloorId)
+                  .map((floor) => (
+                    <FloorSection
+                      key={floor.id}
+                      floor={floor}
+                      selectedSlot={selectedSlot}
+                      selectedSection={selectedSection}
+                      slotSearchQuery={slotSearchQuery}
+                      onSelectSlot={(id) => {
+                        setSelectedSlot(id)
+                        if (step !== "select") setStep("select")
+                      }}
+                      onSlotClick={(id) => navigate(`/slots/${id}`)}
+                      onTrack={handleTrackSlot}
+                      disabled={step !== "select"}
+                    />
+                  ))}
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {activeNavigation && (
+        <ParkingTrackModal
+          slotNumber={activeNavigation.slotNumber}
+          floorName={activeNavigation.floorName}
+          lotName={activeNavigation.lotName}
+          destLatitude={activeNavigation.latitude}
+          destLongitude={activeNavigation.longitude}
+          onClose={() => setActiveNavigation(null)}
+        />
+      )}
     </div>
   )
 }
@@ -552,14 +737,20 @@ export default function ParkingDetail() {
 function FloorSection({
   floor,
   selectedSlot,
+  selectedSection = "all",
+  slotSearchQuery = "",
   onSelectSlot,
   onSlotClick,
+  onTrack,
   disabled,
 }: {
   floor: ParkingFloorOut
   selectedSlot: number | null
+  selectedSection?: string
+  slotSearchQuery?: string
   onSelectSlot: (slotId: number) => void
   onSlotClick: (slotId: number) => void
+  onTrack: (details: SlotTrackDetails) => void
   disabled?: boolean
 }) {
   const [slots, setSlots] = useState<ParkingSlotOut[]>([])
@@ -575,59 +766,172 @@ function FloorSection({
       .finally(() => setLoading(false))
   }, [floor.id])
 
+  const filteredSlots = slots.filter((slot) => {
+    if (
+      slotSearchQuery.trim() &&
+      !slot.slot_number.toLowerCase().includes(slotSearchQuery.trim().toLowerCase())
+    ) {
+      return false
+    }
+    if (selectedSection !== "all") {
+      if (selectedSection === "none") {
+        if (slot.section?.trim()) return false
+      } else if (slot.section?.trim().toLowerCase() !== selectedSection.toLowerCase()) {
+        return false
+      }
+    }
+    return true
+  })
+
+  const sectionMap = filteredSlots.reduce<Record<string, ParkingSlotOut[]>>((acc, slot) => {
+    const key = slot.section?.trim() || "—"
+    if (!acc[key]) acc[key] = []
+    acc[key].push(slot)
+    return acc
+  }, {})
+
+  const sortedSections = Object.keys(sectionMap).sort((a, b) => {
+    if (a === "—") return 1
+    if (b === "—") return -1
+    return a.localeCompare(b)
+  })
+
+  const isFiltered = selectedSection !== "all" || slotSearchQuery.trim() !== ""
+  const floorName = floor.floor_name || `Floor ${floor.id}`
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{floor.floor_name || `Floor ${floor.id}`}</CardTitle>
+    <Card className="border border-border/80 shadow-sm rounded overflow-hidden">
+      <CardHeader className="flex-row items-center justify-between pb-3 border-b border-border/40">
+        <div className="flex items-center gap-3 flex-wrap">
+          <CardTitle className="text-base font-bold">
+            {floor.floor_name || `Floor ${floor.id}`}
+          </CardTitle>
+          {filteredSlots.length > 0 && (
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium border border-emerald-500/20">
+                {filteredSlots.filter((s) => s.status === "AVAILABLE").length} Available
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 font-medium border border-red-500/20">
+                {filteredSlots.filter((s) => s.status === "OCCUPIED").length} Occupied
+              </span>
+            </div>
+          )}
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4">
         {loading ? (
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading slots...
           </div>
-        ) : slots.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No slots configured for this floor.</p>
+        ) : filteredSlots.length === 0 ? (
+          <p className="text-xs text-muted-foreground py-4 text-center">
+            {isFiltered ? "No slots match the current filter criteria on this floor." : "No slots on this floor."}
+          </p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {slots.map((slot) => {
-              const isSelected = selectedSlot === slot.id
-              const isOccupied = slot.status === "OCCUPIED"
+          <div className="space-y-6">
+            {sortedSections.map((section) => {
+              const sectionSlots = sectionMap[section]
+              const available = sectionSlots.filter((s) => s.status === "AVAILABLE").length
+              const occupied = sectionSlots.filter((s) => s.status === "OCCUPIED").length
+
               return (
-                <div
-                  key={slot.id}
-                  className={`relative rounded-xl border p-3 transition-all ${
-                    isSelected
-                      ? "border-primary bg-primary/10 shadow-sm cursor-pointer"
-                      : disabled
-                        ? "cursor-default border-border"
-                        : "cursor-pointer hover:border-primary/50 hover:bg-muted/50"
-                  }`}
-                  onClick={() => {
-                    if (!disabled) onSelectSlot(slot.id)
-                  }}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <p className="font-semibold text-sm">{slot.slot_number}</p>
-                    {isSelected && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
+                <div key={section} className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 px-3 py-1 rounded bg-muted border border-border/60">
+                      <span className="text-xs font-bold text-foreground tracking-wide uppercase">
+                        {section === "—" ? "No Section" : `Section ${section}`}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-medium">
+                        {sectionSlots.length} slots
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] font-medium">
+                      {available > 0 && (
+                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                          {available} free
+                        </span>
+                      )}
+                      {occupied > 0 && (
+                        <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-600 border border-red-500/20">
+                          {occupied} taken
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 h-px bg-border/50" />
                   </div>
-                  {slot.section && <p className="text-xs text-muted-foreground">{slot.section}</p>}
-                  <Badge
-                    variant={isOccupied ? "secondary" : "default"}
-                    className={`text-[10px] mt-1 ${!isOccupied ? "bg-green-500" : ""}`}
-                  >
-                    {isOccupied ? "Occupied" : "Available"}
-                  </Badge>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full mt-2 h-7 text-xs"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onSlotClick(slot.id)
-                    }}
-                  >
-                    View 3D
-                  </Button>
+
+                  <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                    {sectionSlots.map((slot) => {
+                      const isSelected = selectedSlot === slot.id
+                      const isAvailable = slot.status === "AVAILABLE"
+                      const canSelect = !disabled
+
+                      return (
+                        <div
+                          key={slot.id}
+                          onClick={() => {
+                            if (canSelect) onSelectSlot(slot.id)
+                          }}
+                          className={`group relative flex flex-col gap-1 rounded border p-2.5 transition-all ${isSelected
+                            ? "border-primary bg-primary/10 ring-2 ring-primary/30 shadow-sm cursor-pointer"
+                            : isAvailable
+                              ? "border-emerald-500/30 bg-emerald-500/5 cursor-pointer hover:bg-emerald-500/10"
+                              : "border-amber-500/30 bg-amber-500/5 cursor-pointer hover:bg-amber-500/10"
+                            }`}
+                        >
+                          <div className="flex items-center gap-1.5 justify-between">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span
+                                className={`size-2 rounded-full shrink-0 ${isAvailable ? "bg-emerald-500" : "bg-amber-500"}`}
+                              />
+                              <span className="text-xs font-bold text-foreground truncate leading-none">
+                                {slot.slot_number}
+                              </span>
+                            </div>
+                            {isSelected && <CheckCircle2 className="size-3.5 text-primary shrink-0" />}
+                          </div>
+
+                          <span
+                            className={`text-[9px] font-semibold uppercase tracking-wide ${isAvailable ? "text-emerald-600" : "text-amber-600"
+                              }`}
+                          >
+                            {isAvailable ? "Free" : "Taken now"}
+                          </span>
+
+                          <div className="flex gap-1 mt-0.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onSlotClick(slot.id)
+                              }}
+                              className={`flex-1 rounded py-1 text-[10px] font-semibold transition-all border ${isAvailable
+                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                                : "bg-amber-500/10 border-amber-500/30 text-amber-700 hover:bg-amber-500/20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                                }`}
+                            >
+                              View 3D
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onTrack({
+                                  slotNumber: slot.slot_number,
+                                  floorName,
+                                  latitude: slot.latitude,
+                                  longitude: slot.longitude,
+                                })
+                              }}
+                              className="flex-1 rounded py-1 text-[10px] font-semibold transition-all border bg-primary/10 border-primary/30 text-primary hover:bg-primary/20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                            >
+                              Track
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               )
             })}

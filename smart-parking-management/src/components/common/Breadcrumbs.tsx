@@ -17,7 +17,6 @@ const BREADCRUMB_CONFIG: Record<string, { label: string; parent?: string }> = {
   "/owner/lots": { label: "Parking Lots", parent: "/owner" },
   "/owner/staff": { label: "Staff", parent: "/owner" },
   "/owner/sessions": { label: "Sessions", parent: "/owner" },
-  "/owner/payments": { label: "Payments", parent: "/owner" },
   "/staff": { label: "Dashboard" },
   "/staff/slots": { label: "Slots Board", parent: "/staff" },
   "/staff/sessions": { label: "Sessions", parent: "/staff" },
