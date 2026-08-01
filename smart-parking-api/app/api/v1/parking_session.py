@@ -1,4 +1,4 @@
-"""Parking session endpoints: book (customer), start (staff), list, get, finish."""
+"""Parking session endpoints: book (customer), pay (wallet), list, get, finish."""
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
@@ -13,7 +13,10 @@ from app.schemas.parking_session import (
     ParkingSessionOut,
     ParkingSessionStart,
 )
+from app.schemas.payment import PaymentConfirmRequest, PaymentOut
 from app.services.parking_session_service import ParkingSessionService, serialize_session
+from app.services.payment_service import PaymentService
+from app.services.wallet_payment_client import WalletPaymentClient, get_wallet_client
 
 router = APIRouter(prefix="/parking-sessions", tags=["Parking Sessions"])
 
@@ -24,7 +27,7 @@ router = APIRouter(prefix="/parking-sessions", tags=["Parking Sessions"])
     "/book",
     response_model=SuccessResponse[ParkingSessionOut],
     status_code=status.HTTP_201_CREATED,
-    summary="Customer: book a session with start/end time (creates ACTIVE session with calculated fee)",
+    summary="Customer: book a session (creates PENDING session; becomes ACTIVE after wallet payment)",
 )
 def book_session(
     payload: ParkingSessionBook,
@@ -34,8 +37,62 @@ def book_session(
     session = ParkingSessionService(db).book_session(payload, current_user)
     return {
         "success": True,
-        "message": f"Session booked and activated successfully. Calculated fee: {session.fee:.2f} MMK.",
+        "message": (
+            f"Session booked. Estimated fee: {session.fee:.2f} MMK. "
+            "Please complete the wallet payment to activate the session."
+        ),
         "data": serialize_session(session),
+    }
+
+
+# ─── Wallet payment flow (session becomes ACTIVE only after payment) ──────────
+
+@router.post(
+    "/{session_id}/pay/initiate",
+    response_model=SuccessResponse[PaymentOut],
+    status_code=status.HTTP_201_CREATED,
+    summary="Customer: request a wallet payment for a PENDING session (returns OTP)",
+)
+def initiate_session_payment(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    wallet_client: WalletPaymentClient = Depends(get_wallet_client),
+):
+    service = ParkingSessionService(db)
+    session = service.get_by_id(session_id)
+    payment = PaymentService(db, wallet_client).initiate_session_payment(session, current_user)
+    return {
+        "success": True,
+        "message": "Wallet payment initiated. Enter the OTP and your PIN to confirm.",
+        "data": payment,
+    }
+
+
+@router.post(
+    "/{session_id}/pay/confirm",
+    response_model=SuccessResponse[dict],
+    summary="Customer: confirm the wallet payment (OTP + PIN) to activate the session",
+)
+def confirm_session_payment(
+    session_id: int,
+    payload: PaymentConfirmRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    wallet_client: WalletPaymentClient = Depends(get_wallet_client),
+):
+    service = ParkingSessionService(db)
+    session = service.get_by_id(session_id)
+    payment, session = PaymentService(db, wallet_client).confirm_session_payment(
+        session, payload, current_user
+    )
+    return {
+        "success": True,
+        "message": "Payment successful. Your parking session is now active.",
+        "data": {
+            "payment": PaymentOut.model_validate(payment).model_dump(mode="json"),
+            "session": serialize_session(session),
+        },
     }
 
 

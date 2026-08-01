@@ -1,5 +1,5 @@
 """Tests for role-based access control enforcement."""
-from tests.conftest import auth_headers
+from tests.conftest import auth_headers, purchase_and_activate
 
 
 def test_customer_cannot_create_parking_lot(client, admin_user):
@@ -71,9 +71,9 @@ def test_owner_cannot_manage_other_owners_lot(client, admin_user):
     owner1_headers = auth_headers(client, "owner1@example.com", "Owner@1234")
     owner2_headers = auth_headers(client, "owner2@example.com", "Owner@1234")
 
-    # Both owners subscribe
-    client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner1_headers)
-    client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner2_headers)
+    # Both owners subscribe (and pay via wallet)
+    purchase_and_activate(client, owner1_headers, pkg_id)
+    purchase_and_activate(client, owner2_headers, pkg_id)
 
     lot_id = client.post(
         "/api/v1/parking-lots", headers=owner1_headers, json={"name": "Owner1 Lot"}

@@ -162,7 +162,8 @@ class ParkingSessionService:
     def book_session(self, payload: ParkingSessionBook, current_user: User) -> ParkingSession:
         """
         Customer books a session with start/end time.
-        Creates an ACTIVE session with a calculated fee.
+        Creates a PENDING session with a calculated fee. The session becomes
+        ACTIVE only after the wallet payment is completed.
         Slot status does NOT change here.
         """
         # Validate customer
@@ -239,7 +240,7 @@ class ParkingSessionService:
         rate_per_hour = self._get_lot_rate(payload.slot_id)
         duration_minutes, fee = _calculate_fee(start, end, rate_per_hour)
 
-        # Create ACTIVE session directly
+        # Create session in PENDING state (payment required before it becomes ACTIVE)
         session = ParkingSession(
             car_id=payload.car_id,
             slot_id=payload.slot_id,
@@ -247,7 +248,7 @@ class ParkingSessionService:
             end_time=end,
             duration=duration_minutes,
             fee=fee,
-            status=SessionStatus.ACTIVE.value,
+            status=SessionStatus.PENDING.value,
         )
         session = self.session_repo.create(session)
 

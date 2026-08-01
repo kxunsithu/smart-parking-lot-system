@@ -1,5 +1,5 @@
 """Tests for the subscription package feature."""
-from tests.conftest import auth_headers
+from tests.conftest import auth_headers, purchase_and_activate, set_phone
 
 
 def test_admin_can_create_package(client, admin_user):
@@ -74,19 +74,33 @@ def test_owner_can_purchase_subscription(client, admin_user):
     )
     owner_headers = auth_headers(client, "owner@test.com", "Owner@12345")
 
-    # Purchase subscription with payment details
+    # Purchase returns a PENDING subscription (not yet active)
     resp = client.post(
         "/api/v1/subscriptions/purchase",
-        json={"package_id": pkg_id, "payment_method": "KBZPAY", "transaction_ref": "KBZ12345678"},
+        json={"package_id": pkg_id},
         headers=owner_headers,
     )
     assert resp.status_code == 201
     data = resp.json()["data"]
-    assert data["status"] == "ACTIVE"
-    assert data["package"]["name"] == "Basic"
-    assert data["payment_method"] == "KBZPAY"
+    assert data["status"] == "PENDING"
     assert data["amount"] == 9900.0
-    assert data["transaction_ref"] == "KBZ12345678"
+    assert "payment_method" not in data
+    assert "transaction_ref" not in data
+
+    # Complete the wallet payment to activate
+    sub_id = data["id"]
+    set_phone(client, owner_headers)
+    init = client.post(f"/api/v1/subscriptions/{sub_id}/pay/initiate", headers=owner_headers)
+    assert init.status_code == 201
+
+    conf = client.post(
+        f"/api/v1/subscriptions/{sub_id}/pay/confirm",
+        json={"otp_code": "123456", "pin": "1234"},
+        headers=owner_headers,
+    )
+    assert conf.status_code == 200
+    assert conf.json()["data"]["subscription"]["status"] == "ACTIVE"
+    assert conf.json()["data"]["payment"]["status"] == "COMPLETED"
 
 
 def test_owner_without_subscription_cannot_create_lot(client, admin_user):
@@ -136,7 +150,7 @@ def test_owner_with_subscription_can_create_lot(client, admin_user):
     )
     owner_headers = auth_headers(client, "subowner@test.com", "Owner@12345")
 
-    client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers)
+    purchase_and_activate(client, owner_headers, pkg_id)
 
     # Now create a lot → should succeed
     resp = client.post(
@@ -170,7 +184,7 @@ def test_max_lots_limit_enforced(client, admin_user):
         },
     )
     owner_headers = auth_headers(client, "limit@test.com", "Owner@12345")
-    client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers)
+    purchase_and_activate(client, owner_headers, pkg_id)
 
     # Create 1 lot → succeeds
     resp1 = client.post("/api/v1/parking-lots", json={"name": "Lot 1"}, headers=owner_headers)
@@ -203,20 +217,27 @@ def test_owner_can_renew_subscription(client, admin_user):
     )
     owner_headers = auth_headers(client, "renew@test.com", "Owner@12345")
 
-    # Purchase
-    purchase_resp = client.post(
-        "/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers
-    )
-    original_expires = purchase_resp.json()["data"]["expires_at"]
+    # Purchase + pay
+    first = purchase_and_activate(client, owner_headers, pkg_id)
+    original_expires = first["expires_at"]
 
-    # Renew
+    # Renew + pay
+    set_phone(client, owner_headers)
     renew_resp = client.post(
         "/api/v1/subscriptions/renew", json={"package_id": pkg_id}, headers=owner_headers
     )
     assert renew_resp.status_code == 201
-    new_expires = renew_resp.json()["data"]["expires_at"]
+    sub_id = renew_resp.json()["data"]["id"]
+    init = client.post(f"/api/v1/subscriptions/{sub_id}/pay/initiate", headers=owner_headers)
+    conf = client.post(
+        f"/api/v1/subscriptions/{sub_id}/pay/confirm",
+        json={"otp_code": "123456", "pin": "1234"},
+        headers=owner_headers,
+    )
+    assert conf.status_code == 200
+    new_expires = conf.json()["data"]["subscription"]["expires_at"]
 
-    # New expiry should be after original
+    # New expiry should be after original (renewal extends from previous expiry)
     assert new_expires > original_expires
 
 
@@ -241,7 +262,7 @@ def test_owner_can_view_own_subscriptions(client, admin_user):
         },
     )
     owner_headers = auth_headers(client, "view@test.com", "Owner@12345")
-    client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers)
+    purchase_and_activate(client, owner_headers, pkg_id)
 
     me_resp = client.get("/api/v1/subscriptions/me", headers=owner_headers)
     assert me_resp.status_code == 200

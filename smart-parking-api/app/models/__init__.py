@@ -14,6 +14,7 @@ from app.models.token_blacklist import TokenBlacklist
 from app.models.otp import OTP
 from app.models.package import Package
 from app.models.owner_subscription import OwnerSubscription
+from app.models.payment import Payment
 
 __all__ = [
     "Base",
@@ -31,5 +32,6 @@ __all__ = [
     "OTP",
     "Package",
     "OwnerSubscription",
+    "Payment",
 ]
 

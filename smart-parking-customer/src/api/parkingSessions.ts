@@ -1,5 +1,14 @@
 import apiClient from "./client"
-import type { ApiSuccess, ParkingSessionOut, ParkingSessionBook, ParkingSessionStart, ParkingSessionFinish } from "./types"
+import type {
+  ApiSuccess,
+  ParkingSessionOut,
+  ParkingSessionBook,
+  ParkingSessionStart,
+  ParkingSessionFinish,
+  ParkingSessionPayResult,
+  WalletPaymentConfirm,
+  WalletPaymentOut,
+} from "./types"
 
 export const parkingSessionsApi = {
   list: async (params?: {
@@ -17,9 +26,21 @@ export const parkingSessionsApi = {
     return response.data.data
   },
 
-  /** Customer booking: creates an ACTIVE session with a calculated fee */
+  /** Customer booking: creates a PENDING session; becomes ACTIVE after wallet payment */
   book: async (data: ParkingSessionBook): Promise<ParkingSessionOut> => {
     const response = await apiClient.post<ApiSuccess<ParkingSessionOut>>("/parking-sessions/book", data)
+    return response.data.data
+  },
+
+  /** Customer: request a wallet payment for a PENDING session (returns OTP) */
+  payInitiate: async (id: number): Promise<WalletPaymentOut> => {
+    const response = await apiClient.post<ApiSuccess<WalletPaymentOut>>(`/parking-sessions/${id}/pay/initiate`)
+    return response.data.data
+  },
+
+  /** Customer: confirm the wallet payment (OTP + PIN) to activate the session */
+  payConfirm: async (id: number, data: WalletPaymentConfirm): Promise<ParkingSessionPayResult> => {
+    const response = await apiClient.post<ApiSuccess<ParkingSessionPayResult>>(`/parking-sessions/${id}/pay/confirm`, data)
     return response.data.data
   },
 

@@ -11,10 +11,8 @@ import {
   ShoppingCart,
   Loader2,
   AlertTriangle,
-  CreditCard,
-  QrCode,
+  Wallet,
   ShieldCheck,
-  Check,
 } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { EmptyState } from "@/components/common/EmptyState"
@@ -37,7 +35,7 @@ import {
 import { packagesApi } from "@/api/packages"
 import { subscriptionsApi } from "@/api/subscriptions"
 import { getErrorMessage } from "@/api/client"
-import type { PackageOut, SubscriptionOut, SubscriptionStatus } from "@/types"
+import type { PackageOut, SubscriptionOut, SubscriptionStatus, WalletPaymentOut } from "@/types"
 
 function formatPrice(price: number): string {
   return `${Math.round(price).toLocaleString("en-US")} MMK`
@@ -72,14 +70,6 @@ const TIER_ACCENT: Record<string, string> = {
   Enterprise: "border-amber-500",
 }
 
-const PAYMENT_METHODS = [
-  { id: "KBZPAY", name: "KBZPay", color: "bg-blue-600 text-white", phone: "09-400123456", account: "Smart Parking Co., Ltd" },
-  { id: "WAVEPAY", name: "WavePay", color: "bg-yellow-500 text-black", phone: "09-400123456", account: "Smart Parking Co., Ltd" },
-  { id: "AYAPAY", name: "AYA Pay", color: "bg-red-600 text-white", phone: "09-400123456", account: "Smart Parking Co., Ltd" },
-  { id: "UABPAY", name: "UABPay", color: "bg-purple-600 text-white", phone: "09-400123456", account: "Smart Parking Co., Ltd" },
-  { id: "CASH", name: "Cash / Counter", color: "bg-slate-700 text-white", phone: "N/A", account: "Direct Admin Verification" },
-]
-
 export function OwnerSubscriptionPage() {
   const [activeSub, setActiveSub] = useState<SubscriptionOut | null | undefined>(undefined)
   const [history, setHistory] = useState<SubscriptionOut[]>([])
@@ -89,9 +79,15 @@ export function OwnerSubscriptionPage() {
   // Payment Modal State
   const [selectedPkg, setSelectedPkg] = useState<PackageOut | null>(null)
   const [paymentActionType, setPaymentActionType] = useState<"purchase" | "renew">("purchase")
-  const [selectedMethod, setSelectedMethod] = useState("KBZPAY")
-  const [transactionRef, setTransactionRef] = useState("")
+  const [pendingSub, setPendingSub] = useState<SubscriptionOut | null>(null)
+  const [paymentInfo, setPaymentInfo] = useState<WalletPaymentOut | null>(null)
+  const [otp, setOtp] = useState("")
+  const [pin, setPin] = useState("")
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false)
+  const [isInitiating, setIsInitiating] = useState(false)
+  const [isPaying, setIsPaying] = useState(false)
+  const [payInitiateError, setPayInitiateError] = useState<string | null>(null)
+  const [payError, setPayError] = useState<string | null>(null)
 
   const fetchAll = async () => {
     try {
@@ -118,30 +114,38 @@ export function OwnerSubscriptionPage() {
   const openPaymentModal = (pkg: PackageOut, actionType: "purchase" | "renew") => {
     setSelectedPkg(pkg)
     setPaymentActionType(actionType)
-    setSelectedMethod("KBZPAY")
-    setTransactionRef("")
+    setPendingSub(null)
+    setPaymentInfo(null)
+    setOtp("")
+    setPin("")
+    setPayInitiateError(null)
+    setPayError(null)
+  }
+
+  const closeModal = () => {
+    setSelectedPkg(null)
+    setPendingSub(null)
+    setPaymentInfo(null)
+    setOtp("")
+    setPin("")
+    setPayInitiateError(null)
+    setPayError(null)
   }
 
   const handleConfirmPayment = async () => {
     if (!selectedPkg) return
     try {
       setIsSubmittingPayment(true)
-      const payload = {
-        package_id: selectedPkg.id,
-        payment_method: selectedMethod,
-        transaction_ref: transactionRef.trim() || undefined,
-      }
+      const payload = { package_id: selectedPkg.id }
 
-      if (paymentActionType === "renew") {
-        await subscriptionsApi.renew(payload)
-        toast.success(`Package "${selectedPkg.name}" successfully renewed!`)
-      } else {
-        await subscriptionsApi.purchase(payload)
-        toast.success(`Subscribed to "${selectedPkg.name}" plan!`)
-      }
+      const sub = paymentActionType === "renew"
+        ? await subscriptionsApi.renew(payload)
+        : await subscriptionsApi.purchase(payload)
 
-      setSelectedPkg(null)
-      fetchAll()
+      setPendingSub(sub)
+      setPayInitiateError(null)
+      setPaymentInfo(null)
+      await handleInitiatePayment(sub.id)
     } catch (error) {
       toast.error(getErrorMessage(error))
     } finally {
@@ -149,9 +153,39 @@ export function OwnerSubscriptionPage() {
     }
   }
 
-  const days = activeSub ? daysRemaining(activeSub.expires_at) : 0
+  const handleInitiatePayment = async (subscriptionId: number) => {
+    setIsInitiating(true)
+    setPayInitiateError(null)
+    try {
+      const info = await subscriptionsApi.payInitiate(subscriptionId)
+      setPaymentInfo(info)
+    } catch (error) {
+      setPayInitiateError(getErrorMessage(error))
+    } finally {
+      setIsInitiating(false)
+    }
+  }
+
+  const handlePayNow = async () => {
+    if (!pendingSub) return
+    if (!/^\d{6}$/.test(otp.trim())) { toast.error("Please enter the 6-digit OTP"); return }
+    if (!/^\d{4}$/.test(pin.trim())) { toast.error("Please enter your 4-digit wallet PIN"); return }
+    setIsPaying(true)
+    setPayError(null)
+    try {
+      await subscriptionsApi.payConfirm(pendingSub.id, { otp_code: otp.trim(), pin: pin.trim() })
+      toast.success("Payment successful! Your subscription is now active.")
+      closeModal()
+      fetchAll()
+    } catch (error) {
+      setPayError(getErrorMessage(error))
+    } finally {
+      setIsPaying(false)
+    }
+  }
+
+  const days = activeSub?.expires_at ? daysRemaining(activeSub.expires_at) : 0
   const isExpiringSoon = activeSub?.status === "ACTIVE" && days <= 7 && days > 0
-  const activeMethodInfo = PAYMENT_METHODS.find((m) => m.id === selectedMethod) ?? PAYMENT_METHODS[0]
 
   return (
     <div className="space-y-8">
@@ -183,8 +217,10 @@ export function OwnerSubscriptionPage() {
                 <p className="text-lg font-bold">{activeSub.package?.name} Plan</p>
                 <p className="text-sm text-muted-foreground">
                   {activeSub.status === "ACTIVE"
-                    ? `Expires ${formatDate(activeSub.expires_at)} · ${days > 0 ? `${days} days remaining` : "Expires today"}`
-                    : `Expired on ${formatDate(activeSub.expires_at)}`}
+                    ? `Expires ${activeSub.expires_at ? formatDate(activeSub.expires_at) : "—"} · ${days > 0 ? `${days} days remaining` : "Expires today"}`
+                    : activeSub.expires_at
+                      ? `Expired on ${formatDate(activeSub.expires_at)}`
+                      : "Pending wallet payment"}
                 </p>
               </div>
             </div>
@@ -320,8 +356,6 @@ export function OwnerSubscriptionPage() {
                       <TableHead>#</TableHead>
                       <TableHead>Package</TableHead>
                       <TableHead>Amount</TableHead>
-                      <TableHead>Payment Method</TableHead>
-                      <TableHead>Txn Ref</TableHead>
                       <TableHead>Started</TableHead>
                       <TableHead>Expires</TableHead>
                       <TableHead>Status</TableHead>
@@ -335,16 +369,8 @@ export function OwnerSubscriptionPage() {
                         <TableCell className="font-medium">
                           {formatPrice(sub.amount ?? sub.package?.price ?? 0)}
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="font-semibold">
-                            {sub.payment_method ?? "CASH"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground">
-                          {sub.transaction_ref || "—"}
-                        </TableCell>
-                        <TableCell>{formatDate(sub.started_at)}</TableCell>
-                        <TableCell>{formatDate(sub.expires_at)}</TableCell>
+                        <TableCell>{sub.started_at ? formatDate(sub.started_at) : "—"}</TableCell>
+                        <TableCell>{sub.expires_at ? formatDate(sub.expires_at) : "—"}</TableCell>
                         <TableCell>
                           <StatusBadge
                             label={sub.status}
@@ -362,19 +388,19 @@ export function OwnerSubscriptionPage() {
       </div>
 
       {/* Payment Flow Modal */}
-      <Dialog open={Boolean(selectedPkg)} onOpenChange={(v) => { if (!v) setSelectedPkg(null) }}>
+      <Dialog open={Boolean(selectedPkg)} onOpenChange={(v) => { if (!v) closeModal() }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CreditCard className="size-5 text-indigo-500" />
+              <Wallet className="size-5 text-indigo-500" />
               {paymentActionType === "renew" ? "Renew Subscription" : "Subscription Checkout"}
             </DialogTitle>
             <DialogDescription>
-              Complete payment to activate or extend your parking management subscription.
+              Pay securely with your wallet to activate or extend your parking management subscription.
             </DialogDescription>
           </DialogHeader>
 
-          {selectedPkg && (
+          {selectedPkg && !pendingSub && (
             <div className="space-y-5 py-2">
               {/* Order Summary Box */}
               <div className="bg-slate-900 text-white rounded p-4 space-y-2">
@@ -392,80 +418,119 @@ export function OwnerSubscriptionPage() {
                 </div>
               </div>
 
-              {/* Payment Method Selector */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Select Payment Method</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {PAYMENT_METHODS.map((method) => {
-                    const isSelected = selectedMethod === method.id
-                    return (
-                      <button
-                        key={method.id}
-                        type="button"
-                        onClick={() => setSelectedMethod(method.id)}
-                        className={`flex items-center justify-between p-3 rounded border text-left transition-all ${isSelected
-                          ? "border-primary bg-primary/10 ring-2 ring-primary"
-                          : "border-border hover:bg-muted"
-                          }`}
-                      >
-                        <span className="text-xs font-semibold">{method.name}</span>
-                        {isSelected && <Check className="size-4 text-primary shrink-0" />}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Instructions & Simulated QR / Transfer Details */}
-              <div className="rounded border p-4 bg-muted/30 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="size-10 rounded bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                    <QrCode className="size-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      Payment Transfer Info ({activeMethodInfo.name})
-                    </p>
-                    <p className="text-sm font-semibold">{activeMethodInfo.account}</p>
-                    <p className="text-xs font-mono text-indigo-400">{activeMethodInfo.phone}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Transaction Ref Input */}
-              <FormField
-                label="Transaction ID / Reference Number"
-                htmlFor="txn_ref"
-                error={undefined}
-              >
-                <Input
-                  id="txn_ref"
-                  placeholder="e.g. TXN987654321 or Receipt No."
-                  value={transactionRef}
-                  onChange={(e) => setTransactionRef(e.target.value)}
-                />
-              </FormField>
-
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <ShieldCheck className="size-4 text-emerald-500" />
-                <span>Instant activation upon payment confirmation.</span>
+                <span>Payment is processed via the digital wallet app using OTP + PIN.</span>
               </div>
+
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button type="button" variant="outline" onClick={closeModal}>
+                  Cancel
+                </Button>
+                <Button type="button" disabled={isSubmittingPayment} onClick={handleConfirmPayment}>
+                  {isSubmittingPayment && <Loader2 className="size-4 animate-spin mr-2" />}
+                  Confirm & Proceed to Payment
+                </Button>
+              </DialogFooter>
             </div>
           )}
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={() => setSelectedPkg(null)}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              disabled={isSubmittingPayment}
-              onClick={handleConfirmPayment}
-            >
-              {isSubmittingPayment && <Loader2 className="size-4 animate-spin mr-2" />}
-              Confirm & Pay {selectedPkg ? formatPrice(selectedPkg.price) : ""}
-            </Button>
-          </DialogFooter>
+          {pendingSub && !paymentInfo && (
+            <div className="space-y-4 py-2">
+              {payInitiateError && (
+                <p className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded p-3">
+                  {payInitiateError}
+                </p>
+              )}
+              <Button
+                className="w-full"
+                type="button"
+                disabled={isInitiating}
+                onClick={() => handleInitiatePayment(pendingSub.id)}
+              >
+                {isInitiating ? (
+                  <><Loader2 className="size-4 animate-spin mr-2" /> Requesting payment...</>
+                ) : (
+                  <>Pay with Wallet</>
+                )}
+              </Button>
+            </div>
+          )}
+
+          {pendingSub && paymentInfo && (
+            <div className="space-y-4 py-2">
+              <div className="bg-slate-900 text-white rounded p-4 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm opacity-80">Package</span>
+                  <span className="text-sm font-semibold">{selectedPkg?.name ?? `#${pendingSub.package_id}`}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm opacity-80">Subscription Fee</span>
+                  <span className="text-sm font-medium">{formatPrice(paymentInfo.amount)}</span>
+                </div>
+                {paymentInfo.fee > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm opacity-80">Wallet Fee</span>
+                    <span className="text-sm font-medium">{formatPrice(paymentInfo.fee)}</span>
+                  </div>
+                )}
+                <div className="border-t border-slate-800 pt-2 flex justify-between items-center">
+                  <span className="font-medium">Total Due</span>
+                  <span className="text-xl font-bold text-amber-400">{formatPrice(paymentInfo.total)}</span>
+                </div>
+              </div>
+
+              <FormField label="One-Time Password (OTP)" htmlFor="pay-otp" hint="Enter the 6-digit code sent to your phone by your wallet app." error={undefined}>
+                <Input
+                  id="pay-otp"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="6-digit OTP"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                  className="tracking-widest text-center"
+                />
+              </FormField>
+              <FormField label="Wallet PIN" htmlFor="pay-pin" error={undefined}>
+                <Input
+                  id="pay-pin"
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={4}
+                  placeholder="4-digit PIN"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                  className="tracking-widest text-center"
+                />
+              </FormField>
+
+              {payError && (
+                <p className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded p-3">
+                  {payError}
+                </p>
+              )}
+
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button type="button" variant="outline" onClick={closeModal} disabled={isPaying}>
+                  Cancel
+                </Button>
+                <Button type="button" disabled={isPaying} onClick={handlePayNow}>
+                  {isPaying && <Loader2 className="size-4 animate-spin mr-2" />}
+                  Pay {formatPrice(paymentInfo.total)}
+                </Button>
+              </DialogFooter>
+              <p className="text-center">
+                <button
+                  type="button"
+                  onClick={() => handleInitiatePayment(pendingSub.id)}
+                  disabled={isInitiating || isPaying}
+                  className="text-xs text-primary hover:underline disabled:opacity-50"
+                >
+                  Request a new OTP
+                </button>
+              </p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

@@ -52,6 +52,11 @@ class Settings(BaseSettings):
     OTP_EXPIRE_MINUTES: int
     OTP_LENGTH: int
 
+    # Digital Wallet Integration (merchant API)
+    WALLET_API_BASE_URL: str = ""
+    WALLET_MERCHANT_API_KEY: str = ""
+    WALLET_REFERENCE_PREFIX: str = "PP"
+
 
 @lru_cache
 def get_settings() -> Settings:

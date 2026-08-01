@@ -32,3 +32,7 @@ class User(Base):
     customer_profile: Mapped[Optional["Customer"]] = relationship(
         "Customer", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
+
+    payments: Mapped[List["Payment"]] = relationship(
+        "Payment", back_populates="user", cascade="all, delete-orphan"
+    )

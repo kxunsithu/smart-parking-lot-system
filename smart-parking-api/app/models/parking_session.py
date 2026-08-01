@@ -11,6 +11,7 @@ from app.database.base import Base
 if TYPE_CHECKING:
     from app.models.car import Car
     from app.models.parking_slot import ParkingSlot
+    from app.models.payment import Payment
 
 
 class ParkingSession(Base):
@@ -33,3 +34,4 @@ class ParkingSession(Base):
 
     car: Mapped["Car"] = relationship("Car", back_populates="sessions")
     slot: Mapped["ParkingSlot"] = relationship("ParkingSlot", back_populates="sessions")
+    payments: Mapped[list["Payment"]] = relationship("Payment", back_populates="session")

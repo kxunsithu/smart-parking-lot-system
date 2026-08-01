@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useParams, useNavigate, useSearchParams } from "react-router-dom"
 import {
   ArrowLeft, MapPin, RotateCw, CheckCircle2, Loader2,
-  CalendarDays, ChevronRight, Filter, Search, Layers, RotateCcw,
+  CalendarDays, ChevronRight, Filter, Search, Layers, RotateCcw, Wallet,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,14 +19,14 @@ import { parkingSessionsApi } from "@/api/parkingSessions"
 import { parkingFloorsApi } from "@/api/parkingFloors"
 import { parkingSlotsApi } from "@/api/parkingSlots"
 import { useCarStore } from "@/store/carStore"
-import type { ParkingLotOut, ParkingSlotOut, ParkingSessionOut } from "@/api/types"
+import type { ParkingLotOut, ParkingSlotOut, ParkingSessionOut, WalletPaymentOut } from "@/api/types"
 import type { ParkingFloorOut } from "@/api/parkingFloors"
 import { toast } from "@/components/ui/toaster"
 import { format, addHours } from "date-fns"
 import { trackParkingSlot, type ParkingTrackTarget, type SlotTrackDetails } from "@/lib/parkingTrack"
 import { findCarSessionOverlap } from "@/lib/sessionSchedule"
 
-type BookingStep = "select" | "schedule" | "success"
+type BookingStep = "select" | "schedule" | "pay" | "success"
 
 function toLocalDatetimeValue(date: Date): string {
   // Returns "YYYY-MM-DDTHH:MM" for datetime-local input
@@ -97,6 +97,15 @@ export default function ParkingDetail() {
   const [selectedSlotDetails, setSelectedSlotDetails] = useState<SlotTrackDetails | null>(null)
   const [activeNavigation, setActiveNavigation] = useState<ParkingTrackTarget | null>(null)
   const [carSessions, setCarSessions] = useState<ParkingSessionOut[]>([])
+
+  // Wallet payment state
+  const [paymentInfo, setPaymentInfo] = useState<WalletPaymentOut | null>(null)
+  const [otpCode, setOtpCode] = useState("")
+  const [pin, setPin] = useState("")
+  const [initiating, setInitiating] = useState(false)
+  const [paying, setPaying] = useState(false)
+  const [payInitiateError, setPayInitiateError] = useState<string | null>(null)
+  const [payError, setPayError] = useState<string | null>(null)
 
   useEffect(() => {
     if (id) {
@@ -267,12 +276,52 @@ export default function ParkingDetail() {
         end_time: toISOUTC(endTime),
       })
       setBookedSession(booked)
-      toast.success("Your parking session is now ACTIVE.")
-      setStep("success")
+      setPaymentInfo(null)
+      setOtpCode("")
+      setPin("")
+      setPayError(null)
+      setPayInitiateError(null)
+      toast.success("Session booked. Please complete the wallet payment to activate it.")
+      setStep("pay")
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to book parking session")
     } finally {
       setBooking(false)
+    }
+  }
+
+  const handleInitiatePayment = async () => {
+    if (!bookedSession) return
+    setInitiating(true)
+    setPayInitiateError(null)
+    try {
+      const info = await parkingSessionsApi.payInitiate(bookedSession.id)
+      setPaymentInfo(info)
+    } catch (err: any) {
+      setPayInitiateError(err.response?.data?.message || "Failed to initiate payment. Please try again.")
+    } finally {
+      setInitiating(false)
+    }
+  }
+
+  const handleConfirmPayment = async () => {
+    if (!bookedSession || !paymentInfo) return
+    if (!/^\d{6}$/.test(otpCode.trim())) { toast.error("Please enter the 6-digit OTP"); return }
+    if (!/^\d{4}$/.test(pin.trim())) { toast.error("Please enter your 4-digit wallet PIN"); return }
+    setPaying(true)
+    setPayError(null)
+    try {
+      const result = await parkingSessionsApi.payConfirm(bookedSession.id, {
+        otp_code: otpCode.trim(),
+        pin: pin.trim(),
+      })
+      setBookedSession(result.session)
+      toast.success("Payment successful! Your parking session is now ACTIVE.")
+      setStep("success")
+    } catch (err: any) {
+      setPayError(err.response?.data?.message || "Payment failed. Please check your OTP and PIN and try again.")
+    } finally {
+      setPaying(false)
     }
   }
 
@@ -389,7 +438,7 @@ export default function ParkingDetail() {
             {/* Step indicator */}
             <div className="flex items-center gap-2 mb-4">
               {(() => {
-                const steps: BookingStep[] = ["select", "schedule", "success"]
+                const steps: BookingStep[] = ["select", "schedule", "pay", "success"]
                 const stepIndex = steps.indexOf(step)
                 return steps.map((s, i) => (
                   <div key={s} className="flex items-center gap-2">
@@ -559,7 +608,114 @@ export default function ParkingDetail() {
               </Card>
             )}
 
-            {/* ── Step 3: Success ─── */}
+            {/* ── Step 3: Pay with wallet ─── */}
+            {step === "pay" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Wallet className="h-5 w-5 text-primary" />
+                    Confirm Wallet Payment
+                  </CardTitle>
+                  <CardDescription>Your slot is reserved. Pay to activate your session.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {!paymentInfo ? (
+                    <div className="space-y-4">
+                      {payInitiateError && (
+                        <p className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded p-3">
+                          {payInitiateError}
+                        </p>
+                      )}
+                      <Button className="w-full" onClick={handleInitiatePayment} disabled={initiating}>
+                        {initiating ? (
+                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Requesting payment...</>
+                        ) : (
+                          <>Pay with Wallet</>
+                        )}
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center">
+                        Estimated fee: <span className="font-semibold text-foreground">{(bookedSession?.fee ?? previewFee).toLocaleString()} MMK</span>
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="rounded bg-primary/10 border border-primary/20 p-4 space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Payment Summary</p>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Parking Fee</span>
+                          <span className="font-medium">{paymentInfo.amount.toLocaleString()} MMK</span>
+                        </div>
+                        {paymentInfo.fee > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Wallet Fee</span>
+                            <span className="font-medium">{paymentInfo.fee.toLocaleString()} MMK</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between font-bold text-base border-t border-primary/20 pt-2 mt-2">
+                          <span>Total</span>
+                          <span className="text-primary">{paymentInfo.total.toLocaleString()} MMK</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="otp">One-Time Password (OTP)</Label>
+                        <Input
+                          id="otp"
+                          inputMode="numeric"
+                          maxLength={6}
+                          placeholder="6-digit OTP"
+                          value={otpCode}
+                          onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                          className="mt-1 tracking-widest text-center"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Enter the 6-digit code sent to your phone by your wallet app.
+                        </p>
+                      </div>
+                      <div>
+                        <Label htmlFor="pin">Wallet PIN</Label>
+                        <Input
+                          id="pin"
+                          type="password"
+                          inputMode="numeric"
+                          maxLength={4}
+                          placeholder="4-digit PIN"
+                          value={pin}
+                          onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                          className="mt-1 tracking-widest text-center"
+                        />
+                      </div>
+
+                      {payError && (
+                        <p className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded p-3">
+                          {payError}
+                        </p>
+                      )}
+
+                      <Button className="w-full" onClick={handleConfirmPayment} disabled={paying}>
+                        {paying ? (
+                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing payment...</>
+                        ) : (
+                          <>Pay {paymentInfo.total.toLocaleString()} MMK</>
+                        )}
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center">
+                        <button
+                          type="button"
+                          onClick={handleInitiatePayment}
+                          disabled={initiating || paying}
+                          className="text-primary hover:underline disabled:opacity-50"
+                        >
+                          Request a new OTP
+                        </button>
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ── Step 4: Success ─── */}
             {step === "success" && (
               <Card className="border-green-500/30 bg-green-500/5">
                 <CardContent className="pt-8 pb-6 text-center space-y-4">

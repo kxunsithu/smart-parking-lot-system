@@ -6,7 +6,7 @@ export type SlotStatus = "AVAILABLE" | "OCCUPIED"
 
 export type SessionStatus = "PENDING" | "ACTIVE" | "FINISHED"
 
-export type SubscriptionStatus = "ACTIVE" | "EXPIRED" | "CANCELLED"
+export type SubscriptionStatus = "PENDING" | "ACTIVE" | "EXPIRED" | "CANCELLED"
 
 export interface PackageOut {
   id: number
@@ -24,12 +24,10 @@ export interface SubscriptionOut {
   id: number
   owner_id: number
   package_id: number
-  started_at: string
-  expires_at: string
+  started_at: string | null
+  expires_at: string | null
   status: SubscriptionStatus
-  payment_method: string
   amount: number
-  transaction_ref?: string | null
   created_at: string
   package?: PackageOut | null
   owner?: ParkingOwnerOut | null
@@ -375,6 +373,31 @@ export interface CarUpdate {
 export interface SubscriptionPurchase {
   package_id: number
   owner_id?: number | null
-  payment_method: string
-  transaction_ref?: string | null
+}
+
+// Wallet Payment
+export interface WalletPaymentOut {
+  id: number
+  reference: string
+  session_id?: number | null
+  subscription_id?: number | null
+  wallet_payment_id?: number | null
+  amount: number
+  fee: number
+  total: number
+  status: string
+  message?: string | null
+  wallet_transaction_id?: number | null
+  paid_at?: string | null
+  created_at: string
+}
+
+export interface WalletPaymentConfirm {
+  otp_code: string
+  pin: string
+}
+
+export interface SubscriptionPayResult {
+  payment: WalletPaymentOut
+  subscription: SubscriptionOut
 }

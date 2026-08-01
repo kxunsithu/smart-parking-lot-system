@@ -89,6 +89,41 @@ export interface ParkingSessionOut {
   status: SessionStatus
 }
 
+export interface WalletPaymentOut {
+  id: number
+  reference: string
+  session_id?: number | null
+  subscription_id?: number | null
+  wallet_payment_id?: number | null
+  amount: number
+  fee: number
+  total: number
+  status: string
+  message?: string | null
+  wallet_transaction_id?: number | null
+  paid_at?: string | null
+  created_at: string
+}
+
+export interface WalletPaymentConfirm {
+  otp_code: string
+  pin: string
+}
+
+export interface ParkingSessionPayResult {
+  payment: WalletPaymentOut
+  session: ParkingSessionOut
+}
+  id: number
+  car_id: number
+  slot_id: number
+  start_time: string
+  end_time?: string | null
+  duration?: number | null
+  fee?: number | null
+  status: SessionStatus
+}
+
 export interface ParkingSessionStart {
   car_id: number
   slot_id: number

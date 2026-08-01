@@ -1,6 +1,6 @@
 """Tests verifying the 2-hour overlap buffer logic for customer bookings."""
 from datetime import datetime, timedelta, timezone
-from tests.conftest import auth_headers
+from tests.conftest import auth_headers, purchase_and_activate
 
 
 def test_overlap_booking_buffer(client, admin_user):
@@ -25,7 +25,7 @@ def test_overlap_booking_buffer(client, admin_user):
         },
     )
     owner_headers = auth_headers(client, "bob.overlap@example.com", "Owner@1234")
-    client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers)
+    purchase_and_activate(client, owner_headers, pkg_id)
 
     # Owner creates parking lot, floor, and slot
     lot_id = client.post(
@@ -65,6 +65,24 @@ def test_overlap_booking_buffer(client, admin_user):
     )
     car_id = car_resp.json()["data"]["id"]
 
+    # A second car used for the slot-buffer scenarios so the same-car overlap
+    # check does not shadow the 2-hour slot buffer behaviour.
+    car_b_resp = client.post(
+        "/api/v1/cars",
+        headers=customer_headers,
+        json={"plate_number": "YGN-778"},
+    )
+    car_b_id = car_b_resp.json()["data"]["id"]
+
+    # A third car for the failing buffer scenarios (no prior sessions, so only
+    # the slot buffer conflict applies).
+    car_c_resp = client.post(
+        "/api/v1/cars",
+        headers=customer_headers,
+        json={"plate_number": "YGN-779"},
+    )
+    car_c_id = car_c_resp.json()["data"]["id"]
+
     # Let's define the base time for testing (say tomorrow at 3:00 PM UTC)
     tomorrow = datetime.now(timezone.utc).date() + timedelta(days=1)
     base_time = datetime(tomorrow.year, tomorrow.month, tomorrow.day, 15, 0, tzinfo=timezone.utc)  # 3:00 PM
@@ -91,7 +109,7 @@ def test_overlap_booking_buffer(client, admin_user):
         "/api/v1/parking-sessions/book",
         headers=customer_headers,
         json={
-            "car_id": car_id,
+            "car_id": car_b_id,
             "slot_id": slot_id,
             "start_time": start_time_ok,
             "end_time": end_time_ok,
@@ -106,7 +124,7 @@ def test_overlap_booking_buffer(client, admin_user):
         "/api/v1/parking-sessions/book",
         headers=customer_headers,
         json={
-            "car_id": car_id,
+            "car_id": car_c_id,
             "slot_id": slot_id,
             "start_time": start_time_fail,
             "end_time": end_time_fail,
@@ -122,7 +140,7 @@ def test_overlap_booking_buffer(client, admin_user):
         "/api/v1/parking-sessions/book",
         headers=customer_headers,
         json={
-            "car_id": car_id,
+            "car_id": car_b_id,
             "slot_id": slot_id,
             "start_time": start_time_post_ok,
             "end_time": end_time_post_ok,
@@ -137,7 +155,7 @@ def test_overlap_booking_buffer(client, admin_user):
         "/api/v1/parking-sessions/book",
         headers=customer_headers,
         json={
-            "car_id": car_id,
+            "car_id": car_c_id,
             "slot_id": slot_id,
             "start_time": start_time_post_fail,
             "end_time": end_time_post_fail,
@@ -168,7 +186,7 @@ def test_car_cannot_book_overlapping_session_on_different_slot(client, admin_use
         },
     )
     owner_headers = auth_headers(client, "bob.car-overlap@example.com", "Owner@1234")
-    client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers)
+    purchase_and_activate(client, owner_headers, pkg_id)
 
     lot_id = client.post(
         "/api/v1/parking-lots", headers=owner_headers, json={"name": "Car Overlap Lot", "rate_per_hour": 1000}

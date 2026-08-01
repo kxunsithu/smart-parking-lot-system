@@ -1,5 +1,5 @@
 """End-to-end tests covering the core parking lot business flow."""
-from tests.conftest import auth_headers
+from tests.conftest import auth_headers, purchase_and_activate
 
 
 def _create_basic_package(client, admin_headers) -> int:
@@ -13,8 +13,8 @@ def _create_basic_package(client, admin_headers) -> int:
 
 
 def _subscribe_owner(client, owner_headers, pkg_id: int):
-    """Helper: purchase a subscription for the current owner."""
-    client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers)
+    """Helper: purchase + pay for a subscription for the current owner."""
+    purchase_and_activate(client, owner_headers, pkg_id)
 
 
 def test_full_parking_flow(client, admin_user):

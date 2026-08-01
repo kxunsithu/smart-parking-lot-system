@@ -21,9 +21,17 @@ class SessionStatus(str, Enum):
 
 
 class SubscriptionStatus(str, Enum):
+    PENDING = "PENDING"
     ACTIVE = "ACTIVE"
     EXPIRED = "EXPIRED"
     CANCELLED = "CANCELLED"
+
+
+class PaymentStatus(str, Enum):
+    PENDING = "PENDING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    EXPIRED = "EXPIRED"
 
 
 class LotType(str, Enum):

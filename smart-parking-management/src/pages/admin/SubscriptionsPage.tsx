@@ -14,10 +14,9 @@ import { getErrorMessage } from "@/api/client"
 import type { SubscriptionOut, SubscriptionStatus } from "@/types"
 import type { ApiMeta } from "@/types"
 
-import { Badge } from "@/components/ui/badge"
-
 const STATUS_OPTIONS = [
   { label: "All statuses", value: "all" },
+  { label: "Pending", value: "PENDING" },
   { label: "Active", value: "ACTIVE" },
   { label: "Expired", value: "EXPIRED" },
   { label: "Cancelled", value: "CANCELLED" },
@@ -112,7 +111,7 @@ export function AdminSubscriptionsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {subscriptions.map((sub) => {
-                const days = daysRemaining(sub.expires_at)
+                const days = sub.expires_at ? daysRemaining(sub.expires_at) : 0
                 return (
                   <Card key={sub.id} className="hover:shadow-md transition-shadow">
                     <CardHeader className="pb-3">
@@ -171,23 +170,24 @@ export function AdminSubscriptionsPage() {
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm">
-                          <Badge variant="outline" className="font-semibold">
-                            {sub.payment_method ?? "CASH"}
-                          </Badge>
+                          <StatusBadge
+                            label={sub.status}
+                            tone={subscriptionStatusTone(sub.status as SubscriptionStatus)}
+                          />
                         </div>
                         <span className="font-mono text-xs text-muted-foreground">
-                          {sub.transaction_ref || "—"}
+                          #{sub.id}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Calendar className="size-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Started:</span>
-                        <span className="font-medium">{formatDate(sub.started_at)}</span>
+                        <span className="font-medium">{sub.started_at ? formatDate(sub.started_at) : "—"}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Calendar className="size-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Expires:</span>
-                        <span className="font-medium">{formatDate(sub.expires_at)}</span>
+                        <span className="font-medium">{sub.expires_at ? formatDate(sub.expires_at) : "—"}</span>
                       </div>
                       {sub.status === "ACTIVE" && (
                         <div className="flex items-center gap-2 text-sm pt-2 border-t">

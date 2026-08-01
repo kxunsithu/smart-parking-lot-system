@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.constants import RoleName, SubscriptionStatus
-from app.core.exceptions import ForbiddenException, NotFoundException
+from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
 from app.models.owner_subscription import OwnerSubscription
 from app.models.parking_lot import ParkingLot
 from app.models.user import User
@@ -41,64 +41,84 @@ class SubscriptionService:
         if not pkg or not pkg.is_active:
             raise NotFoundException("Package not found or is no longer available.")
 
-        # Mark any existing ACTIVE subscription as EXPIRED before creating a new one
-        existing = self.sub_repo.get_active_by_owner_id(owner_id)
-        if existing:
-            self.sub_repo.update(existing, {"status": SubscriptionStatus.EXPIRED.value})
-
-        now = datetime.now(timezone.utc)
+        # A subscription starts as PENDING until the wallet payment is completed.
         sub = OwnerSubscription(
             owner_id=owner_id,
             package_id=pkg.id,
-            started_at=now,
-            expires_at=now + timedelta(days=pkg.duration_days),
-            status=SubscriptionStatus.ACTIVE.value,
-            payment_method=payload.payment_method or "CASH",
+            started_at=None,
+            expires_at=None,
+            status=SubscriptionStatus.PENDING.value,
             amount=pkg.price,
-            transaction_ref=payload.transaction_ref,
         )
         return self.sub_repo.create(sub)
 
     def renew(self, payload: SubscriptionPurchase, current_user: User) -> OwnerSubscription:
-        """Extend subscription: if active, extends from expires_at; otherwise from now."""
+        """Create a PENDING renewal that extends from the current expiry once paid."""
         owner_id = self._resolve_owner_id(current_user, payload.owner_id)
 
         pkg = self.pkg_repo.get(payload.package_id)
         if not pkg or not pkg.is_active:
             raise NotFoundException("Package not found or is no longer available.")
 
-        now = datetime.now(timezone.utc)
-        latest = self.sub_repo.get_latest_by_owner_id(owner_id)
-
-        if latest:
-            # Normalise – SQLite returns naive datetimes, PostgreSQL returns aware
-            exp = latest.expires_at
-            if exp.tzinfo is None:
-                exp = exp.replace(tzinfo=timezone.utc)
-            still_active = exp > now
-        else:
-            still_active = False
-
-        if still_active and latest:
-            start = exp  # type: ignore[possibly-undefined]
-        else:
-            start = now
-
         sub = OwnerSubscription(
             owner_id=owner_id,
             package_id=pkg.id,
-            started_at=start,
-            expires_at=start + timedelta(days=pkg.duration_days),
-            status=SubscriptionStatus.ACTIVE.value,
-            payment_method=payload.payment_method or "CASH",
+            started_at=None,
+            expires_at=None,
+            status=SubscriptionStatus.PENDING.value,
             amount=pkg.price,
-            transaction_ref=payload.transaction_ref,
         )
         return self.sub_repo.create(sub)
+
+    def activate_paid_subscription(self, sub: OwnerSubscription) -> OwnerSubscription:
+        """
+        Mark a PENDING subscription ACTIVE and compute its period once payment succeeds.
+        If the owner already has another ACTIVE subscription, this is a renewal and
+        extends from the previous expiry date; the previous one is then EXPIRED.
+        """
+        if sub.status != SubscriptionStatus.PENDING.value:
+            raise BadRequestException("Only PENDING subscriptions can be activated.")
+
+        now = datetime.now(timezone.utc)
+        existing = self.sub_repo.get_active_by_owner_id(sub.owner_id)
+
+        if existing and existing.id != sub.id:
+            start = existing.expires_at
+            if start.tzinfo is None:
+                start = start.replace(tzinfo=timezone.utc)
+            if start < now:
+                start = now
+            self.sub_repo.update(existing, {"status": SubscriptionStatus.EXPIRED.value})
+        else:
+            start = now
+
+        return self.sub_repo.update(
+            sub,
+            {
+                "status": SubscriptionStatus.ACTIVE.value,
+                "started_at": start,
+                "expires_at": start + timedelta(days=sub.package.duration_days),
+            },
+        )
 
 
     def get_active_subscription(self, owner_id: int) -> OwnerSubscription | None:
         return self.sub_repo.get_active_by_owner_id(owner_id)
+
+    def get_subscription(self, subscription_id: int) -> OwnerSubscription:
+        from sqlalchemy.orm import joinedload
+        from app.models.parking_owner import ParkingOwner
+        sub = self.db.scalar(
+            select(OwnerSubscription)
+            .options(
+                joinedload(OwnerSubscription.package),
+                joinedload(OwnerSubscription.owner).joinedload(ParkingOwner.user),
+            )
+            .where(OwnerSubscription.id == subscription_id)
+        )
+        if not sub:
+            raise NotFoundException("Subscription not found.")
+        return sub
 
     def check_subscription_required(self, owner_id: int) -> None:
         """Raise ForbiddenException if the owner has no active subscription."""
@@ -150,8 +170,10 @@ class SubscriptionService:
         if not sub:
             raise NotFoundException("Subscription not found.")
         
-        # Toggle between ACTIVE and CANCELLED
+        # Toggle between ACTIVE/PENDING and CANCELLED
         if sub.status == SubscriptionStatus.ACTIVE.value:
+            new_status = SubscriptionStatus.CANCELLED.value
+        elif sub.status == SubscriptionStatus.PENDING.value:
             new_status = SubscriptionStatus.CANCELLED.value
         elif sub.status == SubscriptionStatus.CANCELLED.value:
             new_status = SubscriptionStatus.ACTIVE.value

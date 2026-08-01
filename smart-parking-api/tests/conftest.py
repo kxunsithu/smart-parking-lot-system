@@ -11,14 +11,52 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.constants import RoleName
+from app.core.exceptions import BadRequestException
 from app.core.security import hash_password
 from app.database.base import Base
 from app.database.session import get_db
 from app.main import app
 from app.models.role import Role
 from app.models.user import User
+from app.services.wallet_payment_client import get_wallet_client
 
 TEST_DATABASE_URL = "sqlite://"
+
+
+class FakeWalletClient:
+    """Stands in for the digital wallet merchant API during tests."""
+
+    def __init__(self, should_fail: bool = False):
+        self.should_fail = should_fail
+        self.initiated = 0
+        self.confirmed = 0
+
+    def initiate(self, customer_phone: str, amount: float, reference: str, description: str | None = None) -> dict:
+        if self.should_fail:
+            raise BadRequestException("Customer not found for the given phone number.")
+        self.initiated += 1
+        fee = round(float(amount) * 0.01, 2)
+        return {
+            "payment_id": 1000 + self.initiated,
+            "customer_phone": customer_phone,
+            "merchant_name": "Smart Parking",
+            "amount": float(amount),
+            "fee": fee,
+            "total": round(float(amount) + fee, 2),
+            "reference": reference,
+            "status": "pending",
+            "expires_at": None,
+        }
+
+    def confirm(self, payment_id: int, otp_code: str, pin: str) -> dict:
+        if self.should_fail or otp_code != "123456":
+            raise BadRequestException("Invalid OTP.")
+        self.confirmed += 1
+        return {
+            "id": 5000 + self.confirmed,
+            "transaction_number": "TX-TEST-123",
+            "status": "completed",
+        }
 
 
 @pytest.fixture()
@@ -66,8 +104,11 @@ def client(db_engine, db_session):
         finally:
             session.close()
 
+    fake_wallet = FakeWalletClient()
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_wallet_client] = lambda: fake_wallet
     with TestClient(app) as test_client:
+        test_client._fake_wallet = fake_wallet  # type: ignore[attr-defined]
         yield test_client
     app.dependency_overrides.clear()
 
@@ -90,3 +131,57 @@ def auth_headers(client: TestClient, email: str, password: str) -> dict:
     response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     token = response.json()["data"]["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+def set_phone(client: TestClient, headers: dict, phone: str = "+959000000001") -> None:
+    response = client.put("/api/v1/auth/me", json={"phone": phone}, headers=headers)
+    assert response.status_code == 200
+
+
+def purchase_and_activate(client: TestClient, owner_headers: dict, pkg_id: int) -> dict:
+    """Purchase a subscription and complete wallet payment via the fake wallet."""
+    set_phone(client, owner_headers)
+    resp = client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers)
+    assert resp.status_code == 201
+    sub_id = resp.json()["data"]["id"]
+
+    init = client.post(f"/api/v1/subscriptions/{sub_id}/pay/initiate", headers=owner_headers)
+    assert init.status_code == 201, init.text
+
+    conf = client.post(
+        f"/api/v1/subscriptions/{sub_id}/pay/confirm",
+        json={"otp_code": "123456", "pin": "1234"},
+        headers=owner_headers,
+    )
+    assert conf.status_code == 200, conf.text
+    return conf.json()["data"]["subscription"]
+
+
+def book_and_pay_session(
+    client: TestClient,
+    customer_headers: dict,
+    car_id: int,
+    slot_id: int,
+    start_time: str,
+    end_time: str,
+) -> dict:
+    """Book a session and complete wallet payment, returning the activated session dict."""
+    book = client.post(
+        "/api/v1/parking-sessions/book",
+        headers=customer_headers,
+        json={"car_id": car_id, "slot_id": slot_id, "start_time": start_time, "end_time": end_time},
+    )
+    assert book.status_code == 201, book.text
+    session_id = book.json()["data"]["id"]
+
+    set_phone(client, customer_headers)
+    init = client.post(f"/api/v1/parking-sessions/{session_id}/pay/initiate", headers=customer_headers)
+    assert init.status_code == 201, init.text
+
+    conf = client.post(
+        f"/api/v1/parking-sessions/{session_id}/pay/confirm",
+        json={"otp_code": "123456", "pin": "1234"},
+        headers=customer_headers,
+    )
+    assert conf.status_code == 200, conf.text
+    return conf.json()["data"]["session"]
