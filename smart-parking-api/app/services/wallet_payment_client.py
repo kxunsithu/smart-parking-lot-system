@@ -22,6 +22,7 @@ class WalletPaymentClient:
         amount: float,
         order_reference: str,
         description: str | None = None,
+        redirect_url: str | None = None,
         api_key: str | None = None,
     ) -> dict:
         """Ask the wallet to create a pending external payment and send an OTP to the payer."""
@@ -32,6 +33,8 @@ class WalletPaymentClient:
         }
         if description:
             payload["description"] = description
+        if redirect_url:
+            payload["redirect_url"] = redirect_url
         return self._post("/api/external/payments/initiate", payload, api_key)
 
     def confirm(self, payment_reference: str, otp_code: str, pin: str, api_key: str | None = None) -> dict:
@@ -45,6 +48,32 @@ class WalletPaymentClient:
             },
             api_key,
         )
+
+    def get_payment_status(self, payment_reference: str, api_key: str | None = None) -> dict:
+        """Poll the wallet for the current status of an external payment."""
+        if not self.base_url:
+            raise BadRequestException(
+                "Wallet payment is not configured on this server yet. "
+                "Please contact the administrator."
+            )
+        if not api_key:
+            raise BadRequestException(
+                "The receiving wallet account is missing its API key. "
+                "Please update the payment account configuration."
+            )
+        headers = {"X-API-Key": api_key, "Accept": "application/json"}
+        try:
+            with httpx.Client(base_url=self.base_url, headers=headers, timeout=60.0) as client:
+                resp = client.get(f"/api/external/payments/{payment_reference}")
+        except httpx.TimeoutException as exc:
+            raise BadRequestException(
+                "The wallet service is taking too long to respond. Please try again later."
+            ) from exc
+        except httpx.HTTPError as exc:
+            raise BadRequestException(
+                "Could not reach the wallet service. Please try again later."
+            ) from exc
+        return self._parse(resp)
 
     def _post(self, path: str, payload: dict, api_key: str | None) -> dict:
         if not self.base_url:

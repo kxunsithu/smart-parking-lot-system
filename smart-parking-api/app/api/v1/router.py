@@ -16,6 +16,7 @@ from app.api.v1 import (
     users,
     car,
     wallet_account,
+    wallet_payment,
 )
 
 api_router = APIRouter()
@@ -34,3 +35,4 @@ api_router.include_router(dashboard.router)
 api_router.include_router(package.router)
 api_router.include_router(subscription.router)
 api_router.include_router(wallet_account.router)
+api_router.include_router(wallet_payment.router)

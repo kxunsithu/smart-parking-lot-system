@@ -39,6 +39,8 @@ class Payment(Base):
     reference: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
     # Reference returned by the digital wallet external payment API (e.g. PAY-XXXX).
     wallet_payment_reference: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    # Hosted payment page URL on the wallet backend the customer is redirected to.
+    wallet_payment_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     # Transaction number returned once the wallet confirms the payment (e.g. TX-XXXX).
     wallet_transaction_number: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     amount: Mapped[float] = mapped_column(Float, nullable=False)

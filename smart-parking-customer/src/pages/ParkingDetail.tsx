@@ -105,6 +105,7 @@ export default function ParkingDetail() {
   const [walletPhone, setWalletPhone] = useState("")
   const [initiating, setInitiating] = useState(false)
   const [paying, setPaying] = useState(false)
+  const [paymentChecking, setPaymentChecking] = useState(false)
   const [payInitiateError, setPayInitiateError] = useState<string | null>(null)
   const [payError, setPayError] = useState<string | null>(null)
 
@@ -283,6 +284,7 @@ export default function ParkingDetail() {
       setWalletPhone("")
       setPayError(null)
       setPayInitiateError(null)
+      setPaymentChecking(false)
       toast.success("Session booked. Please complete the wallet payment to activate it.")
       setStep("pay")
     } catch (err: any) {
@@ -296,15 +298,79 @@ export default function ParkingDetail() {
     if (!bookedSession) return
     setInitiating(true)
     setPayInitiateError(null)
+    setPayError(null)
     try {
       const info = await parkingSessionsApi.payInitiate(bookedSession.id, {
         wallet_phone: walletPhone.trim() || null,
       })
       setPaymentInfo(info)
+      if (info.wallet_payment_url) {
+        window.open(info.wallet_payment_url, "_blank", "noopener,noreferrer")
+        toast.success("Wallet payment page opened in a new tab. Complete the payment there.")
+      } else {
+        toast.success("Payment initiated. Enter the OTP and your PIN to confirm.")
+      }
     } catch (err: any) {
       setPayInitiateError(err.response?.data?.message || "Failed to initiate payment. Please try again.")
     } finally {
       setInitiating(false)
+    }
+  }
+
+  // While the customer is completing the payment on the wallet hosted page,
+  // poll the parking session until it becomes ACTIVE, then auto-advance.
+  useEffect(() => {
+    if (step !== "pay" || !bookedSession || !paymentInfo?.wallet_payment_url) return
+    let cancelled = false
+    let attempts = 0
+    const check = async () => {
+      if (cancelled) return
+      setPaymentChecking(true)
+      try {
+        const session = await parkingSessionsApi.get(bookedSession.id)
+        if (cancelled) return
+        if (session.status === "ACTIVE") {
+          setBookedSession(session)
+          setPaymentChecking(false)
+          toast.success("Payment successful! Your parking session is now ACTIVE.")
+          setStep("success")
+          return
+        }
+      } catch {
+        // transient error — keep polling
+      }
+      if (cancelled) return
+      attempts += 1
+      if (attempts < 100) {
+        setPaymentChecking(false)
+        setTimeout(check, 3000)
+      } else {
+        setPaymentChecking(false)
+      }
+    }
+    check()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, bookedSession, paymentInfo?.wallet_payment_url])
+
+  const handleCheckPaymentStatus = async () => {
+    if (!bookedSession) return
+    setPaymentChecking(true)
+    try {
+      const session = await parkingSessionsApi.get(bookedSession.id)
+      if (session.status === "ACTIVE") {
+        setBookedSession(session)
+        toast.success("Payment successful! Your parking session is now ACTIVE.")
+        setStep("success")
+      } else {
+        toast.error("Payment is not completed yet. Complete it in the wallet tab and try again.")
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to check payment status.")
+    } finally {
+      setPaymentChecking(false)
     }
   }
 
@@ -653,6 +719,65 @@ export default function ParkingDetail() {
                       </Button>
                       <p className="text-xs text-muted-foreground text-center">
                         Estimated fee: <span className="font-semibold text-foreground">{(bookedSession?.fee ?? previewFee).toLocaleString()} MMK</span>
+                      </p>
+                    </div>
+                  ) : paymentInfo.wallet_payment_url ? (
+                    <div className="space-y-4">
+                      <div className="rounded bg-primary/10 border border-primary/20 p-4 space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Payment Summary</p>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Parking Fee</span>
+                          <span className="font-medium">{paymentInfo.amount.toLocaleString()} MMK</span>
+                        </div>
+                        {paymentInfo.fee > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Wallet Fee</span>
+                            <span className="font-medium">{paymentInfo.fee.toLocaleString()} MMK</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between font-bold text-base border-t border-primary/20 pt-2 mt-2">
+                          <span>Total</span>
+                          <span className="text-primary">{paymentInfo.total.toLocaleString()} MMK</span>
+                        </div>
+                      </div>
+
+                      <div className="rounded bg-card border p-4 space-y-2">
+                        <p className="text-sm font-medium">Complete your payment in the wallet tab</p>
+                        <p className="text-xs text-muted-foreground">
+                          The wallet payment page opened in a new tab. Enter the OTP and your wallet PIN there.
+                          This page will refresh automatically once the payment is confirmed.
+                        </p>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => window.open(paymentInfo.wallet_payment_url!, "_blank", "noopener,noreferrer")}
+                        >
+                          Re-open payment page
+                        </Button>
+                      </div>
+
+                      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Waiting for payment confirmation...</span>
+                      </div>
+
+                      <Button className="w-full" onClick={handleCheckPaymentStatus} disabled={paymentChecking}>
+                        {paymentChecking ? (
+                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Checking...</>
+                        ) : (
+                          <>I've completed the payment</>
+                        )}
+                      </Button>
+
+                      <p className="text-xs text-muted-foreground text-center">
+                        <button
+                          type="button"
+                          onClick={handleInitiatePayment}
+                          disabled={initiating}
+                          className="text-primary hover:underline disabled:opacity-50"
+                        >
+                          Request a new payment
+                        </button>
                       </p>
                     </div>
                   ) : (

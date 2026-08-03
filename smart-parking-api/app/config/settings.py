@@ -56,6 +56,12 @@ class Settings(BaseSettings):
     # API keys are configured per WalletAccount (admin platform + per-owner), not globally.
     WALLET_API_BASE_URL: str = ""
     WALLET_REFERENCE_PREFIX: str = "PP"
+    # Publicly reachable base URL of THIS API. The wallet hosted payment page
+    # redirects the customer's browser back here after OTP/PIN is entered.
+    WALLET_REDIRECT_BASE_URL: str = "http://localhost:8000"
+    # Frontend base URLs the callback redirects the browser to after finalizing.
+    CUSTOMER_APP_URL: str = "http://localhost:5174"
+    MANAGEMENT_APP_URL: str = "http://localhost:5173"
 
 
 @lru_cache

@@ -20,6 +20,9 @@ const ProfilePage = lazy(() => import("@/pages/shared/ProfilePage").then((m) => 
 const MapViewPage = lazy(() => import("@/pages/shared/MapViewPage").then((m) => ({ default: m.MapViewPage })))
 const Lot3DViewPage = lazy(() => import("@/pages/shared/Lot3DViewPage").then((m) => ({ default: m.Lot3DViewPage })))
 const SlotDetailPage = lazy(() => import("@/pages/shared/SlotDetailPage").then((m) => ({ default: m.SlotDetailPage })))
+const WalletPaymentResultPage = lazy(() =>
+  import("@/pages/shared/WalletPaymentResultPage").then((m) => ({ default: m.WalletPaymentResultPage }))
+)
 const NotFoundPage = lazy(() => import("@/pages/shared/NotFoundPage").then((m) => ({ default: m.NotFoundPage })))
 const UnauthorizedPage = lazy(() =>
   import("@/pages/shared/UnauthorizedPage").then((m) => ({ default: m.UnauthorizedPage }))
@@ -110,6 +113,7 @@ const router = createBrowserRouter([
           { path: "/map/:lotId", element: withSuspense(<MapViewPage />) },
           { path: "/3d/:lotId", element: withSuspense(<Lot3DViewPage />) },
           { path: "/slots/:slotId", element: withSuspense(<SlotDetailPage />) },
+          { path: "/wallet-payment/result", element: withSuspense(<WalletPaymentResultPage />) },
 
           {
             element: <ProtectedRoute allowedRoles={["ADMIN"]} />,

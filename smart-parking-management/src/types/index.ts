@@ -388,6 +388,7 @@ export interface WalletPaymentOut {
   status: string
   message?: string | null
   wallet_payment_reference?: string | null
+  wallet_payment_url?: string | null
   wallet_transaction_number?: string | null
   paid_at?: string | null
   created_at: string

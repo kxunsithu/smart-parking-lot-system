@@ -86,6 +86,7 @@ export function OwnerSubscriptionPage() {
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false)
   const [isInitiating, setIsInitiating] = useState(false)
   const [isPaying, setIsPaying] = useState(false)
+  const [paymentChecking, setPaymentChecking] = useState(false)
   const [walletPhone, setWalletPhone] = useState("")
   const [payInitiateError, setPayInitiateError] = useState<string | null>(null)
   const [payError, setPayError] = useState<string | null>(null)
@@ -122,6 +123,7 @@ export function OwnerSubscriptionPage() {
     setWalletPhone("")
     setPayInitiateError(null)
     setPayError(null)
+    setPaymentChecking(false)
   }
 
   const closeModal = () => {
@@ -133,6 +135,7 @@ export function OwnerSubscriptionPage() {
     setWalletPhone("")
     setPayInitiateError(null)
     setPayError(null)
+    setPaymentChecking(false)
   }
 
   const handleConfirmPayment = async () => {
@@ -158,15 +161,81 @@ export function OwnerSubscriptionPage() {
   const handleInitiatePayment = async (subscriptionId: number, phone?: string) => {
     setIsInitiating(true)
     setPayInitiateError(null)
+    setPayError(null)
     try {
       const info = await subscriptionsApi.payInitiate(subscriptionId, phone ? { wallet_phone: phone } : undefined)
       setPaymentInfo(info)
+      if (info.wallet_payment_url) {
+        window.open(info.wallet_payment_url, "_blank", "noopener,noreferrer")
+        toast.success("Wallet payment page opened in a new tab. Complete the payment there.")
+      } else {
+        toast.success("Payment initiated. Enter the OTP and your PIN to confirm.")
+      }
     } catch (error) {
       setPayInitiateError(getErrorMessage(error))
     } finally {
       setIsInitiating(false)
     }
   }
+
+  const handleCheckPaymentStatus = async () => {
+    if (!pendingSub) return
+    setPaymentChecking(true)
+    try {
+      const subs = await subscriptionsApi.getMySubscriptions()
+      const updated = subs.find((s) => s.id === pendingSub.id)
+      if (updated && updated.status === "ACTIVE") {
+        toast.success("Payment successful! Your subscription is now active.")
+        closeModal()
+        fetchAll()
+      } else {
+        toast.error("Payment is not completed yet. Complete it in the wallet tab and try again.")
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setPaymentChecking(false)
+    }
+  }
+
+  // While the customer is completing the payment on the wallet hosted page,
+  // poll the subscription until it becomes ACTIVE, then close and refresh.
+  useEffect(() => {
+    if (!pendingSub || !paymentInfo?.wallet_payment_url) return
+    let cancelled = false
+    let attempts = 0
+    const check = async () => {
+      if (cancelled) return
+      setPaymentChecking(true)
+      try {
+        const subs = await subscriptionsApi.getMySubscriptions()
+        if (cancelled) return
+        const updated = subs.find((s) => s.id === pendingSub.id)
+        if (updated && updated.status === "ACTIVE") {
+          setPaymentChecking(false)
+          toast.success("Payment successful! Your subscription is now active.")
+          closeModal()
+          fetchAll()
+          return
+        }
+      } catch {
+        // transient error — keep polling
+      }
+      if (cancelled) return
+      attempts += 1
+      if (attempts < 100) {
+        setPaymentChecking(false)
+        setTimeout(check, 3000)
+      } else {
+        setPaymentChecking(false)
+      }
+    }
+    check()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingSub, paymentInfo?.wallet_payment_url])
 
   const handlePayNow = async () => {
     if (!pendingSub) return
@@ -491,55 +560,105 @@ export function OwnerSubscriptionPage() {
                 </div>
               </div>
 
-              <FormField label="One-Time Password (OTP)" htmlFor="pay-otp" hint="Enter the 6-digit code sent to your phone by your wallet app." error={undefined}>
-                <Input
-                  id="pay-otp"
-                  inputMode="numeric"
-                  maxLength={6}
-                  placeholder="6-digit OTP"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                  className="tracking-widest text-center"
-                />
-              </FormField>
-              <FormField label="Wallet PIN" htmlFor="pay-pin" error={undefined}>
-                <Input
-                  id="pay-pin"
-                  type="password"
-                  inputMode="numeric"
-                  maxLength={4}
-                  placeholder="4-digit PIN"
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-                  className="tracking-widest text-center"
-                />
-              </FormField>
+              {paymentInfo.wallet_payment_url ? (
+                <>
+                  <div className="rounded bg-muted/40 border p-4 space-y-2">
+                    <p className="text-sm font-medium">Complete your payment in the wallet tab</p>
+                    <p className="text-xs text-muted-foreground">
+                      The wallet payment page opened in a new tab. Enter the OTP and your wallet PIN there.
+                      This dialog will close automatically once the payment is confirmed.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => window.open(paymentInfo.wallet_payment_url!, "_blank", "noopener,noreferrer")}
+                    >
+                      Re-open payment page
+                    </Button>
+                  </div>
 
-              {payError && (
-                <p className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded p-3">
-                  {payError}
-                </p>
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                    {paymentChecking && <Loader2 className="size-4 animate-spin" />}
+                    <span>{paymentChecking ? "Waiting for payment confirmation..." : "Waiting for payment confirmation"}</span>
+                  </div>
+
+                  <DialogFooter className="gap-2 sm:gap-0">
+                    <Button type="button" variant="outline" onClick={closeModal} disabled={paymentChecking}>
+                      Cancel
+                    </Button>
+                    <Button type="button" onClick={handleCheckPaymentStatus} disabled={paymentChecking}>
+                      {paymentChecking ? (
+                        <><Loader2 className="size-4 animate-spin mr-2" /> Checking...</>
+                      ) : (
+                        <>I've completed the payment</>
+                      )}
+                    </Button>
+                  </DialogFooter>
+                  <p className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => handleInitiatePayment(pendingSub.id, walletPhone.trim() || undefined)}
+                      disabled={isInitiating || paymentChecking}
+                      className="text-xs text-primary hover:underline disabled:opacity-50"
+                    >
+                      Request a new payment
+                    </button>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <FormField label="One-Time Password (OTP)" htmlFor="pay-otp" hint="Enter the 6-digit code sent to your phone by your wallet app." error={undefined}>
+                    <Input
+                      id="pay-otp"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="6-digit OTP"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                      className="tracking-widest text-center"
+                    />
+                  </FormField>
+                  <FormField label="Wallet PIN" htmlFor="pay-pin" error={undefined}>
+                    <Input
+                      id="pay-pin"
+                      type="password"
+                      inputMode="numeric"
+                      maxLength={4}
+                      placeholder="4-digit PIN"
+                      value={pin}
+                      onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                      className="tracking-widest text-center"
+                    />
+                  </FormField>
+
+                  {payError && (
+                    <p className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded p-3">
+                      {payError}
+                    </p>
+                  )}
+
+                  <DialogFooter className="gap-2 sm:gap-0">
+                    <Button type="button" variant="outline" onClick={closeModal} disabled={isPaying}>
+                      Cancel
+                    </Button>
+                    <Button type="button" disabled={isPaying} onClick={handlePayNow}>
+                      {isPaying && <Loader2 className="size-4 animate-spin mr-2" />}
+                      Pay {formatPrice(paymentInfo.total)}
+                    </Button>
+                  </DialogFooter>
+                  <p className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => handleInitiatePayment(pendingSub.id, walletPhone.trim() || undefined)}
+                      disabled={isInitiating || isPaying}
+                      className="text-xs text-primary hover:underline disabled:opacity-50"
+                    >
+                      Request a new OTP
+                    </button>
+                  </p>
+                </>
               )}
-
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button type="button" variant="outline" onClick={closeModal} disabled={isPaying}>
-                  Cancel
-                </Button>
-                <Button type="button" disabled={isPaying} onClick={handlePayNow}>
-                  {isPaying && <Loader2 className="size-4 animate-spin mr-2" />}
-                  Pay {formatPrice(paymentInfo.total)}
-                </Button>
-              </DialogFooter>
-              <p className="text-center">
-                <button
-                  type="button"
-                  onClick={() => handleInitiatePayment(pendingSub.id, walletPhone.trim() || undefined)}
-                  disabled={isInitiating || isPaying}
-                  className="text-xs text-primary hover:underline disabled:opacity-50"
-                >
-                  Request a new OTP
-                </button>
-              </p>
             </div>
           )}
         </DialogContent>

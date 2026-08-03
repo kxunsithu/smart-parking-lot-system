@@ -101,6 +101,7 @@ export interface WalletPaymentOut {
   status: string
   message?: string | null
   wallet_payment_reference?: string | null
+  wallet_payment_url?: string | null
   wallet_transaction_number?: string | null
   paid_at?: string | null
   created_at: string
@@ -114,15 +115,6 @@ export interface WalletPaymentConfirm {
 export interface ParkingSessionPayResult {
   payment: WalletPaymentOut
   session: ParkingSessionOut
-}
-  id: number
-  car_id: number
-  slot_id: number
-  start_time: string
-  end_time?: string | null
-  duration?: number | null
-  fee?: number | null
-  status: SessionStatus
 }
 
 export interface ParkingSessionStart {

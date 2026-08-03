@@ -11,6 +11,7 @@ import Profile from "@/pages/Profile"
 import ParkingDetail from "@/pages/ParkingDetail"
 import Lot3DView from "@/pages/Lot3DView"
 import Slot3DView from "@/pages/Slot3DView"
+import WalletPaymentResult from "@/pages/WalletPaymentResult"
 import { useAuthStore } from "@/store/authStore"
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -53,6 +54,7 @@ function App() {
           <Route path="/parking/:id" element={<ProtectedRoute><ParkingDetail /></ProtectedRoute>} />
           <Route path="/parking/:id/3d" element={<ProtectedRoute><Lot3DView /></ProtectedRoute>} />
           <Route path="/slots/:id" element={<ProtectedRoute><Slot3DView /></ProtectedRoute>} />
+          <Route path="/wallet-payment/result" element={<ProtectedRoute><WalletPaymentResult /></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
         <Toaster />

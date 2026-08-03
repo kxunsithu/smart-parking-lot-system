@@ -56,6 +56,21 @@ class PaymentService:
             )
         return phone.strip()
 
+    def _wallet_callback_url(self, app: str) -> str:
+        """Where the wallet hosted page redirects the browser after OTP/PIN is entered.
+
+        The wallet appends `reference`, `order_reference`, `status` and `message`
+        query params to this URL; the `app` hint lets the callback pick the correct
+        frontend even when the payment cannot be found locally.
+        """
+        base = settings.WALLET_REDIRECT_BASE_URL.rstrip("/")
+        return f"{base}/api/v1/wallet-payment/callback?app={app}"
+
+    def _redirect_app_url(self, payment: Payment) -> str:
+        """Frontend result page the browser is redirected to after the callback finalizes."""
+        base = settings.CUSTOMER_APP_URL if payment.session_id is not None else settings.MANAGEMENT_APP_URL
+        return f"{base.rstrip('/')}/wallet-payment/result"
+
     def _require_account(self, account: WalletAccount | None, who: str) -> WalletAccount:
         if not account:
             raise BadRequestException(
@@ -91,12 +106,30 @@ class PaymentService:
             payment.message = exc.message
             self.db.commit()
             raise
-        payment.status = PaymentStatus.COMPLETED.value
         payment.wallet_transaction_number = str(
             result.get("transaction_number") or result.get("id") or ""
         )
+        self._finalize(payment)
+
+    def _finalize(self, payment: Payment) -> None:
+        """Mark a completed wallet payment and apply its side effect to the parent entity.
+
+        Called both from the OTP/PIN confirm flow and from the hosted payment
+        callback (where the wallet completed the payment on its own page).
+        """
+        payment.status = PaymentStatus.COMPLETED.value
         payment.paid_at = datetime.now(timezone.utc)
         payment.message = "Payment completed."
+
+        if payment.session_id is not None:
+            session = self.db.get(ParkingSession, payment.session_id)
+            if session and session.status == SessionStatus.PENDING.value:
+                session.status = SessionStatus.ACTIVE.value
+        elif payment.subscription_id is not None:
+            subscription = self.db.get(OwnerSubscription, payment.subscription_id)
+            if subscription and subscription.status == SubscriptionStatus.PENDING.value:
+                SubscriptionService(self.db).activate_paid_subscription(subscription)
+
         self.db.commit()
 
     # ─── Parking session payments ────────────────────────────────────────────
@@ -159,6 +192,7 @@ class PaymentService:
             amount=session.fee,
             order_reference=reference,
             description=f"Parking session #{session.id}",
+            redirect_url=self._wallet_callback_url("customer"),
             api_key=receiver.api_key,
         )
 
@@ -171,6 +205,7 @@ class PaymentService:
             wallet_account_id=receiver.id,
             session_id=session.id,
             wallet_payment_reference=result.get("payment_reference"),
+            wallet_payment_url=result.get("payment_url"),
             amount=amount,
             fee=fee,
             total=total,
@@ -195,9 +230,6 @@ class PaymentService:
             raise BadRequestException("Please initiate the payment first.")
 
         self._confirm(payment, payload)
-
-        session.status = SessionStatus.ACTIVE.value
-        self.db.commit()
         self.db.refresh(payment)
         return payment, session
 
@@ -246,6 +278,7 @@ class PaymentService:
             amount=subscription.amount,
             order_reference=reference,
             description=f"Parking subscription #{subscription.id}",
+            redirect_url=self._wallet_callback_url("management"),
             api_key=receiver.api_key,
         )
 
@@ -258,6 +291,7 @@ class PaymentService:
             wallet_account_id=receiver.id,
             subscription_id=subscription.id,
             wallet_payment_reference=result.get("payment_reference"),
+            wallet_payment_url=result.get("payment_url"),
             amount=amount,
             fee=fee,
             total=total,
@@ -282,6 +316,60 @@ class PaymentService:
             raise BadRequestException("Please initiate the payment first.")
 
         self._confirm(payment, payload)
-
-        SubscriptionService(self.db).activate_paid_subscription(subscription)
+        self.db.refresh(payment)
+        self.db.refresh(subscription)
         return payment, subscription
+
+    # ─── Hosted payment callback ─────────────────────────────────────────────
+
+    def find_payment_for_callback(
+        self, order_reference: str | None, wallet_reference: str | None
+    ) -> Payment | None:
+        """Locate a payment from the wallet callback, preferring our own reference."""
+        if order_reference:
+            payment = self.payment_repo.get_by_reference(order_reference)
+            if payment:
+                return payment
+        if wallet_reference:
+            return self.payment_repo.get_by_wallet_reference(wallet_reference)
+        return None
+
+    def finalize_wallet_payment(self, payment: Payment) -> Payment:
+        """Finalize a payment completed on the wallet hosted page (callback).
+
+        The wallet redirects the customer's browser here after OTP + PIN are
+        entered. We re-verify the status against the wallet (server to server)
+        so a forged redirect cannot mark a payment paid, then mark the payment
+        completed and activate the parent entity. Safe to call multiple times.
+        """
+        if payment.status == PaymentStatus.COMPLETED.value:
+            return payment
+
+        if payment.status != PaymentStatus.PENDING.value:
+            raise BadRequestException("This payment can no longer be finalized.")
+
+        account = self._require_account(payment.wallet_account, "The receiving party")
+        result = self.wallet_client.get_payment_status(
+            payment.wallet_payment_reference, api_key=account.api_key
+        )
+
+        if result.get("status") != "completed":
+            payment.message = result.get("status") or "Payment was not completed."
+            self.db.commit()
+            raise BadRequestException(payment.message)
+
+        payment.wallet_transaction_number = str(
+            result.get("transaction_number") or result.get("id") or ""
+        )
+        self._finalize(payment)
+        return payment
+
+    def redirect_url_for(self, payment: Payment, status: str) -> str:
+        """Frontend URL the callback redirects the browser to after finalizing."""
+        query = f"reference={payment.reference}&status={status}"
+        return f"{self._redirect_app_url(payment)}?{query}"
+
+    def redirect_url_for_unknown(self, app: str, status: str) -> str:
+        """Fallback frontend URL when the payment could not be found locally."""
+        base = settings.CUSTOMER_APP_URL if app == "customer" else settings.MANAGEMENT_APP_URL
+        return f"{base.rstrip('/')}/wallet-payment/result?status={status}"

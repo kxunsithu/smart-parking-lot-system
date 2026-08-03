@@ -31,6 +31,7 @@ class FakeWalletClient:
         self.should_fail = should_fail
         self.initiated = 0
         self.confirmed = 0
+        self.completed_refs: set[str] = set()
         self.last_customer_phone: str | None = None
         self.last_api_key: str | None = None
 
@@ -40,6 +41,7 @@ class FakeWalletClient:
         amount: float,
         order_reference: str,
         description: str | None = None,
+        redirect_url: str | None = None,
         api_key: str | None = None,
     ) -> dict:
         self.last_customer_phone = customer_phone
@@ -48,8 +50,9 @@ class FakeWalletClient:
             raise BadRequestException("Customer not found for the given phone number.")
         self.initiated += 1
         fee = round(float(amount) * 0.01, 2)
+        reference = f"PAY-TEST-{self.initiated:010d}"
         return {
-            "payment_reference": f"PAY-TEST-{self.initiated:010d}",
+            "payment_reference": reference,
             "customer_phone": customer_phone,
             "merchant_name": "Smart Parking",
             "amount": float(amount),
@@ -58,6 +61,7 @@ class FakeWalletClient:
             "order_reference": order_reference,
             "status": "pending",
             "expires_at": None,
+            "payment_url": f"http://wallet.local/external-payments/pay/{reference}",
         }
 
     def confirm(self, payment_reference: str, otp_code: str, pin: str, api_key: str | None = None) -> dict:
@@ -65,11 +69,32 @@ class FakeWalletClient:
         if self.should_fail or otp_code != "123456":
             raise BadRequestException("Invalid OTP.")
         self.confirmed += 1
+        self.completed_refs.add(payment_reference)
         return {
             "id": 5000 + self.confirmed,
             "transaction_number": "TX-TEST-123",
             "status": "completed",
         }
+
+    def get_payment_status(self, payment_reference: str, api_key: str | None = None) -> dict:
+        self.last_api_key = api_key
+        if payment_reference in self.completed_refs:
+            return {
+                "reference": payment_reference,
+                "order_reference": None,
+                "status": "completed",
+                "transaction_number": "TX-TEST-123",
+            }
+        return {
+            "reference": payment_reference,
+            "order_reference": None,
+            "status": "pending",
+            "transaction_number": None,
+        }
+
+    def mark_completed(self, payment_reference: str) -> None:
+        """Simulate the customer completing the payment on the wallet hosted page."""
+        self.completed_refs.add(payment_reference)
 
 
 @pytest.fixture()

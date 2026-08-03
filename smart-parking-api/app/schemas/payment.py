@@ -36,6 +36,7 @@ class PaymentOut(BaseModel):
     status: str
     message: Optional[str] = None
     wallet_payment_reference: Optional[str] = None
+    wallet_payment_url: Optional[str] = None
     wallet_transaction_number: Optional[str] = None
     paid_at: Optional[datetime] = None
     created_at: datetime
