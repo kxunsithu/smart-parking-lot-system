@@ -94,13 +94,14 @@ export interface WalletPaymentOut {
   reference: string
   session_id?: number | null
   subscription_id?: number | null
-  wallet_payment_id?: number | null
+  wallet_account_id?: number | null
   amount: number
   fee: number
   total: number
   status: string
   message?: string | null
-  wallet_transaction_id?: number | null
+  wallet_payment_reference?: string | null
+  wallet_transaction_number?: string | null
   paid_at?: string | null
   created_at: string
 }

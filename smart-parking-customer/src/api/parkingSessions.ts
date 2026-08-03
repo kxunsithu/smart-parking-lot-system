@@ -33,8 +33,8 @@ export const parkingSessionsApi = {
   },
 
   /** Customer: request a wallet payment for a PENDING session (returns OTP) */
-  payInitiate: async (id: number): Promise<WalletPaymentOut> => {
-    const response = await apiClient.post<ApiSuccess<WalletPaymentOut>>(`/parking-sessions/${id}/pay/initiate`)
+  payInitiate: async (id: number, data?: { wallet_phone?: string | null }): Promise<WalletPaymentOut> => {
+    const response = await apiClient.post<ApiSuccess<WalletPaymentOut>>(`/parking-sessions/${id}/pay/initiate`, data)
     return response.data.data
   },
 

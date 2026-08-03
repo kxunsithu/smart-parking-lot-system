@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom"
 import { Car, History, LogOut, Menu, ParkingCircle, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/theme/ThemeToggle"
 import { useAuthStore } from "@/store/authStore"
 import { authApi } from "@/api/auth"
 import { toast } from "@/components/ui/toaster"
@@ -45,7 +46,7 @@ export default function Navbar() {
   ]
 
   return (
-    <nav className="border-b bg-background">
+    <nav className="sticky top-0 z-40 border-b bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -62,6 +63,9 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
+            <div className="fixed right-4 top-3 z-50">
+              <ThemeToggle />
+            </div>
             {navItems.map((item) => (
               <Button
                 key={item.path}
@@ -81,6 +85,9 @@ export default function Navbar() {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
+            <div className="fixed right-4 top-3 z-50">
+              <ThemeToggle />
+            </div>
             <Button
               variant="ghost"
               size="icon"

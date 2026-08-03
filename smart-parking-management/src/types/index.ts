@@ -381,15 +381,51 @@ export interface WalletPaymentOut {
   reference: string
   session_id?: number | null
   subscription_id?: number | null
-  wallet_payment_id?: number | null
+  wallet_account_id?: number | null
   amount: number
   fee: number
   total: number
   status: string
   message?: string | null
-  wallet_transaction_id?: number | null
+  wallet_payment_reference?: string | null
+  wallet_transaction_number?: string | null
   paid_at?: string | null
   created_at: string
+}
+
+// Wallet Account (digital wallet receiver credentials)
+export interface WalletAccountOut {
+  id: number
+  owner_id?: number | null
+  name: string
+  wallet_phone?: string | null
+  api_key?: string | null
+  api_key_masked?: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  owner?: {
+    id: number
+    name?: string
+    email?: string
+  } | null
+}
+
+export interface WalletAccountCreate {
+  name: string
+  wallet_phone?: string | null
+  api_key: string
+}
+
+export interface WalletAccountUpdate {
+  name?: string
+  wallet_phone?: string | null
+  api_key?: string
+  is_active?: boolean
+}
+
+export interface WalletPaymentInitiate {
+  wallet_phone?: string | null
 }
 
 export interface WalletPaymentConfirm {

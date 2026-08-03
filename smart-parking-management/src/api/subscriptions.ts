@@ -5,6 +5,7 @@ import type {
   SubscriptionPurchase,
   SubscriptionPayResult,
   WalletPaymentConfirm,
+  WalletPaymentInitiate,
   WalletPaymentOut,
 } from "@/types"
 
@@ -22,8 +23,8 @@ export const subscriptionsApi = {
   },
 
   /** Owner/Admin: request a wallet payment for a PENDING subscription (returns OTP) */
-  async payInitiate(subscriptionId: number): Promise<WalletPaymentOut> {
-    const res = await apiClient.post<ApiSuccess<WalletPaymentOut>>(`/subscriptions/${subscriptionId}/pay/initiate`)
+  async payInitiate(subscriptionId: number, data?: WalletPaymentInitiate): Promise<WalletPaymentOut> {
+    const res = await apiClient.post<ApiSuccess<WalletPaymentOut>>(`/subscriptions/${subscriptionId}/pay/initiate`, data)
     return res.data.data
   },
 

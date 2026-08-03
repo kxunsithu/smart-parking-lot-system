@@ -42,6 +42,9 @@ const AdminPackagesPage = lazy(() =>
 const AdminSubscriptionsPage = lazy(() =>
   import("@/pages/admin/SubscriptionsPage").then((m) => ({ default: m.AdminSubscriptionsPage }))
 )
+const AdminPaymentsPage = lazy(() =>
+  import("@/pages/admin/PaymentsPage").then((m) => ({ default: m.AdminPaymentsPage }))
+)
 
 const OwnerDashboardPage = lazy(() =>
   import("@/pages/owner/OwnerDashboardPage").then((m) => ({ default: m.OwnerDashboardPage }))
@@ -54,6 +57,9 @@ const OwnerSessionsPage = lazy(() =>
 )
 const OwnerSubscriptionPage = lazy(() =>
   import("@/pages/owner/SubscriptionPage").then((m) => ({ default: m.OwnerSubscriptionPage }))
+)
+const OwnerWalletPage = lazy(() =>
+  import("@/pages/owner/WalletPage").then((m) => ({ default: m.OwnerWalletPage }))
 )
 
 const StaffDashboardPage = lazy(() =>
@@ -116,6 +122,7 @@ const router = createBrowserRouter([
               { path: "/admin/users", element: withSuspense(<CustomersPage />) },
               { path: "/admin/packages", element: withSuspense(<AdminPackagesPage />) },
               { path: "/admin/subscriptions", element: withSuspense(<AdminSubscriptionsPage />) },
+              { path: "/admin/payments", element: withSuspense(<AdminPaymentsPage />) },
             ],
           },
           {
@@ -123,6 +130,7 @@ const router = createBrowserRouter([
             children: [
               { path: "/owner", element: withSuspense(<OwnerDashboardPage />) },
               { path: "/owner/subscription", element: withSuspense(<OwnerSubscriptionPage />) },
+              { path: "/owner/wallet", element: withSuspense(<OwnerWalletPage />) },
               { path: "/owner/lots", element: withSuspense(<LotsPage />) },
               { path: "/owner/lots/:lotId", element: withSuspense(<LotDetailPage />) },
               { path: "/owner/slots/:slotId", element: withSuspense(<SlotDetailPage />) },

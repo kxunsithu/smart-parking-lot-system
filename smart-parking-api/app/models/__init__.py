@@ -15,6 +15,7 @@ from app.models.otp import OTP
 from app.models.package import Package
 from app.models.owner_subscription import OwnerSubscription
 from app.models.payment import Payment
+from app.models.wallet_account import WalletAccount
 
 __all__ = [
     "Base",
@@ -33,5 +34,6 @@ __all__ = [
     "Package",
     "OwnerSubscription",
     "Payment",
+    "WalletAccount",
 ]
 

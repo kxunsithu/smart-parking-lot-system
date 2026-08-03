@@ -1,5 +1,5 @@
 """Parking session endpoints: book (customer), pay (wallet), list, get, finish."""
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Body, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
@@ -13,7 +13,7 @@ from app.schemas.parking_session import (
     ParkingSessionOut,
     ParkingSessionStart,
 )
-from app.schemas.payment import PaymentConfirmRequest, PaymentOut
+from app.schemas.payment import PaymentConfirmRequest, PaymentInitiateRequest, PaymentOut
 from app.services.parking_session_service import ParkingSessionService, serialize_session
 from app.services.payment_service import PaymentService
 from app.services.wallet_payment_client import WalletPaymentClient, get_wallet_client
@@ -55,13 +55,16 @@ def book_session(
 )
 def initiate_session_payment(
     session_id: int,
+    payload: PaymentInitiateRequest = Body(default=PaymentInitiateRequest()),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     wallet_client: WalletPaymentClient = Depends(get_wallet_client),
 ):
     service = ParkingSessionService(db)
     session = service.get_by_id(session_id)
-    payment = PaymentService(db, wallet_client).initiate_session_payment(session, current_user)
+    payment = PaymentService(db, wallet_client).initiate_session_payment(
+        session, current_user, wallet_phone=payload.wallet_phone
+    )
     return {
         "success": True,
         "message": "Wallet payment initiated. Enter the OTP and your PIN to confirm.",

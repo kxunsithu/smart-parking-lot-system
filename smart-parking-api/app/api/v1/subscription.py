@@ -1,5 +1,5 @@
 """Subscription endpoints: Owner purchases/renews packages and pays via wallet."""
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Body, Depends, status
 from sqlalchemy.orm import Session
 
 from app.core.constants import RoleName
@@ -11,7 +11,7 @@ from app.schemas.common import PaginationParams, SuccessResponse
 from app.core.exceptions import ForbiddenException
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.schemas.owner_subscription import SubscriptionOut, SubscriptionPurchase
-from app.schemas.payment import PaymentConfirmRequest, PaymentOut
+from app.schemas.payment import PaymentConfirmRequest, PaymentInitiateRequest, PaymentOut
 from app.services.payment_service import PaymentService
 from app.services.subscription_service import SubscriptionService
 from app.services.wallet_payment_client import WalletPaymentClient, get_wallet_client
@@ -55,7 +55,7 @@ def renew_subscription(
     }
 
 
-# ─── Wallet payment flow (subscription becomes ACTIVE only after payment) ─────
+# ─── Wallet payment flow (subscription becomes ACTIVE only after payment) ───────
 
 @router.post(
     "/{subscription_id}/pay/initiate",
@@ -65,13 +65,16 @@ def renew_subscription(
 )
 def initiate_subscription_payment(
     subscription_id: int,
+    payload: PaymentInitiateRequest = Body(default=PaymentInitiateRequest()),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     wallet_client: WalletPaymentClient = Depends(get_wallet_client),
 ):
     service = SubscriptionService(db)
     sub = service.get_subscription(subscription_id)
-    payment = PaymentService(db, wallet_client).initiate_subscription_payment(sub, current_user)
+    payment = PaymentService(db, wallet_client).initiate_subscription_payment(
+        sub, current_user, wallet_phone=payload.wallet_phone
+    )
     return {
         "success": True,
         "message": "Wallet payment initiated. Enter the OTP and your PIN to confirm.",

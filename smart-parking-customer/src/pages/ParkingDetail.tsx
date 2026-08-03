@@ -102,6 +102,7 @@ export default function ParkingDetail() {
   const [paymentInfo, setPaymentInfo] = useState<WalletPaymentOut | null>(null)
   const [otpCode, setOtpCode] = useState("")
   const [pin, setPin] = useState("")
+  const [walletPhone, setWalletPhone] = useState("")
   const [initiating, setInitiating] = useState(false)
   const [paying, setPaying] = useState(false)
   const [payInitiateError, setPayInitiateError] = useState<string | null>(null)
@@ -279,6 +280,7 @@ export default function ParkingDetail() {
       setPaymentInfo(null)
       setOtpCode("")
       setPin("")
+      setWalletPhone("")
       setPayError(null)
       setPayInitiateError(null)
       toast.success("Session booked. Please complete the wallet payment to activate it.")
@@ -295,7 +297,9 @@ export default function ParkingDetail() {
     setInitiating(true)
     setPayInitiateError(null)
     try {
-      const info = await parkingSessionsApi.payInitiate(bookedSession.id)
+      const info = await parkingSessionsApi.payInitiate(bookedSession.id, {
+        wallet_phone: walletPhone.trim() || null,
+      })
       setPaymentInfo(info)
     } catch (err: any) {
       setPayInitiateError(err.response?.data?.message || "Failed to initiate payment. Please try again.")
@@ -626,6 +630,20 @@ export default function ParkingDetail() {
                           {payInitiateError}
                         </p>
                       )}
+                      <div>
+                        <Label htmlFor="wallet-phone">Wallet phone number</Label>
+                        <Input
+                          id="wallet-phone"
+                          inputMode="tel"
+                          placeholder="e.g. +959123456789"
+                          value={walletPhone}
+                          onChange={(e) => setWalletPhone(e.target.value)}
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Optional. Use this if your wallet account phone is different from your profile phone.
+                        </p>
+                      </div>
                       <Button className="w-full" onClick={handleInitiatePayment} disabled={initiating}>
                         {initiating ? (
                           <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Requesting payment...</>

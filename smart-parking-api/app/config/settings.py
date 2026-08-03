@@ -52,9 +52,9 @@ class Settings(BaseSettings):
     OTP_EXPIRE_MINUTES: int
     OTP_LENGTH: int
 
-    # Digital Wallet Integration (merchant API)
+    # Digital Wallet Integration (external system API)
+    # API keys are configured per WalletAccount (admin platform + per-owner), not globally.
     WALLET_API_BASE_URL: str = ""
-    WALLET_MERCHANT_API_KEY: str = ""
     WALLET_REFERENCE_PREFIX: str = "PP"
 
 

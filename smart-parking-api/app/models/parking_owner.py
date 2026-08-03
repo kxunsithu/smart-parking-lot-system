@@ -1,9 +1,12 @@
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
+
+if TYPE_CHECKING:
+    from app.models.wallet_account import WalletAccount
 
 
 class ParkingOwner(Base):
@@ -19,4 +22,7 @@ class ParkingOwner(Base):
     )
     subscriptions: Mapped[List["OwnerSubscription"]] = relationship(
         "OwnerSubscription", back_populates="owner", cascade="all, delete-orphan"
+    )
+    wallet_account: Mapped[Optional["WalletAccount"]] = relationship(
+        "WalletAccount", back_populates="owner", uselist=False
     )

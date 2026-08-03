@@ -18,37 +18,50 @@ from app.database.session import get_db
 from app.main import app
 from app.models.role import Role
 from app.models.user import User
+from app.models.wallet_account import WalletAccount
 from app.services.wallet_payment_client import get_wallet_client
 
 TEST_DATABASE_URL = "sqlite://"
 
 
 class FakeWalletClient:
-    """Stands in for the digital wallet merchant API during tests."""
+    """Stands in for the digital wallet external payment API during tests."""
 
     def __init__(self, should_fail: bool = False):
         self.should_fail = should_fail
         self.initiated = 0
         self.confirmed = 0
+        self.last_customer_phone: str | None = None
+        self.last_api_key: str | None = None
 
-    def initiate(self, customer_phone: str, amount: float, reference: str, description: str | None = None) -> dict:
+    def initiate(
+        self,
+        customer_phone: str,
+        amount: float,
+        order_reference: str,
+        description: str | None = None,
+        api_key: str | None = None,
+    ) -> dict:
+        self.last_customer_phone = customer_phone
+        self.last_api_key = api_key
         if self.should_fail:
             raise BadRequestException("Customer not found for the given phone number.")
         self.initiated += 1
         fee = round(float(amount) * 0.01, 2)
         return {
-            "payment_id": 1000 + self.initiated,
+            "payment_reference": f"PAY-TEST-{self.initiated:010d}",
             "customer_phone": customer_phone,
             "merchant_name": "Smart Parking",
             "amount": float(amount),
             "fee": fee,
             "total": round(float(amount) + fee, 2),
-            "reference": reference,
+            "order_reference": order_reference,
             "status": "pending",
             "expires_at": None,
         }
 
-    def confirm(self, payment_id: int, otp_code: str, pin: str) -> dict:
+    def confirm(self, payment_reference: str, otp_code: str, pin: str, api_key: str | None = None) -> dict:
+        self.last_api_key = api_key
         if self.should_fail or otp_code != "123456":
             raise BadRequestException("Invalid OTP.")
         self.confirmed += 1
@@ -104,6 +117,16 @@ def client(db_engine, db_session):
         finally:
             session.close()
 
+    # A platform (admin) wallet account must exist before owners can pay subscriptions.
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
+    setup = TestingSessionLocal()
+    try:
+        if not setup.query(WalletAccount).filter(WalletAccount.owner_id.is_(None)).first():
+            setup.add(WalletAccount(owner_id=None, name="Platform", api_key="sk_test_platform"))
+            setup.commit()
+    finally:
+        setup.close()
+
     fake_wallet = FakeWalletClient()
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_wallet_client] = lambda: fake_wallet
@@ -157,15 +180,33 @@ def purchase_and_activate(client: TestClient, owner_headers: dict, pkg_id: int) 
     return conf.json()["data"]["subscription"]
 
 
+def create_owner_wallet(
+    client: TestClient,
+    owner_headers: dict,
+    api_key: str = "sk_test_owner",
+    name: str = "Owner Wallet",
+) -> dict:
+    """Give the owner a receiving wallet account so customers can pay them."""
+    resp = client.post(
+        "/api/v1/wallet-accounts/me",
+        json={"name": name, "api_key": api_key},
+        headers=owner_headers,
+    )
+    assert resp.status_code == 201, resp.text
+    return resp.json()["data"]
+
+
 def book_and_pay_session(
     client: TestClient,
     customer_headers: dict,
     car_id: int,
     slot_id: int,
+    owner_headers: dict,
     start_time: str,
     end_time: str,
 ) -> dict:
     """Book a session and complete wallet payment, returning the activated session dict."""
+    create_owner_wallet(client, owner_headers)
     book = client.post(
         "/api/v1/parking-sessions/book",
         headers=customer_headers,

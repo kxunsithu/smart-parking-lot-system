@@ -86,6 +86,7 @@ export function OwnerSubscriptionPage() {
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false)
   const [isInitiating, setIsInitiating] = useState(false)
   const [isPaying, setIsPaying] = useState(false)
+  const [walletPhone, setWalletPhone] = useState("")
   const [payInitiateError, setPayInitiateError] = useState<string | null>(null)
   const [payError, setPayError] = useState<string | null>(null)
 
@@ -118,6 +119,7 @@ export function OwnerSubscriptionPage() {
     setPaymentInfo(null)
     setOtp("")
     setPin("")
+    setWalletPhone("")
     setPayInitiateError(null)
     setPayError(null)
   }
@@ -128,6 +130,7 @@ export function OwnerSubscriptionPage() {
     setPaymentInfo(null)
     setOtp("")
     setPin("")
+    setWalletPhone("")
     setPayInitiateError(null)
     setPayError(null)
   }
@@ -145,7 +148,6 @@ export function OwnerSubscriptionPage() {
       setPendingSub(sub)
       setPayInitiateError(null)
       setPaymentInfo(null)
-      await handleInitiatePayment(sub.id)
     } catch (error) {
       toast.error(getErrorMessage(error))
     } finally {
@@ -153,11 +155,11 @@ export function OwnerSubscriptionPage() {
     }
   }
 
-  const handleInitiatePayment = async (subscriptionId: number) => {
+  const handleInitiatePayment = async (subscriptionId: number, phone?: string) => {
     setIsInitiating(true)
     setPayInitiateError(null)
     try {
-      const info = await subscriptionsApi.payInitiate(subscriptionId)
+      const info = await subscriptionsApi.payInitiate(subscriptionId, phone ? { wallet_phone: phone } : undefined)
       setPaymentInfo(info)
     } catch (error) {
       setPayInitiateError(getErrorMessage(error))
@@ -437,6 +439,15 @@ export function OwnerSubscriptionPage() {
 
           {pendingSub && !paymentInfo && (
             <div className="space-y-4 py-2">
+              <FormField label="Wallet Phone Number" htmlFor="wallet-phone" hint="Enter the phone number registered with your digital wallet account." error={undefined}>
+                <Input
+                  id="wallet-phone"
+                  type="tel"
+                  placeholder="e.g. +959XXXXXXXXX"
+                  value={walletPhone}
+                  onChange={(e) => setWalletPhone(e.target.value)}
+                />
+              </FormField>
               {payInitiateError && (
                 <p className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded p-3">
                   {payInitiateError}
@@ -445,8 +456,8 @@ export function OwnerSubscriptionPage() {
               <Button
                 className="w-full"
                 type="button"
-                disabled={isInitiating}
-                onClick={() => handleInitiatePayment(pendingSub.id)}
+                disabled={isInitiating || !walletPhone.trim()}
+                onClick={() => handleInitiatePayment(pendingSub.id, walletPhone.trim() || undefined)}
               >
                 {isInitiating ? (
                   <><Loader2 className="size-4 animate-spin mr-2" /> Requesting payment...</>
@@ -522,7 +533,7 @@ export function OwnerSubscriptionPage() {
               <p className="text-center">
                 <button
                   type="button"
-                  onClick={() => handleInitiatePayment(pendingSub.id)}
+                  onClick={() => handleInitiatePayment(pendingSub.id, walletPhone.trim() || undefined)}
                   disabled={isInitiating || isPaying}
                   className="text-xs text-primary hover:underline disabled:opacity-50"
                 >

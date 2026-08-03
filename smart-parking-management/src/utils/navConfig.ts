@@ -9,6 +9,7 @@ import {
   UserCog,
   Timer,
   Repeat2,
+  Wallet,
 } from "lucide-react"
 import type { RoleName } from "@/types"
 
@@ -27,10 +28,12 @@ export const NAV_CONFIG: Record<RoleName, NavItem[]> = {
     { label: "Customers", to: "/admin/users", icon: Users },
     { label: "Packages", to: "/admin/packages", icon: Package },
     { label: "Subscriptions", to: "/admin/subscriptions", icon: Repeat2 },
+    { label: "Payments", to: "/admin/payments", icon: Wallet },
   ],
   OWNER: [
     { label: "Dashboard", to: "/owner", icon: LayoutDashboard, end: true },
     { label: "Subscription", to: "/owner/subscription", icon: Package },
+    { label: "Wallet Account", to: "/owner/wallet", icon: Wallet },
     { label: "Parking Lots", to: "/owner/lots", icon: ParkingSquare },
     { label: "Staff", to: "/owner/staff", icon: UserCog },
     { label: "Sessions", to: "/owner/sessions", icon: Timer },

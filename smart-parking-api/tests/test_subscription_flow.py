@@ -277,3 +277,54 @@ def test_admin_can_list_all_subscriptions(client, admin_user):
     resp = client.get("/api/v1/subscriptions", headers=admin_headers)
     assert resp.status_code == 200
     assert "data" in resp.json()
+
+
+def test_owner_can_pay_with_wallet_phone_in_initiate(client, admin_user):
+    """Owner can pass wallet_phone in the pay/initiate body instead of relying on profile phone."""
+    admin_headers = auth_headers(client, "admin@test.com", "Admin@12345")
+
+    pkg_resp = client.post(
+        "/api/v1/packages",
+        json={"name": "Basic", "price": 9900.0, "duration_days": 30, "max_lots": 1, "max_staff": 5},
+        headers=admin_headers,
+    )
+    pkg_id = pkg_resp.json()["data"]["id"]
+
+    client.post(
+        "/api/v1/auth/register-owner",
+        json={
+            "name": "Wallet Phone Owner",
+            "email": "wphone@test.com",
+            "password": "Owner@12345",
+            "confirm_password": "Owner@12345",
+            "company_name": "WPhoneCo",
+        },
+    )
+    owner_headers = auth_headers(client, "wphone@test.com", "Owner@12345")
+
+    # Purchase without setting profile phone
+    resp = client.post(
+        "/api/v1/subscriptions/purchase",
+        json={"package_id": pkg_id},
+        headers=owner_headers,
+    )
+    assert resp.status_code == 201
+    sub_id = resp.json()["data"]["id"]
+
+    # Initiate with wallet_phone in the body (no profile phone set)
+    init = client.post(
+        f"/api/v1/subscriptions/{sub_id}/pay/initiate",
+        json={"wallet_phone": "+959000000099"},
+        headers=owner_headers,
+    )
+    assert init.status_code == 201
+    assert init.json()["data"]["status"] == "PENDING"
+
+    # Confirm payment
+    conf = client.post(
+        f"/api/v1/subscriptions/{sub_id}/pay/confirm",
+        json={"otp_code": "123456", "pin": "1234"},
+        headers=owner_headers,
+    )
+    assert conf.status_code == 200
+    assert conf.json()["data"]["subscription"]["status"] == "ACTIVE"

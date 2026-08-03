@@ -1,4 +1,9 @@
-"""HTTP client for the digital wallet system merchant payment API."""
+"""HTTP client for the digital wallet backend external payment API.
+
+Each WalletAccount stores the X-API-Key of an external system registered in the
+digital wallet backend, so the API key is supplied per request rather than being
+a single server-wide credential.
+"""
 import httpx
 
 from app.config.settings import settings
@@ -6,54 +11,60 @@ from app.core.exceptions import BadRequestException
 
 
 class WalletPaymentClient:
-    """Speaks to the wallet backend's merchant endpoints (X-API-Key auth)."""
+    """Speaks to the wallet backend's external payment endpoints (X-API-Key auth)."""
 
-    def __init__(self, base_url: str, api_key: str):
+    def __init__(self, base_url: str):
         self.base_url = (base_url or "").rstrip("/")
-        self.api_key = api_key or ""
-
-    def _ensure_configured(self) -> None:
-        if not self.base_url or not self.api_key:
-            raise BadRequestException(
-                "Wallet payment is not configured on this server yet. "
-                "Please contact the administrator."
-            )
-
-    def _headers(self) -> dict:
-        return {"X-API-Key": self.api_key, "Accept": "application/json"}
 
     def initiate(
         self,
         customer_phone: str,
         amount: float,
-        reference: str,
+        order_reference: str,
         description: str | None = None,
+        api_key: str | None = None,
     ) -> dict:
-        """Ask the wallet to create a pending merchant payment and issue an OTP."""
-        self._ensure_configured()
+        """Ask the wallet to create a pending external payment and send an OTP to the payer."""
         payload: dict = {
             "customer_phone": customer_phone,
             "amount": float(amount),
-            "reference": reference,
+            "order_reference": order_reference,
         }
         if description:
             payload["description"] = description
-        return self._post("/api/merchants/payment/initiate", payload)
+        return self._post("/api/external/payments/initiate", payload, api_key)
 
-    def confirm(self, payment_id: int, otp_code: str, pin: str) -> dict:
+    def confirm(self, payment_reference: str, otp_code: str, pin: str, api_key: str | None = None) -> dict:
         """Verify OTP + PIN in the wallet and complete the transfer."""
-        self._ensure_configured()
-        payload = {
-            "payment_id": int(payment_id),
-            "otp_code": otp_code,
-            "pin": pin,
-        }
-        return self._post("/api/merchants/payment/confirm", payload)
+        return self._post(
+            "/api/external/payments/confirm",
+            {
+                "payment_reference": payment_reference,
+                "otp": otp_code,
+                "pin": pin,
+            },
+            api_key,
+        )
 
-    def _post(self, path: str, payload: dict) -> dict:
+    def _post(self, path: str, payload: dict, api_key: str | None) -> dict:
+        if not self.base_url:
+            raise BadRequestException(
+                "Wallet payment is not configured on this server yet. "
+                "Please contact the administrator."
+            )
+        if not api_key:
+            raise BadRequestException(
+                "The receiving wallet account is missing its API key. "
+                "Please update the payment account configuration."
+            )
+        headers = {"X-API-Key": api_key, "Accept": "application/json"}
         try:
-            with httpx.Client(base_url=self.base_url, headers=self._headers(), timeout=20.0) as client:
+            with httpx.Client(base_url=self.base_url, headers=headers, timeout=180.0) as client:
                 resp = client.post(path, json=payload)
+        except httpx.TimeoutException as exc:
+            raise BadRequestException(
+                "The wallet service is taking too long to respond. Please try again later."
+            ) from exc
         except httpx.HTTPError as exc:
             raise BadRequestException(
                 "Could not reach the wallet service. Please try again later."
@@ -76,7 +87,4 @@ class WalletPaymentClient:
 
 
 def get_wallet_client() -> WalletPaymentClient:
-    return WalletPaymentClient(
-        settings.WALLET_API_BASE_URL,
-        settings.WALLET_MERCHANT_API_KEY,
-    )
+    return WalletPaymentClient(settings.WALLET_API_BASE_URL)
