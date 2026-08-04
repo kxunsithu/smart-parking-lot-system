@@ -51,20 +51,33 @@ class WalletPaymentClient:
 
     def get_payment_status(self, payment_reference: str, api_key: str | None = None) -> dict:
         """Poll the wallet for the current status of an external payment."""
+        return self._get(
+            f"/api/external/payments/{payment_reference}",
+            api_key,
+            "The receiving wallet account is missing its API key. "
+            "Please update the payment account configuration.",
+        )
+
+    def resolve_api_key(self, api_key: str | None = None) -> dict:
+        """Resolve an external-system API key to its registered system + account details."""
+        return self._get(
+            "/api/external/system-info",
+            api_key,
+            "Please enter the wallet API key to verify.",
+        )
+
+    def _get(self, path: str, api_key: str | None, missing_key_message: str) -> dict:
         if not self.base_url:
             raise BadRequestException(
                 "Wallet payment is not configured on this server yet. "
                 "Please contact the administrator."
             )
         if not api_key:
-            raise BadRequestException(
-                "The receiving wallet account is missing its API key. "
-                "Please update the payment account configuration."
-            )
+            raise BadRequestException(missing_key_message)
         headers = {"X-API-Key": api_key, "Accept": "application/json"}
         try:
             with httpx.Client(base_url=self.base_url, headers=headers, timeout=60.0) as client:
-                resp = client.get(f"/api/external/payments/{payment_reference}")
+                resp = client.get(path)
         except httpx.TimeoutException as exc:
             raise BadRequestException(
                 "The wallet service is taking too long to respond. Please try again later."

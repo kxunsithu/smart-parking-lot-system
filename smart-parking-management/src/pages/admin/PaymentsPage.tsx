@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog"
 import { walletAccountsApi } from "@/api/walletAccounts"
 import { getErrorMessage } from "@/api/client"
-import type { WalletAccountOut } from "@/types"
+import type { WalletAccountOut, WalletAccountResolveOut } from "@/types"
 
 export function AdminPaymentsPage() {
   const [platform, setPlatform] = useState<WalletAccountOut | null | undefined>(undefined)
@@ -31,9 +31,11 @@ export function AdminPaymentsPage() {
   // Platform form dialog
   const [showForm, setShowForm] = useState(false)
   const [isEdit, setIsEdit] = useState(false)
-  const [formName, setFormName] = useState("")
-  const [formPhone, setFormPhone] = useState("")
   const [formApiKey, setFormApiKey] = useState("")
+  const [resolved, setResolved] = useState<WalletAccountResolveOut | null>(null)
+  const [resolvedKey, setResolvedKey] = useState("")
+  const [isResolving, setIsResolving] = useState(false)
+  const [resolveError, setResolveError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [showDelete, setShowDelete] = useState(false)
@@ -59,38 +61,79 @@ export function AdminPaymentsPage() {
 
   const openCreate = () => {
     setIsEdit(false)
-    setFormName("")
-    setFormPhone("")
     setFormApiKey("")
+    setResolved(null)
+    setResolvedKey("")
+    setResolveError(null)
     setShowForm(true)
   }
 
   const openEdit = () => {
     if (!platform) return
     setIsEdit(true)
-    setFormName(platform.name)
-    setFormPhone(platform.wallet_phone ?? "")
     setFormApiKey("")
+    setResolved(null)
+    setResolvedKey("")
+    setResolveError(null)
     setShowForm(true)
   }
 
+  const resolveKey = async (key: string) => {
+    const trimmed = key.trim()
+    if (!trimmed) {
+      setResolved(null)
+      setResolvedKey("")
+      setResolveError(null)
+      return
+    }
+    if (trimmed === resolvedKey) return
+    setIsResolving(true)
+    setResolveError(null)
+    try {
+      const info = await walletAccountsApi.resolveApiKey(trimmed)
+      setResolved(info)
+      setResolvedKey(trimmed)
+    } catch (error) {
+      setResolved(null)
+      setResolvedKey("")
+      setResolveError(getErrorMessage(error))
+    } finally {
+      setIsResolving(false)
+    }
+  }
+
   const handleSubmit = async () => {
-    if (!formName.trim()) { toast.error("Please enter an account name"); return }
-    if (!formApiKey.trim() && !isEdit) { toast.error("Please enter the wallet API key"); return }
+    const key = formApiKey.trim()
+    if (!isEdit && !key) { toast.error("Please enter the wallet API key"); return }
     try {
       setIsSubmitting(true)
+      let accountName = isEdit && platform ? platform.name : ""
+      let walletPhone = isEdit && platform ? platform.wallet_phone ?? null : null
+
+      if (key && resolvedKey === key && resolved) {
+        accountName = resolved.account_name ?? resolved.name
+        walletPhone = resolved.wallet_phone ?? null
+      } else if (key) {
+        const info = await walletAccountsApi.resolveApiKey(key)
+        setResolved(info)
+        setResolvedKey(key)
+        accountName = info.account_name ?? info.name
+        walletPhone = info.wallet_phone ?? null
+      }
+
       if (isEdit && platform) {
         await walletAccountsApi.updatePlatform({
-          name: formName.trim(),
-          wallet_phone: formPhone.trim() || null,
-          ...(formApiKey.trim() ? { api_key: formApiKey.trim() } : {}),
+          name: accountName,
+          wallet_phone: walletPhone,
+          ...(key ? { api_key: key } : {}),
         })
         toast.success("Platform wallet account updated.")
       } else {
+        if (!accountName) { toast.error("Could not load account details. Please verify the API key and try again."); return }
         await walletAccountsApi.createPlatform({
-          name: formName.trim(),
-          wallet_phone: formPhone.trim() || null,
-          api_key: formApiKey.trim(),
+          name: accountName,
+          wallet_phone: walletPhone,
+          api_key: key,
         })
         toast.success("Platform wallet account added. Owners can now pay subscriptions.")
       }
@@ -286,19 +329,64 @@ export function AdminPaymentsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <FormField label="Account Name" htmlFor="plat-name" hint="A friendly label, e.g. Platform Wallet.">
-              <Input id="plat-name" placeholder="Platform Wallet" value={formName} onChange={(e) => setFormName(e.target.value)} />
-            </FormField>
-            <FormField label="Wallet Phone" htmlFor="plat-phone" hint="Optional. The wallet phone linked to this receiver.">
-              <Input id="plat-phone" type="tel" placeholder="e.g. +959XXXXXXXXX" value={formPhone} onChange={(e) => setFormPhone(e.target.value)} />
-            </FormField>
             <FormField
               label="API Key"
               htmlFor="plat-key"
               hint={isEdit ? "Leave blank to keep the current key." : "The X-API-Key of the platform's external system in the digital wallet backend."}
             >
-              <Input id="plat-key" type="password" placeholder={isEdit ? "••••••••••••" : "e.g. MCH-XXXXXXXXXXXX"} value={formApiKey} onChange={(e) => setFormApiKey(e.target.value)} />
+              <Input
+                id="plat-key"
+                type="password"
+                placeholder={isEdit ? "••••••••••••" : "e.g. sk_live_XXXXXXXXXXXXXXXX"}
+                value={formApiKey}
+                onChange={(e) => { setFormApiKey(e.target.value); setResolveError(null) }}
+                onBlur={(e) => resolveKey(e.target.value)}
+              />
             </FormField>
+
+            {isResolving && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+                Loading account details from the digital wallet...
+              </div>
+            )}
+
+            {resolveError && !isResolving && (
+              <p className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded p-3">
+                {resolveError}
+              </p>
+            )}
+
+            {resolved && resolvedKey === formApiKey.trim() && (
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Connected wallet account</p>
+                <div className="flex justify-between text-sm gap-4">
+                  <span className="text-muted-foreground">External System Name</span>
+                  <span className="font-medium text-right">{resolved.name || "—"}</span>
+                </div>
+                <div className="flex justify-between text-sm gap-4">
+                  <span className="text-muted-foreground">Account Name</span>
+                  <span className="font-medium text-right">{resolved.account_name || "—"}</span>
+                </div>
+                <div className="flex justify-between text-sm gap-4">
+                  <span className="text-muted-foreground">Wallet Phone</span>
+                  <span className="font-medium text-right">{resolved.wallet_phone || "—"}</span>
+                </div>
+              </div>
+            )}
+
+            {!resolved && !isResolving && !resolveError && isEdit && (
+              <p className="text-sm text-muted-foreground">
+                Current account: {platform?.name}
+                {platform?.wallet_phone ? ` · ${platform.wallet_phone}` : ""}. Enter a new API key to refresh these details.
+              </p>
+            )}
+
+            {!resolved && !isResolving && !resolveError && !isEdit && (
+              <p className="text-sm text-muted-foreground">
+                Enter the API key and press Tab or click away to automatically load the account details.
+              </p>
+            )}
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setShowForm(false)} disabled={isSubmitting}>

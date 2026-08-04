@@ -92,6 +92,16 @@ class FakeWalletClient:
             "transaction_number": None,
         }
 
+    def resolve_api_key(self, api_key: str | None = None) -> dict:
+        if self.should_fail or not api_key or api_key == "sk_invalid":
+            raise BadRequestException("Invalid or inactive API key.")
+        return {
+            "name": "Smart Parking",
+            "account_name": "Wallet Agent",
+            "wallet_phone": "+959000000099",
+            "system_link": "https://smart-parking.example",
+        }
+
     def mark_completed(self, payment_reference: str) -> None:
         """Simulate the customer completing the payment on the wallet hosted page."""
         self.completed_refs.add(payment_reference)

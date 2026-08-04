@@ -38,3 +38,21 @@ class WalletAccountOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     owner: Optional[dict] = None
+
+
+class WalletAccountResolveRequest(BaseModel):
+    api_key: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="X-API-Key of the external system registered in the digital wallet backend.",
+    )
+
+
+class WalletAccountResolveOut(BaseModel):
+    """Details returned by the digital wallet backend for a given API key."""
+
+    name: str = Field(default="", description="External system name.")
+    account_name: Optional[str] = Field(default=None, description="Wallet account holder name (agent).")
+    wallet_phone: Optional[str] = Field(default=None, description="Wallet phone number (agent).")
+    system_link: Optional[str] = Field(default=None, description="External system web link.")

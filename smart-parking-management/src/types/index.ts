@@ -418,6 +418,13 @@ export interface WalletAccountCreate {
   api_key: string
 }
 
+export interface WalletAccountResolveOut {
+  name: string
+  account_name?: string | null
+  wallet_phone?: string | null
+  system_link?: string | null
+}
+
 export interface WalletAccountUpdate {
   name?: string
   wallet_phone?: string | null

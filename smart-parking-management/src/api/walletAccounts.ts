@@ -4,6 +4,7 @@ import type {
   ApiSuccess,
   WalletAccountCreate,
   WalletAccountOut,
+  WalletAccountResolveOut,
   WalletAccountUpdate,
 } from "@/types"
 
@@ -64,6 +65,12 @@ export const walletAccountsApi = {
   /** Admin: list all wallet accounts (platform + owners) */
   async listAll(): Promise<WalletAccountOut[]> {
     const res = await apiClient.get<ApiSuccess<WalletAccountOut[]>>("/wallet-accounts")
+    return res.data.data
+  },
+
+  /** Resolve an API key to the digital wallet account details (system name, account name, wallet phone) */
+  async resolveApiKey(apiKey: string): Promise<WalletAccountResolveOut> {
+    const res = await apiClient.post<ApiSuccess<WalletAccountResolveOut>>("/wallet-accounts/resolve", { api_key: apiKey })
     return res.data.data
   },
 }

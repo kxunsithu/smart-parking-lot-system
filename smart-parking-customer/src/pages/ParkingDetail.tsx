@@ -305,8 +305,7 @@ export default function ParkingDetail() {
       })
       setPaymentInfo(info)
       if (info.wallet_payment_url) {
-        window.open(info.wallet_payment_url, "_blank", "noopener,noreferrer")
-        toast.success("Wallet payment page opened in a new tab. Complete the payment there.")
+        window.location.href = info.wallet_payment_url
       } else {
         toast.success("Payment initiated. Enter the OTP and your PIN to confirm.")
       }
@@ -742,17 +741,17 @@ export default function ParkingDetail() {
                       </div>
 
                       <div className="rounded bg-card border p-4 space-y-2">
-                        <p className="text-sm font-medium">Complete your payment in the wallet tab</p>
+                        <p className="text-sm font-medium">Complete your payment in the digital wallet</p>
                         <p className="text-xs text-muted-foreground">
-                          The wallet payment page opened in a new tab. Enter the OTP and your wallet PIN there.
-                          This page will refresh automatically once the payment is confirmed.
+                          You are being redirected to the digital wallet. Enter the OTP and your wallet PIN there,
+                          and you will be brought back to this app automatically once the payment is confirmed.
                         </p>
                         <Button
                           variant="outline"
                           className="w-full"
-                          onClick={() => window.open(paymentInfo.wallet_payment_url!, "_blank", "noopener,noreferrer")}
+                          onClick={() => { window.location.href = paymentInfo.wallet_payment_url! }}
                         >
-                          Re-open payment page
+                          Open payment page
                         </Button>
                       </div>
 

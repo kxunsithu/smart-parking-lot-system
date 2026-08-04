@@ -164,6 +164,28 @@ def test_admin_can_manage_platform_and_list_accounts(client, admin_user):
     assert denied.status_code == 403
 
 
+def test_resolve_api_key_returns_account_details(client, admin_user):
+    admin_headers = auth_headers(client, "admin@test.com", "Admin@12345")
+    owner_headers = _register_owner(client, "owner.resolve@test.com")
+
+    for headers in (admin_headers, owner_headers):
+        resp = client.post("/api/v1/wallet-accounts/resolve", json={"api_key": "sk_test_owner"}, headers=headers)
+        assert resp.status_code == 200, resp.text
+        data = resp.json()["data"]
+        assert data["name"] == "Smart Parking"
+        assert data["account_name"] == "Wallet Agent"
+        assert data["wallet_phone"] == "+959000000099"
+
+    # Unauthenticated requests are rejected
+    unauth = client.post("/api/v1/wallet-accounts/resolve", json={"api_key": "sk_test_owner"})
+    assert unauth.status_code == 401
+
+    # Invalid keys surface the wallet error
+    bad = client.post("/api/v1/wallet-accounts/resolve", json={"api_key": "sk_invalid"}, headers=admin_headers)
+    assert bad.status_code == 400
+
+
+
 # ─── Session payments (customer → owner wallet) ──────────────────────────────
 
 

@@ -7,10 +7,31 @@ from app.database.session import get_db
 from app.dependencies.auth import get_current_user, require_roles
 from app.models.user import User
 from app.schemas.common import SuccessResponse
-from app.schemas.wallet_account import WalletAccountCreate, WalletAccountOut, WalletAccountUpdate
+from app.schemas.wallet_account import (
+    WalletAccountCreate,
+    WalletAccountOut,
+    WalletAccountResolveOut,
+    WalletAccountResolveRequest,
+    WalletAccountUpdate,
+)
 from app.services.wallet_account_service import WalletAccountService, serialize_wallet_account
+from app.services.wallet_payment_client import WalletPaymentClient, get_wallet_client
 
 router = APIRouter(prefix="/wallet-accounts", tags=["Wallet Accounts"])
+
+
+@router.post("/resolve", response_model=SuccessResponse[WalletAccountResolveOut])
+def resolve_wallet_account(
+    payload: WalletAccountResolveRequest,
+    wallet_client: WalletPaymentClient = Depends(get_wallet_client),
+    _: User = Depends(require_roles(RoleName.ADMIN, RoleName.OWNER)),
+):
+    info = wallet_client.resolve_api_key(payload.api_key)
+    return {
+        "success": True,
+        "message": "Wallet account details resolved.",
+        "data": info,
+    }
 
 
 # ─── Owner: manage their own receiving account ───────────────────────────────
