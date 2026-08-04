@@ -19,8 +19,8 @@ services:
 
   api:
     build:
-      context: .
-      dockerfile: smart-parking-api/Dockerfile
+      context: ./smart-parking-api
+      dockerfile: Dockerfile
     container_name: smart-parking
     restart: unless-stopped
     env_file:
@@ -33,12 +33,6 @@ services:
       # Public (browser-facing) URL of THIS API so the wallet hosted page can
       # redirect back to the parking callback after OTP/PIN is entered.
       WALLET_REDIRECT_BASE_URL: http://localhost:8000
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    command: >
-      sh -c "alembic upgrade head &&
-             python -m scripts.seed &&
-             uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
     ports:
       - "8000:8000"
     depends_on:
