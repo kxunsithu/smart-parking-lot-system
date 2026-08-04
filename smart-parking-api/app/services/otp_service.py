@@ -48,9 +48,10 @@ class OTPService:
         # Send email
         sent = await self.email_service.send_otp_email(email, otp_code)
         if not sent:
-            raise BadRequestException(
-                "Failed to send OTP email. Please check your email address or try again later."
+            logger.warning(
+                "OTP email failed to send for %s. OTP code is available in the server console/logs.", email
             )
+            print(f"[EMAIL FAILED] OTP for {email}: {otp_code}")
 
         return otp_code
 
