@@ -46,7 +46,11 @@ class OTPService:
         self.otp_repo.create(otp)
 
         # Send email
-        await self.email_service.send_otp_email(email, otp_code)
+        sent = await self.email_service.send_otp_email(email, otp_code)
+        if not sent:
+            raise BadRequestException(
+                "Failed to send OTP email. Please check your email address or try again later."
+            )
 
         return otp_code
 
