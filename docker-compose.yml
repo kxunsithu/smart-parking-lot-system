@@ -27,9 +27,9 @@ services:
       - smart-parking-api/.env
     environment:
       DATABASE_URL: postgresql+psycopg2://smart_parking:smart_parking@db:5432/smart_parking
-      # The parking API (in this container) talks to the wallet backend (Laravel)
-      # published on the Docker host at port 8001.
-      WALLET_API_BASE_URL: http://host.docker.internal:8001
+      # The parking API (in this container) talks to the deployed digital wallet
+      # backend (Render) for external payments.
+      WALLET_API_BASE_URL: https://smart-wallet-api-vm58.onrender.com
       # Public (browser-facing) URL of THIS API so the wallet hosted page can
       # redirect back to the parking callback after OTP/PIN is entered.
       WALLET_REDIRECT_BASE_URL: http://localhost:8000
@@ -44,6 +44,30 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+  customer:
+    build:
+      context: ./smart-parking-customer
+      args:
+        VITE_API_BASE_URL: http://localhost:8000/api/v1
+    container_name: smart-parking-customer
+    restart: unless-stopped
+    ports:
+      - "5174:80"
+    depends_on:
+      - api
+
+  management:
+    build:
+      context: ./smart-parking-management
+      args:
+        VITE_API_BASE_URL: http://localhost:8000/api/v1
+    container_name: smart-parking-management
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
 
 volumes:
   pgdata:

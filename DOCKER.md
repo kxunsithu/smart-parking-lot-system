@@ -18,16 +18,24 @@ smart-parking-lot-system/
 │   ├── .env
 │   ├── .env.example
 │   └── .env.production
+├── smart-parking-customer/
+│   ├── Dockerfile
+│   └── nginx.conf
+└── smart-parking-management/
+    ├── Dockerfile
+    └── nginx.conf
 ```
 
-The `Dockerfile` lives inside `smart-parking-api/` but must be built from the **project root** because it references `smart-parking-api/...` paths.
+The API `Dockerfile` lives inside `smart-parking-api/` but must be built from the **project root** because it references `smart-parking-api/...` paths. The frontend Dockerfiles build from their own directories (`./smart-parking-customer`, `./smart-parking-management`).
 
-## Recommended: Run with Docker Compose (API + PostgreSQL)
+## Recommended: Run everything with Docker Compose
 
-The `docker-compose.yml` runs two services:
+The `docker-compose.yml` runs the full stack with four services:
 
 - **db** — PostgreSQL 16 (persistent data in a Docker volume)
 - **api** — the FastAPI app (runs migrations + seed, then starts uvicorn)
+- **customer** — the customer frontend built with Vite, served by nginx (SPA)
+- **management** — the management frontend built with Vite, served by nginx (SPA)
 
 ### 1. Start everything
 
@@ -35,7 +43,7 @@ The `docker-compose.yml` runs two services:
 docker compose up --build -d
 ```
 
-This builds the image, starts Postgres, waits for it to be healthy, then runs `alembic upgrade head`, `python -m scripts.seed`, and starts the API.
+This builds all images, starts Postgres, waits for it to be healthy, then runs `alembic upgrade head`, `python -m scripts.seed`, and starts the API. The frontends are served by nginx on the host ports below.
 
 ### 2. Verify
 
@@ -43,6 +51,13 @@ This builds the image, starts Postgres, waits for it to be healthy, then runs `a
 docker compose ps
 curl http://localhost:8000/health
 ```
+
+| Service | URL |
+|---|---|
+| Management app | http://localhost:5173 |
+| Customer app | http://localhost:5174 |
+| API (Swagger) | http://localhost:8000/docs |
+| API (health) | http://localhost:8000/health |
 
 ### 3. Useful commands
 
@@ -53,6 +68,12 @@ docker compose up --build -d        # rebuild + restart after code changes
 docker compose down                 # stop and remove containers (keeps data)
 docker compose down -v              # stop AND delete the database volume
 docker compose exec db psql -U smart_parking -d smart_parking   # psql shell
+```
+
+The frontends call the API at `http://localhost:8000/api/v1` (baked in at build time via the `VITE_API_BASE_URL` build arg). Override it when running the stack remotely, e.g.:
+
+```bash
+docker compose build --build-arg VITE_API_BASE_URL=https://api.example.com/api/v1 customer management
 ```
 
 ### Default database credentials (local compose only)
@@ -137,6 +158,11 @@ Required variables (see `smart-parking-api/.env.example` for all):
 | `SMTP_USE_TLS` | `True` |
 | `OTP_EXPIRE_MINUTES` | `10` |
 | `OTP_LENGTH` | `6` |
+| `WALLET_API_BASE_URL` | `https://smart-wallet-api-vm58.onrender.com` |
+| `WALLET_REFERENCE_PREFIX` | `PP` |
+| `WALLET_REDIRECT_BASE_URL` | `http://localhost:8000` |
+| `CUSTOMER_APP_URL` | `http://localhost:5174` |
+| `MANAGEMENT_APP_URL` | `http://localhost:5173` |
 
 ## 3. Run the Container
 

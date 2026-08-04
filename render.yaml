@@ -64,6 +64,16 @@ services:
         value: "10"
       - key: OTP_LENGTH
         value: "6"
+      - key: WALLET_API_BASE_URL
+        value: https://smart-wallet-api-vm58.onrender.com
+      - key: WALLET_REFERENCE_PREFIX
+        value: PP
+      - key: WALLET_REDIRECT_BASE_URL
+        value: https://smart-parking-api.onrender.com
+      - key: CUSTOMER_APP_URL
+        value: https://smart-parking-customer.onrender.com
+      - key: MANAGEMENT_APP_URL
+        value: https://smart-parking-management.onrender.com
 
   - type: web
     name: smart-parking-customer
