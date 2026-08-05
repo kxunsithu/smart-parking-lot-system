@@ -445,3 +445,30 @@ export interface SubscriptionPayResult {
   payment: WalletPaymentOut
   subscription: SubscriptionOut
 }
+
+// Wallet transaction list row (GET /payments)
+export type WalletPaymentKind = "session" | "subscription"
+
+export type WalletPaymentDirection = "received" | "paid"
+
+export interface PaymentListOut {
+  id: number
+  reference: string
+  kind: WalletPaymentKind
+  wallet_payment_reference?: string | null
+  wallet_transaction_number?: string | null
+  receiver_phone?: string | null
+  payer_name?: string | null
+  payer_phone?: string | null
+  amount: number
+  fee: number
+  total: number
+  status: string
+  paid_at?: string | null
+  created_at: string
+  lot_name?: string | null
+  plate_number?: string | null
+  package_name?: string | null
+  owner_name?: string | null
+  direction?: WalletPaymentDirection | null
+}

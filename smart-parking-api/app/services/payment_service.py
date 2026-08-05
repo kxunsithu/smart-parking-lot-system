@@ -17,25 +17,33 @@ from the receiving account's API key via the wallet's system-info endpoint.
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy import or_, select
+from sqlalchemy.orm import Session, joinedload
 
 from app.config.settings import settings
 from app.core.constants import PaymentStatus, RoleName, SessionStatus, SubscriptionStatus
 from app.core.exceptions import BadRequestException, ForbiddenException
 from app.models.car import Car
+from app.models.customer import Customer
 from app.models.owner_subscription import OwnerSubscription
+from app.models.package import Package
+from app.models.parking_floor import ParkingFloor
+from app.models.parking_lot import ParkingLot
+from app.models.parking_owner import ParkingOwner
 from app.models.parking_session import ParkingSession
+from app.models.parking_slot import ParkingSlot
 from app.models.payment import Payment
 from app.models.pending_payment import PendingWalletPayment
 from app.models.user import User
 from app.models.wallet_account import WalletAccount
 from app.repositories.car_repository import CarRepository
 from app.repositories.customer_repository import CustomerRepository
+from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.repositories.payment_repository import PaymentRepository
 from app.repositories.pending_payment_repository import PendingWalletPaymentRepository
 from app.repositories.wallet_account_repository import WalletAccountRepository
-from app.schemas.payment import PaymentConfirmRequest
+from app.schemas.common import Meta, PaginationParams, build_meta
+from app.schemas.payment import PaymentConfirmRequest, PaymentListOut
 from app.services.subscription_service import SubscriptionService
 from app.services.wallet_payment_client import WalletPaymentClient
 
@@ -54,6 +62,7 @@ class PaymentService:
         self.account_repo = WalletAccountRepository(db)
         self.car_repo = CarRepository(db)
         self.customer_repo = CustomerRepository(db)
+        self.owner_repo = ParkingOwnerRepository(db)
 
     # ─── helpers ──────────────────────────────────────────────────────────────
 
@@ -422,3 +431,120 @@ class PaymentService:
         """Fallback frontend URL when the payment could not be found locally."""
         base = settings.CUSTOMER_APP_URL if app == "customer" else settings.MANAGEMENT_APP_URL
         return f"{base.rstrip('/')}/wallet-payment/result?status={status}"
+
+    # ─── Transaction list (external-system wallet payments) ──────────────────
+
+    def list_payments(
+        self, params: PaginationParams, current_user: User
+    ) -> tuple[list[PaymentListOut], Meta]:
+        """List external wallet transaction records.
+
+        Admin sees every payment; an owner sees only the parking fees received
+        into their wallet accounts plus their own subscription payments.
+        """
+        stmt = (
+            select(Payment)
+            .options(
+                joinedload(Payment.user),
+                joinedload(Payment.wallet_account)
+                .joinedload(WalletAccount.owner)
+                .joinedload(ParkingOwner.user),
+                joinedload(Payment.session)
+                .joinedload(ParkingSession.car)
+                .joinedload(Car.customer)
+                .joinedload(Customer.user),
+                joinedload(Payment.session)
+                .joinedload(ParkingSession.slot)
+                .joinedload(ParkingSlot.floor)
+                .joinedload(ParkingFloor.parking_lot),
+                joinedload(Payment.subscription).joinedload(OwnerSubscription.package),
+                joinedload(Payment.subscription)
+                .joinedload(OwnerSubscription.owner)
+                .joinedload(ParkingOwner.user),
+            )
+        )
+
+        if current_user.role.name == RoleName.OWNER.value:
+            owner = self.owner_repo.get_by_user_id(current_user.id)
+            if not owner:
+                raise ForbiddenException("Owner profile not found.")
+            stmt = stmt.where(
+                or_(
+                    Payment.subscription_id.in_(
+                        select(OwnerSubscription.id).where(
+                            OwnerSubscription.owner_id == owner.id
+                        )
+                    ),
+                    Payment.wallet_account_id.in_(
+                        select(WalletAccount.id).where(WalletAccount.owner_id == owner.id)
+                    ),
+                )
+            )
+        elif current_user.role.name != RoleName.ADMIN.value:
+            raise ForbiddenException("You do not have permission to view wallet payments.")
+
+        if params.search:
+            like = f"%{params.search.strip()}%"
+            stmt = stmt.where(
+                or_(
+                    Payment.reference.ilike(like),
+                    Payment.wallet_payment_reference.ilike(like),
+                    Payment.wallet_transaction_number.ilike(like),
+                    Payment.receiver_phone.ilike(like),
+                    Payment.session.has(ParkingSession.car.has(Car.plate_number.ilike(like))),
+                )
+            )
+
+        stmt = stmt.order_by(Payment.created_at.desc())
+        items, total = self.payment_repo.paginate(stmt, page=params.page, limit=params.limit)
+
+        is_owner = current_user.role.name == RoleName.OWNER.value
+        rows: list[PaymentListOut] = []
+        for payment in items:
+            item = self._payment_list_item(payment)
+            if is_owner:
+                item.direction = "paid" if item.kind == "subscription" else "received"
+            rows.append(item)
+
+        return rows, build_meta(total, params.page, params.limit)
+
+    def _payment_list_item(self, payment: Payment) -> PaymentListOut:
+        payer = payment.user
+        base = dict(
+            id=payment.id,
+            reference=payment.reference,
+            kind="subscription" if payment.subscription_id is not None else "session",
+            wallet_payment_reference=payment.wallet_payment_reference,
+            wallet_transaction_number=payment.wallet_transaction_number,
+            receiver_phone=payment.receiver_phone,
+            payer_name=payer.name if payer else None,
+            payer_phone=payer.phone if payer else None,
+            amount=payment.amount,
+            fee=payment.fee,
+            total=payment.total,
+            status=payment.status,
+            paid_at=payment.paid_at,
+            created_at=payment.created_at,
+            lot_name=None,
+            plate_number=None,
+            package_name=None,
+            owner_name=None,
+            direction=None,
+        )
+
+        if payment.subscription_id is not None:
+            subscription = payment.subscription
+            base["package_name"] = subscription.package.name if subscription and subscription.package else None
+            owner = subscription.owner if subscription else None
+            base["owner_name"] = owner.user.name if owner and owner.user else None
+        else:
+            session = payment.session
+            if session:
+                car = session.car
+                base["plate_number"] = car.plate_number if car else None
+                slot = session.slot
+                floor = slot.floor if slot else None
+                lot = floor.parking_lot if floor else None
+                base["lot_name"] = lot.name if lot else None
+
+        return PaymentListOut(**base)

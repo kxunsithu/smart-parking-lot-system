@@ -64,3 +64,32 @@ class PendingPaymentOut(BaseModel):
     wallet_payment_reference: Optional[str] = None
     wallet_payment_url: Optional[str] = None
     created_at: datetime
+
+
+class PaymentListOut(BaseModel):
+    """One row in the wallet transaction list (external-system payments).
+
+    `kind` is "session" (customer → owner wallet) or "subscription"
+    (owner → platform wallet). Context fields are filled depending on the kind.
+    `direction` is set for owners only: "received" (parking fees into their
+    wallet) or "paid" (subscription fees out of their wallet).
+    """
+    id: int
+    reference: str
+    kind: str
+    wallet_payment_reference: Optional[str] = None
+    wallet_transaction_number: Optional[str] = None
+    receiver_phone: Optional[str] = None
+    payer_name: Optional[str] = None
+    payer_phone: Optional[str] = None
+    amount: float
+    fee: float
+    total: float
+    status: str
+    paid_at: Optional[datetime] = None
+    created_at: datetime
+    lot_name: Optional[str] = None
+    plate_number: Optional[str] = None
+    package_name: Optional[str] = None
+    owner_name: Optional[str] = None
+    direction: Optional[str] = None

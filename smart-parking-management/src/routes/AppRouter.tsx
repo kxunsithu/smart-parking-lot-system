@@ -23,6 +23,9 @@ const SlotDetailPage = lazy(() => import("@/pages/shared/SlotDetailPage").then((
 const WalletPaymentResultPage = lazy(() =>
   import("@/pages/shared/WalletPaymentResultPage").then((m) => ({ default: m.WalletPaymentResultPage }))
 )
+const WalletTransactionsPage = lazy(() =>
+  import("@/pages/shared/WalletTransactionsPage").then((m) => ({ default: m.WalletTransactionsPage }))
+)
 const NotFoundPage = lazy(() => import("@/pages/shared/NotFoundPage").then((m) => ({ default: m.NotFoundPage })))
 const UnauthorizedPage = lazy(() =>
   import("@/pages/shared/UnauthorizedPage").then((m) => ({ default: m.UnauthorizedPage }))
@@ -127,6 +130,7 @@ const router = createBrowserRouter([
               { path: "/admin/packages", element: withSuspense(<AdminPackagesPage />) },
               { path: "/admin/subscriptions", element: withSuspense(<AdminSubscriptionsPage />) },
               { path: "/admin/payments", element: withSuspense(<AdminPaymentsPage />) },
+              { path: "/admin/transactions", element: withSuspense(<WalletTransactionsPage />) },
             ],
           },
           {
@@ -135,6 +139,7 @@ const router = createBrowserRouter([
               { path: "/owner", element: withSuspense(<OwnerDashboardPage />) },
               { path: "/owner/subscription", element: withSuspense(<OwnerSubscriptionPage />) },
               { path: "/owner/wallet", element: withSuspense(<OwnerWalletPage />) },
+              { path: "/owner/transactions", element: withSuspense(<WalletTransactionsPage />) },
               { path: "/owner/lots", element: withSuspense(<LotsPage />) },
               { path: "/owner/lots/:lotId", element: withSuspense(<LotDetailPage />) },
               { path: "/owner/slots/:slotId", element: withSuspense(<SlotDetailPage />) },
