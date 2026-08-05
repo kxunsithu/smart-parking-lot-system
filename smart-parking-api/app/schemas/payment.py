@@ -35,8 +35,32 @@ class PaymentOut(BaseModel):
     total: float
     status: str
     message: Optional[str] = None
+    receiver_phone: Optional[str] = None
     wallet_payment_reference: Optional[str] = None
     wallet_payment_url: Optional[str] = None
     wallet_transaction_number: Optional[str] = None
     paid_at: Optional[datetime] = None
+    created_at: datetime
+
+
+class PendingPaymentOut(BaseModel):
+    """A wallet payment that has been initiated but not yet completed.
+
+    No transaction record exists yet; the real Payment is created only when the
+    external wallet confirms the payment is completed.
+    """
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    reference: str
+    session_id: Optional[int] = None
+    subscription_id: Optional[int] = None
+    wallet_account_id: Optional[int] = None
+    amount: float
+    fee: float
+    total: float
+    status: str = "PENDING"
+    message: Optional[str] = None
+    wallet_payment_reference: Optional[str] = None
+    wallet_payment_url: Optional[str] = None
     created_at: datetime

@@ -33,15 +33,19 @@ def wallet_payment_callback(
     wallet_client: WalletPaymentClient = Depends(get_wallet_client),
 ) -> RedirectResponse:
     service = PaymentService(db, wallet_client)
-    payment = service.find_payment_for_callback(order_reference or None, reference or None)
+    pending = service.find_pending_for_callback(order_reference or None, reference or None)
 
-    if payment is None:
-        target = service.redirect_url_for_unknown(app, "failed")
+    if pending is None:
+        completed = service.find_completed_payment(order_reference or None, reference or None)
+        if completed:
+            target = service.redirect_url_for(completed, "completed")
+        else:
+            target = service.redirect_url_for_unknown(app, "failed")
     else:
         try:
-            payment = service.finalize_wallet_payment(payment)
+            payment = service.finalize_wallet_payment(pending)
             target = service.redirect_url_for(payment, "completed")
         except (BadRequestException, NotFoundException) as exc:
-            target = service.redirect_url_for(payment, "failed")
+            target = service.redirect_url_for(pending, "failed")
 
     return RedirectResponse(url=target, status_code=303)

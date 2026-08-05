@@ -13,7 +13,12 @@ from app.schemas.parking_session import (
     ParkingSessionOut,
     ParkingSessionStart,
 )
-from app.schemas.payment import PaymentConfirmRequest, PaymentInitiateRequest, PaymentOut
+from app.schemas.payment import (
+    PaymentConfirmRequest,
+    PaymentInitiateRequest,
+    PaymentOut,
+    PendingPaymentOut,
+)
 from app.services.parking_session_service import ParkingSessionService, serialize_session
 from app.services.payment_service import PaymentService
 from app.services.wallet_payment_client import WalletPaymentClient, get_wallet_client
@@ -49,7 +54,7 @@ def book_session(
 
 @router.post(
     "/{session_id}/pay/initiate",
-    response_model=SuccessResponse[PaymentOut],
+    response_model=SuccessResponse[PendingPaymentOut],
     status_code=status.HTTP_201_CREATED,
     summary="Customer: request a wallet payment for a PENDING session (returns OTP)",
 )

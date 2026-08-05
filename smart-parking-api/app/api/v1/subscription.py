@@ -11,7 +11,12 @@ from app.schemas.common import PaginationParams, SuccessResponse
 from app.core.exceptions import ForbiddenException
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.schemas.owner_subscription import SubscriptionOut, SubscriptionPurchase
-from app.schemas.payment import PaymentConfirmRequest, PaymentInitiateRequest, PaymentOut
+from app.schemas.payment import (
+    PaymentConfirmRequest,
+    PaymentInitiateRequest,
+    PaymentOut,
+    PendingPaymentOut,
+)
 from app.services.payment_service import PaymentService
 from app.services.subscription_service import SubscriptionService
 from app.services.wallet_payment_client import WalletPaymentClient, get_wallet_client
@@ -59,7 +64,7 @@ def renew_subscription(
 
 @router.post(
     "/{subscription_id}/pay/initiate",
-    response_model=SuccessResponse[PaymentOut],
+    response_model=SuccessResponse[PendingPaymentOut],
     status_code=status.HTTP_201_CREATED,
     summary="Owner: request a wallet payment for a PENDING subscription (returns OTP)",
 )

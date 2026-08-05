@@ -1,26 +1,24 @@
-"""Wallet payment record linking parking sessions / subscriptions to the digital wallet."""
+"""PendingWalletPayment – tracks an in-flight external wallet payment before completion.
+
+The real transaction record (Payment) is only created once the digital wallet
+backend confirms the payment is completed, so nothing is recorded for initiated
+but unfinished payments.
+"""
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.constants import PaymentStatus
 from app.database.base import Base
 
-if TYPE_CHECKING:
-    from app.models.owner_subscription import OwnerSubscription
-    from app.models.parking_session import ParkingSession
-    from app.models.user import User
-    from app.models.wallet_account import WalletAccount
 
-
-class Payment(Base):
-    __tablename__ = "payments"
+class PendingWalletPayment(Base):
+    __tablename__ = "pending_wallet_payments"
     __table_args__ = (
-        Index("ix_payments_session_id", "session_id"),
-        Index("ix_payments_subscription_id", "subscription_id"),
-        Index("ix_payments_wallet_account_id", "wallet_account_id"),
+        Index("ix_pending_wallet_payments_session_id", "session_id"),
+        Index("ix_pending_wallet_payments_subscription_id", "subscription_id"),
+        Index("ix_pending_wallet_payments_wallet_account_id", "wallet_account_id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -41,29 +39,10 @@ class Payment(Base):
     wallet_payment_reference: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     # Hosted payment page URL on the wallet backend the customer is redirected to.
     wallet_payment_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
-    # Transaction number returned once the wallet confirms the payment (e.g. TX-XXXX).
-    wallet_transaction_number: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    # Receiver's wallet phone, resolved from the receiving account's API key.
-    receiver_phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     fee: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     total: Mapped[float] = mapped_column(Float, nullable=False)
-    status: Mapped[str] = mapped_column(
-        String(20), default=PaymentStatus.PENDING.value, index=True, nullable=False
-    )
     message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
-    )
-
-    user: Mapped["User"] = relationship("User", back_populates="payments")
-    wallet_account: Mapped[Optional["WalletAccount"]] = relationship(
-        "WalletAccount", back_populates="payments"
-    )
-    session: Mapped[Optional["ParkingSession"]] = relationship(
-        "ParkingSession", back_populates="payments"
-    )
-    subscription: Mapped[Optional["OwnerSubscription"]] = relationship(
-        "OwnerSubscription", back_populates="payments"
     )
