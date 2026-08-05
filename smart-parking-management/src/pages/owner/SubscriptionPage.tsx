@@ -508,7 +508,7 @@ export function OwnerSubscriptionPage() {
 
           {pendingSub && !paymentInfo && (
             <div className="space-y-4 py-2">
-              <FormField label="Wallet Phone Number" htmlFor="wallet-phone" hint="Enter the phone number registered with your digital wallet account." error={undefined}>
+              <FormField label="Wallet Phone Number" htmlFor="wallet-phone" hint="Enter the phone number of the customer or agent wallet account used to pay." error={undefined}>
                 <Input
                   id="wallet-phone"
                   type="tel"
