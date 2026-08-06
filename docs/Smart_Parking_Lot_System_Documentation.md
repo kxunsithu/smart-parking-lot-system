@@ -881,18 +881,17 @@ graph LR
 
 ## 2.4 Sequence Diagram
 
-Each role's core workflows are illustrated below using standard UML sequence diagrams. Actors interact with the system via the **Management App** or **Customer App** (UI), which communicates with the backend **Controller / Service** layer and the **Database**, plus external services (Email, Digital Wallet) where applicable. Lifelines feature vertical activation bars representing active execution states.
+Each role's core workflows are illustrated below using standard UML sequence diagrams. Actors interact with the system via the **Management App** or **Customer App** (UI), which communicates with the backend **Smart Parking System** and the underlying **Database**, plus external services (Email Service, Payment Gateway) where applicable. Lifelines feature vertical activation bars representing active execution states.
 
 ### Participants / Lifelines Legend
 
 | Participant Alias | Full Name | Role |
 |---|---|---|
-| **UI** | Management App / Customer App | Frontend SPA that presents forms and sends API requests. |
-| **API** | `*Controller` (e.g., AuthController, PackageController) | FastAPI router that validates requests and delegates to the service layer. |
-| **Service** | `*Service` (e.g., AuthService, ParkingSessionService) | Business logic layer; orchestrates DB calls and external integrations. |
-| **DB** | `*Repository` (e.g., UserRepository, SessionRepository) | SQLAlchemy data-access layer; executes ORM queries against PostgreSQL. |
-| **Email** | EmailService | SMTP / third-party email provider that sends OTP verification emails. |
-| **Wallet** | WalletPaymentClient | External digital wallet API used for two-phase payment (initiate + confirm OTP). |
+| **UI** | Management App / Customer App | Frontend application that renders user interface forms and sends API requests. |
+| **System** | Smart Parking System | Backend application service handling authentication, validation, and business rules. |
+| **DB** | Database | Relational database (PostgreSQL) storing system entities and persistent state. |
+| **Email** | Email Service | External SMTP email provider used for sending OTP verification codes. |
+| **Wallet** | Payment Gateway | External digital wallet API used for two-phase payment processing. |
 
 ### Lifeline Notation
 
@@ -912,50 +911,37 @@ Each role's core workflows are illustrated below using standard UML sequence dia
 sequenceDiagram
     actor Admin
     participant UI as Management App
-    participant API as AuthController
-    participant Auth as AuthService
-    participant DB as UserRepository
+    participant System as Smart Parking System
+    participant DB as Database
 
     Admin->>UI: Request login page
     UI-->>Admin: Render login form
     Admin->>UI: Submit credentials (email, password)
-    UI->>API: POST /auth/login (LoginRequest)
-    activate API
-    API->>Auth: authenticate(email, password)
-    activate Auth
-    Auth->>DB: get_by_email(email)
+    UI->>System: Submit credentials (email, password)
+    activate System
+    System->>DB: Query user by email
     activate DB
-    DB-->>Auth: User (hashed_password, role)
+    DB-->>System: User record (hashed_password, role)
     deactivate DB
-    Auth->>Auth: verify_password(password, hashed_password)
-    Auth->>DB: create_jwt_tokens(user_id)
-    activate DB
-    DB-->>Auth: access_token, refresh_token
-    deactivate DB
-    Auth-->>API: TokenResponse (access_token, refresh_token)
-    deactivate Auth
-    API-->>UI: 200 OK (TokenResponse)
-    deactivate API
-    UI-->>Admin: Display Dashboard
+    System->>System: Verify password & generate JWT tokens
+    System-->>UI: Return authentication tokens (access_token)
+    deactivate System
+    UI-->>Admin: Display Admin Dashboard
 ```
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Method | Description |
+| Step | From → To | Message / Operation | Description |
 |---|---|---|---|
-| 1 | Admin → UI | Request login page | Admin opens the Management App login URL. |
-| 2 | UI → Admin | Render login form | UI renders the email/password input form. |
-| 3 | Admin → UI | Submit credentials | Admin enters email and password and clicks Sign In. |
-| 4 | UI → API | `POST /auth/login` | UI sends `LoginRequest` payload to the auth endpoint. |
-| 5 | API → AuthService | `authenticate(email, password)` | Controller delegates credential validation to the service layer. |
-| 6 | AuthService → DB | `get_by_email(email)` | Service fetches the User record including the hashed password and role. |
-| 7 | DB → AuthService | `User` | Repository returns the matching user record. |
-| 8 | AuthService | `verify_password()` | Service hashes the submitted password and compares against the stored hash. |
-| 9 | AuthService → DB | `create_jwt_tokens(user_id)` | On password match, service requests new JWT access + refresh token pair. |
-| 10 | DB → AuthService | `access_token, refresh_token` | Token pair returned to the service. |
-| 11 | AuthService → API | `TokenResponse` | Service returns the token response object to the controller. |
-| 12 | API → UI | `200 OK (TokenResponse)` | Controller sends the token pair back to the frontend. |
-| 13 | UI → Admin | Display Dashboard | UI stores tokens and redirects the admin to the dashboard page. |
+| 1 | Admin → UI | Request login page | Admin opens the Management App login page. |
+| 2 | UI → Admin | Render login form | UI presents the email and password input form. |
+| 3 | Admin → UI | Submit credentials | Admin enters credentials and clicks Sign In. |
+| 4 | UI → System | `Submit credentials` | UI sends login credentials payload to the backend. |
+| 5 | System → DB | `Query user by email` | System fetches user account details from the database. |
+| 6 | DB → System | `User record` | Database returns hashed password and assigned role. |
+| 7 | System | `Verify password & generate JWT` | System checks bcrypt hash and generates JWT token pair on match. |
+| 8 | System → UI | `Return authentication tokens` | System returns access and refresh tokens to the client. |
+| 9 | UI → Admin | Display Admin Dashboard | UI saves token and redirects Admin to dashboard view. |
 
 ---
 
@@ -965,60 +951,51 @@ sequenceDiagram
 sequenceDiagram
     actor Admin
     participant UI as Management App
-    participant API as PackageController
-    participant Service as PackageService
-    participant DB as PackageRepository
+    participant System as Smart Parking System
+    participant DB as Database
 
     Admin->>UI: Select Create Package
     UI-->>Admin: Render package form
-    Admin->>UI: Submit packageData (name, price, duration, limits)
-    UI->>API: POST /packages (PackageCreate)
-    activate API
-    API->>Service: create_package(packageData)
-    activate Service
-    Service->>DB: insert(packageData)
+    Admin->>UI: Submit package details (name, price, duration, limits)
+    UI->>System: Submit package details
+    activate System
+    System->>DB: Insert new Package record
     activate DB
-    DB-->>Service: Package (id, name, price, is_active=true)
+    DB-->>System: Package (id, name, price, is_active=true)
     deactivate DB
-    Service-->>API: Package
-    deactivate Service
-    API-->>UI: 201 Created (Package)
-    deactivate API
+    System-->>UI: Return created Package data
+    deactivate System
     UI-->>Admin: Display Package List
 
-    Admin->>UI: Click Deactivate Package (packageID)
-    UI->>API: PATCH /packages/packageID/deactivate
-    activate API
-    API->>Service: deactivate_package(packageID)
-    activate Service
-    Service->>DB: update_status(packageID, is_active=false)
+    Admin->>UI: Click Deactivate Package (package_id)
+    UI->>System: Request package deactivation
+    activate System
+    System->>DB: Update package status (is_active=false)
     activate DB
-    DB-->>Service: boolean (true)
+    DB-->>System: Success status
     deactivate DB
-    Service-->>API: SuccessResponse
-    deactivate Service
-    API-->>UI: 200 OK (SuccessResponse)
-    deactivate API
+    System-->>UI: Return status updated confirmation
+    deactivate System
     UI-->>Admin: Update Package Status Badge
 ```
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Method | Description |
+| Step | From → To | Message / Operation | Description |
 |---|---|---|---|
-| 1 | Admin → UI | Select Create Package | Admin navigates to the Package Management page and clicks "New Package". |
-| 2 | Admin → UI | Submit form (name, price, duration, lot_cap, staff_cap) | Admin fills in package details. |
-| 3 | UI → API | `POST /packages` | UI sends `PackageCreate` payload to the packages endpoint. |
-| 4 | API → PackageService | `create_package(packageData)` | Controller delegates to the service layer. |
-| 5 | PackageService → DB | `insert(packageData)` | Service persists the new package record with `is_active=true`. |
-| 6 | DB → PackageService | `Package` | Repository returns the newly created package. |
-| 7 | API → UI | `201 Created (Package)` | Controller returns the created Package to the UI. |
-| 8 | UI → Admin | Display Package List | Package appears in the active package list. |
-| 9 | Admin → UI | Click Deactivate Package | Admin selects an existing package and clicks Deactivate. |
-| 10 | UI → API | `PATCH /packages/{packageID}/deactivate` | UI sends deactivation request. |
-| 11 | PackageService → DB | `update_status(packageID, is_active=false)` | Service updates the package's `is_active` flag to `false`. |
-| 12 | API → UI | `200 OK (SuccessResponse)` | Controller confirms deactivation. |
-| 13 | UI → Admin | Update Package Status Badge | Package badge switches from Active to Inactive in the list. |
+| 1 | Admin → UI | Select Create Package | Admin navigates to Package Management and clicks "New Package". |
+| 2 | Admin → UI | Submit package details | Admin inputs package name, price, duration, and limit caps. |
+| 3 | UI → System | `Submit package details` | UI sends new package data to the System backend. |
+| 4 | System → DB | `Insert new Package record` | System stores new package record (`is_active=true`). |
+| 5 | DB → System | `Package record` | Database returns created package record. |
+| 6 | System → UI | `Return created Package data` | System sends success response with created package. |
+| 7 | UI → Admin | Display Package List | UI updates table with the new package entry. |
+| 8 | Admin → UI | Click Deactivate Package | Admin selects an active package and clicks Deactivate. |
+| 9 | UI → System | `Request package deactivation` | UI sends deactivation request for the package ID. |
+| 10 | System → DB | `Update package status` | System sets `is_active = false` in the database. |
+| 11 | DB → System | `Success status` | Database confirms update. |
+| 12 | System → UI | `Return status updated confirmation` | System responds with updated package state. |
+| 13 | UI → Admin | Update Package Status Badge | UI updates package badge to show Inactive. |
 
 ---
 
@@ -1028,41 +1005,35 @@ sequenceDiagram
 sequenceDiagram
     actor Admin
     participant UI as Management App
-    participant API as OwnerController
-    participant Service as OwnerService
-    participant DB as UserRepository
+    participant System as Smart Parking System
+    participant DB as Database
 
-    Admin->>UI: Search owner and click Deactivate (ownerID)
+    Admin->>UI: Search owner & click Deactivate
     UI-->>Admin: Prompt confirmation dialog
     Admin->>UI: Confirm deactivation
-    UI->>API: PATCH /owners/ownerID/deactivate
-    activate API
-    API->>Service: deactivate_owner(ownerID)
-    activate Service
-    Service->>DB: set_active_status(ownerID, is_active=false)
+    UI->>System: Request owner deactivation
+    activate System
+    System->>DB: Update owner user status (is_active=false)
     activate DB
-    DB-->>Service: boolean (true)
+    DB-->>System: Success status
     deactivate DB
-    Service-->>API: SuccessResponse
-    deactivate Service
-    API-->>UI: 200 OK (SuccessResponse)
-    deactivate API
+    System-->>UI: Return deactivation confirmation
+    deactivate System
     UI-->>Admin: Update Owner Status to Deactivated
 ```
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Method | Description |
+| Step | From → To | Message / Operation | Description |
 |---|---|---|---|
-| 1 | Admin → UI | Search owner and click Deactivate | Admin finds the parking owner by name/email and clicks Deactivate. |
-| 2 | UI → Admin | Prompt confirmation dialog | UI shows a confirmation modal: "Are you sure you want to deactivate this owner?". |
-| 3 | Admin → UI | Confirm deactivation | Admin clicks Confirm in the dialog. |
-| 4 | UI → API | `PATCH /owners/{ownerID}/deactivate` | UI sends deactivation request with the owner's ID. |
-| 5 | API → OwnerService | `deactivate_owner(ownerID)` | Controller delegates to the service layer. |
-| 6 | OwnerService → DB | `set_active_status(ownerID, is_active=false)` | Service updates the User record's `is_active` to `false`, revoking login access. |
-| 7 | DB → OwnerService | `boolean (true)` | Repository confirms the update. |
-| 8 | API → UI | `200 OK (SuccessResponse)` | Controller returns a success response. |
-| 9 | UI → Admin | Update Owner Status to Deactivated | Owner's status badge changes to Deactivated in the owner list. |
+| 1 | Admin → UI | Search owner & click Deactivate | Admin selects an owner from list and clicks Deactivate. |
+| 2 | UI → Admin | Prompt confirmation dialog | UI displays confirmation modal to prevent accidental deactivation. |
+| 3 | Admin → UI | Confirm deactivation | Admin confirms the action in modal. |
+| 4 | UI → System | `Request owner deactivation` | UI sends deactivation request to System backend. |
+| 5 | System → DB | `Update owner user status` | System sets target user account `is_active = false`. |
+| 6 | DB → System | `Success status` | Database confirms status change. |
+| 7 | System → UI | `Return deactivation confirmation` | System returns success response to UI. |
+| 8 | UI → Admin | Update Owner Status | UI updates owner status badge to Deactivated. |
 
 ---
 
@@ -1074,47 +1045,41 @@ sequenceDiagram
 sequenceDiagram
     actor Owner
     participant UI as Management App
-    participant API as AuthController
-    participant Service as AuthService
-    participant DB as UserRepository
+    participant System as Smart Parking System
+    participant DB as Database
 
     Owner->>UI: Request registration page
     UI-->>Owner: Render owner registration form
-    Owner->>UI: Submit ownerData (name, email, password, company_name)
-    UI->>API: POST /auth/register-owner (RegisterOwnerRequest)
-    activate API
-    API->>Service: register_owner(ownerData)
-    activate Service
-    Service->>DB: check_email_exists(email)
+    Owner->>UI: Submit credentials (name, email, password, company)
+    UI->>System: Submit registration data
+    activate System
+    System->>DB: Check if email exists
     activate DB
-    DB-->>Service: boolean (false)
+    DB-->>System: Email available (false)
     deactivate DB
-    Service->>DB: create_owner_user(user, owner_profile)
+    System->>DB: Insert User (role=OWNER) & ParkingOwner profile
     activate DB
-    DB-->>Service: User (id, role=OWNER, is_verified=true)
+    DB-->>System: Created Owner record (is_verified=true)
     deactivate DB
-    Service-->>API: UserOut
-    deactivate Service
-    API-->>UI: 201 Created (UserOut)
-    deactivate API
+    System-->>UI: Return created owner account
+    deactivate System
     UI-->>Owner: Redirect to Login Page
 ```
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Method | Description |
+| Step | From → To | Message / Operation | Description |
 |---|---|---|---|
-| 1 | Owner → UI | Request registration page | Owner opens the Owner Registration URL (public endpoint — no login required). |
-| 2 | UI → Owner | Render owner registration form | UI renders the form with fields: name, email, password, company name. |
-| 3 | Owner → UI | Submit ownerData | Owner fills the form and clicks Register. |
-| 4 | UI → API | `POST /auth/register-owner` | UI sends `RegisterOwnerRequest` to the unprotected registration endpoint. |
-| 5 | API → AuthService | `register_owner(ownerData)` | Controller delegates registration logic to the service. |
-| 6 | AuthService → DB | `check_email_exists(email)` | Service checks whether the email is already in use. |
-| 7 | DB → AuthService | `boolean (false)` | Email is unique; proceed with registration. |
-| 8 | AuthService → DB | `create_owner_user(user, owner_profile)` | Service atomically creates a User record and a linked ParkingOwner profile. `is_verified=true` is set automatically (no OTP needed for owners). |
-| 9 | DB → AuthService | `User (role=OWNER)` | Newly created user returned. |
-| 10 | API → UI | `201 Created (UserOut)` | Controller returns the owner's profile to the UI. |
-| 11 | UI → Owner | Redirect to Login Page | Owner is directed to the login page to log in with the new credentials. |
+| 1 | Owner → UI | Request registration page | Owner opens the Owner Registration URL (unprotected endpoint). |
+| 2 | UI → Owner | Render owner registration form | UI renders the registration form fields. |
+| 3 | Owner → UI | Submit credentials | Owner enters registration data and submits. |
+| 4 | UI → System | `Submit registration data` | UI sends registration payload to System endpoint. |
+| 5 | System → DB | `Check if email exists` | System checks database for existing email. |
+| 6 | DB → System | `Email available` | Database confirms email is unique. |
+| 7 | System → DB | `Insert User & ParkingOwner` | System creates User (`role=OWNER`, `is_verified=true`) and Owner profile. |
+| 8 | DB → System | `Created Owner record` | Database returns saved account data. |
+| 9 | System → UI | `Return created owner account` | System sends success response. |
+| 10 | UI → Owner | Redirect to Login Page | UI directs Owner to login page. |
 
 ---
 
@@ -1124,75 +1089,64 @@ sequenceDiagram
 sequenceDiagram
     actor Owner
     participant UI as Management App
-    participant API as LotController
-    participant Service as ParkingLotService
-    participant DB as ParkingLotRepository
+    participant System as Smart Parking System
+    participant DB as Database
 
-    Owner->>UI: Fill lot form (name, type, rate, map_url)
-    UI->>API: POST /parking-lots (ParkingLotCreate)
-    activate API
-    API->>Service: create_parking_lot(owner_id, lotData)
-    activate Service
-    Service->>DB: check_subscription_limits(owner_id)
+    Owner->>UI: Fill lot form (name, rate_per_hour, location)
+    UI->>System: Submit lot details
+    activate System
+    System->>DB: Verify active subscription lot limits
     activate DB
-    DB-->>Service: boolean (within_limit=true)
+    DB-->>System: Subscription valid & within limits
     deactivate DB
-    Service->>DB: insert_parking_lot(lotData)
+    System->>DB: Insert Parking Lot record
     activate DB
-    DB-->>Service: ParkingLot (id, name)
+    DB-->>System: Created ParkingLot record
     deactivate DB
-    Service-->>API: ParkingLotOut
-    deactivate Service
-    API-->>UI: 201 Created (ParkingLotOut)
-    deactivate API
+    System-->>UI: Return created lot data
+    deactivate System
 
-    Owner->>UI: Add Floor (floor_name)
-    UI->>API: POST /parking-lots/lotID/floors (FloorCreate)
-    activate API
-    API->>Service: add_floor(lotID, floor_name)
-    activate Service
-    Service->>DB: insert_floor(lotID, floor_name)
+    Owner->>UI: Add Floor (name, level)
+    UI->>System: Submit floor details
+    activate System
+    System->>DB: Insert Parking Floor record
     activate DB
-    DB-->>Service: ParkingFloor (id, floor_name)
+    DB-->>System: Created ParkingFloor record
     deactivate DB
-    Service-->>API: FloorOut
-    deactivate Service
-    API-->>UI: 201 Created (FloorOut)
-    deactivate API
+    System-->>UI: Return created floor data
+    deactivate System
 
-    Owner->>UI: Add Slot (slot_number, section)
-    UI->>API: POST /parking-floors/floorID/slots (SlotCreate)
-    activate API
-    API->>Service: add_slot(floorID, slot_number, section)
-    activate Service
-    Service->>DB: insert_slot(floorID, slot_number, section, status=AVAILABLE)
+    Owner->>UI: Add Slot (slot_number, slot_type)
+    UI->>System: Submit slot details
+    activate System
+    System->>DB: Insert Parking Slot record (status=AVAILABLE)
     activate DB
-    DB-->>Service: ParkingSlot (id, status=AVAILABLE)
+    DB-->>System: Created ParkingSlot record
     deactivate DB
-    Service-->>API: SlotOut
-    deactivate Service
-    API-->>UI: 201 Created (SlotOut)
-    deactivate API
-    UI-->>Owner: Display Slot in Floor Board
+    System-->>UI: Return created slot data
+    deactivate System
+    UI-->>Owner: Display Slot in Floor Board Grid
 ```
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Method | Description |
+| Step | From → To | Message / Operation | Description |
 |---|---|---|---|
-| 1 | Owner → UI | Fill lot form | Owner fills in the new lot's name, type (indoor/outdoor), rate_per_hour, and optional map_url. |
-| 2 | UI → API | `POST /parking-lots` | UI sends `ParkingLotCreate` payload. |
-| 3 | API → ParkingLotService | `create_parking_lot(owner_id, lotData)` | Service checks the owner's active subscription lot limit before creating. |
-| 4 | ParkingLotService → DB | `check_subscription_limits(owner_id)` | Service queries the DB to verify the owner has not exceeded their package's `max_lots` cap. |
-| 5 | API → UI | `201 Created (ParkingLotOut)` | The new lot is returned to the UI. |
-| 6 | Owner → UI | Add Floor (name, level) | Owner clicks Add Floor and fills the floor form for the created lot. |
-| 7 | UI → API | `POST /parking-lots/{lotID}/floors` | UI sends `FloorCreate` request. |
-| 8 | ParkingLotService → DB | `insert_floor(lotID, floorData)` | Service persists the floor record linked to the lot. |
-| 9 | API → UI | `201 Created (FloorOut)` | New floor returned to UI and displayed. |
-| 10 | Owner → UI | Add Slot (slot_number, type) | Owner clicks Add Slot on the floor panel. |
-| 11 | UI → API | `POST /parking-lots/{lotID}/floors/{floorID}/slots` | UI sends `SlotCreate` request. |
-| 12 | ParkingLotService → DB | `insert_slot(floorID, slotData)` | Service persists the slot with `status=AVAILABLE`. |
-| 13 | API → UI | `201 Created (SlotOut)` | New slot returned and shown in the floor board grid. |
+| 1 | Owner → UI | Fill lot form | Owner fills in lot name, hourly rate, and facility type. |
+| 2 | UI → System | `Submit lot details` | UI sends lot creation request. |
+| 3 | System → DB | `Verify subscription limits` | System checks DB to enforce package `max_lots` limit. |
+| 4 | DB → System | `Limits valid` | Database confirms owner is within package allowance. |
+| 5 | System → DB | `Insert Parking Lot` | System persists the new `ParkingLot` entity. |
+| 6 | System → UI | `Return created lot data` | System returns newly created lot data. |
+| 7 | Owner → UI | Add Floor | Owner enters floor name and level number. |
+| 8 | UI → System | `Submit floor details` | UI sends floor creation payload. |
+| 9 | System → DB | `Insert Parking Floor` | System persists floor linked to lot. |
+| 10 | System → UI | `Return created floor data` | System returns floor object to UI. |
+| 11 | Owner → UI | Add Slot | Owner specifies slot identifier and category. |
+| 12 | UI → System | `Submit slot details` | UI sends slot creation payload. |
+| 13 | System → DB | `Insert Parking Slot` | System persists slot with initial status `AVAILABLE`. |
+| 14 | System → UI | `Return created slot data` | System returns slot data to UI. |
+| 15 | UI → Owner | Display Slot Board | UI renders updated slot grid. |
 
 ---
 
@@ -1202,84 +1156,71 @@ sequenceDiagram
 sequenceDiagram
     actor Owner
     participant UI as Management App
-    participant API as SubscriptionController
-    participant Service as SubscriptionService
-    participant Wallet as WalletPaymentClient
-    participant DB as SubscriptionRepository
+    participant System as Smart Parking System
+    participant Wallet as Payment Gateway
+    participant DB as Database
 
-    Owner->>UI: Select package and click Subscribe
-    UI->>API: POST /subscriptions (SubscriptionCreate)
-    activate API
-    API->>Service: create_subscription(owner_id, package_id)
-    activate Service
-    Service->>DB: insert_subscription(status=PENDING)
+    Owner->>UI: Select package & click Subscribe
+    UI->>System: Create subscription request (package_id)
+    activate System
+    System->>DB: Insert OwnerSubscription (status=PENDING)
     activate DB
-    DB-->>Service: OwnerSubscription (id, status=PENDING)
+    DB-->>System: Subscription (id, status=PENDING)
     deactivate DB
-    Service-->>API: SubscriptionOut
-    deactivate Service
-    API-->>UI: 201 Created (subscription_id)
-    deactivate API
+    System-->>UI: Return subscription reservation (id)
+    deactivate System
 
-    Owner->>UI: Initiate Payment
-    UI->>API: POST /subscriptions/subID/pay/initiate
-    activate API
-    API->>Service: initiate_payment(subID)
-    activate Service
-    Service->>Wallet: create_payment_request(amount, reference)
+    Owner->>UI: Initiate Payment (wallet_phone)
+    UI->>System: Initiate payment request
+    activate System
+    System->>Wallet: Payment Request (amount, phone)
     activate Wallet
-    Wallet-->>Service: PaymentInitResult (payment_ref, otp_sent=true)
+    Wallet-->>System: OTP Sent to Phone (payment_ref)
     deactivate Wallet
-    Service->>DB: insert_payment(status=PENDING)
+    System->>DB: Insert Payment record (status=PENDING)
     activate DB
-    DB-->>Service: Payment (id, ref)
+    DB-->>System: Payment record saved
     deactivate DB
-    Service-->>API: PaymentInitResponse
-    deactivate Service
-    API-->>UI: 200 OK (Prompt OTP input)
-    deactivate API
+    System-->>UI: Return payment prompt (OTP required)
+    deactivate System
 
-    Owner->>UI: Submit OTP & Wallet PIN
-    UI->>API: POST /subscriptions/subID/pay/confirm (ConfirmPaymentRequest)
-    activate API
-    API->>Service: confirm_payment(subID, otp, pin)
-    activate Service
-    Service->>Wallet: confirm_otp(payment_ref, otp, pin)
+    Owner->>UI: Enter OTP & Wallet PIN
+    UI->>System: Submit payment verification (otp, pin)
+    activate System
+    System->>Wallet: Verify OTP & Deduct Funds
     activate Wallet
-    Wallet-->>Service: PaymentConfirmResult(status=SUCCESS, txn_no)
+    Wallet-->>System: Payment Confirmed (txn_id)
     deactivate Wallet
-    Service->>DB: update_subscription_status(subID, status=ACTIVE)
+    System->>DB: Update Subscription (status=ACTIVE) & Payment (status=COMPLETED)
     activate DB
-    DB-->>Service: OwnerSubscription (status=ACTIVE)
+    DB-->>System: Updated records
     deactivate DB
-    Service-->>API: SuccessResponse
-    deactivate Service
-    API-->>UI: 200 OK (Subscription Activated)
-    deactivate API
-    UI-->>Owner: Display Active Subscription
+    System-->>UI: Return subscription activated status
+    deactivate System
+    UI-->>Owner: Display Active Subscription Badge
 ```
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Method | Description |
+| Step | From → To | Message / Operation | Description |
 |---|---|---|---|
-| 1 | Owner → UI | Select package and click Subscribe | Owner browses the available packages and clicks Subscribe on the chosen tier. |
-| 2 | UI → API | `POST /subscriptions` | UI sends `SubscriptionCreate` payload with `package_id`. |
-| 3 | SubscriptionService → DB | `insert_subscription(status=PENDING)` | Service creates an `OwnerSubscription` record in `PENDING` state awaiting payment. |
-| 4 | API → UI | `201 Created (subscription_id)` | Controller returns the new subscription ID to the UI. |
-| 5 | Owner → UI | Initiate Payment | Owner clicks Pay Now to begin the digital wallet payment process. |
-| 6 | UI → API | `POST /subscriptions/{subID}/pay/initiate` | UI sends a payment initiation request. |
-| 7 | SubscriptionService → Wallet | `create_payment_request(amount, reference)` | Service calls the external Wallet API to create a payment request for the package price. |
-| 8 | Wallet → SubscriptionService | `PaymentInitResult (payment_ref, otp_sent=true)` | Wallet API sends an OTP to the owner's registered wallet phone number. |
-| 9 | SubscriptionService → DB | `insert_payment(status=PENDING)` | Service records the pending payment with the wallet reference. |
-| 10 | API → UI | `200 OK (Prompt OTP input)` | UI shows the OTP entry field to the owner. |
-| 11 | Owner → UI | Submit OTP & Wallet PIN | Owner enters the OTP received on their phone and their wallet PIN. |
-| 12 | UI → API | `POST /subscriptions/{subID}/pay/confirm` | UI sends the confirmation payload. |
-| 13 | SubscriptionService → Wallet | `confirm_otp(payment_ref, otp, pin)` | Service calls the Wallet API to confirm the OTP and deduct funds. |
-| 14 | Wallet → SubscriptionService | `PaymentConfirmResult (status=SUCCESS)` | Wallet confirms the transaction. |
-| 15 | SubscriptionService → DB | `update_subscription_status(subID, ACTIVE)` | Service activates the subscription record. |
-| 16 | API → UI | `200 OK (Subscription Activated)` | Controller confirms activation. |
-| 17 | UI → Owner | Display Active Subscription | Owner's portal shows the active tier, expiry date, and feature limits. |
+| 1 | Owner → UI | Select package & Subscribe | Owner picks a subscription package. |
+| 2 | UI → System | `Create subscription request` | UI requests subscription creation. |
+| 3 | System → DB | `Insert OwnerSubscription` | System creates pending subscription record in DB. |
+| 4 | System → UI | `Return subscription reservation` | System returns subscription ID. |
+| 5 | Owner → UI | Initiate Payment | Owner enters wallet phone number and starts checkout. |
+| 6 | UI → System | `Initiate payment request` | UI sends payment initiation call. |
+| 7 | System → Wallet | `Payment Request` | System initiates payment request via digital wallet gateway. |
+| 8 | Wallet → System | `OTP Sent` | Gateway dispatches SMS OTP code to owner's phone. |
+| 9 | System → DB | `Insert Payment` | System logs pending Payment record in DB. |
+| 10 | System → UI | `Return payment prompt` | System instructs UI to display OTP entry modal. |
+| 11 | Owner → UI | Enter OTP & PIN | Owner types OTP and security PIN. |
+| 12 | UI → System | `Submit payment verification` | UI submits payment verification call. |
+| 13 | System → Wallet | `Verify OTP & Deduct` | System validates OTP with wallet gateway to execute transfer. |
+| 14 | Wallet → System | `Payment Confirmed` | Gateway confirms fund transfer with transaction ID. |
+| 15 | System → DB | `Update Subscription & Payment` | System sets subscription to `ACTIVE` and payment to `COMPLETED`. |
+| 16 | System → UI | `Return subscription activated status` | System responds with activated subscription details. |
+| 17 | UI → Owner | Display Active Subscription | UI shows active subscription badge and tier quota. |
 
 ---
 
@@ -1291,54 +1232,48 @@ sequenceDiagram
 sequenceDiagram
     actor Staff
     participant UI as Management App
-    participant API as SlotBoardController
-    participant Service as ParkingSessionService
-    participant DB as ParkingRepository
+    participant System as Smart Parking System
+    participant DB as Database
 
     Staff->>UI: Request Slot Board for assigned lot
-    UI->>API: GET /parking-lots/lotID/floors
-    activate API
-    API->>DB: get_floors_with_slots(lotID)
+    UI->>System: Request floor and slot layout
+    activate System
+    System->>DB: Fetch floors and slot status grid
     activate DB
-    DB-->>API: list of ParkingFloor & ParkingSlot
+    DB-->>System: Floors and Slots data
     deactivate DB
-    API-->>UI: 200 OK (FloorGridData)
-    deactivate API
+    System-->>UI: Return floor grid layout
+    deactivate System
     UI-->>Staff: Display Slot Board Grid
 
     Staff->>UI: Enter plate_number in search
-    UI->>API: GET /parking-sessions?plate_number=plate
-    activate API
-    API->>Service: find_active_session_by_plate(lotID, plate)
-    activate Service
-    Service->>DB: query_active_session(lotID, plate)
+    UI->>System: Search active session by plate number
+    activate System
+    System->>DB: Search active session by plate number
     activate DB
-    DB-->>Service: ParkingSession (id, car, customer, start_time)
+    DB-->>System: Active ParkingSession details
     deactivate DB
-    Service-->>API: SessionDetailOut
-    deactivate Service
-    API-->>UI: 200 OK (SessionDetailOut)
-    deactivate API
-    UI-->>Staff: Highlight matching slot & session details
+    System-->>UI: Return matching session details
+    deactivate System
+    UI-->>Staff: Highlight matching slot & display session details
 ```
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Method | Description |
+| Step | From → To | Message / Operation | Description |
 |---|---|---|---|
-| 1 | Staff → UI | Request Slot Board for assigned lot | Staff opens the Slot Board page for their assigned parking lot. |
-| 2 | UI → API | `GET /parking-lots/{lotID}/floors` | UI requests all floors and their slot grid for the lot. |
-| 3 | API → DB | `get_floors_with_slots(lotID)` | Controller directly queries the repository for the floor-slot hierarchy. |
-| 4 | DB → API | `list[ParkingFloor & ParkingSlot]` | Repository returns the full floor-slot data with current slot status. |
-| 5 | API → UI | `200 OK (FloorGridData)` | UI receives the grid data. |
-| 6 | UI → Staff | Display Slot Board Grid | UI renders a colour-coded grid: green = AVAILABLE, red = OCCUPIED. |
-| 7 | Staff → UI | Enter plate_number in search | Staff types a vehicle plate number into the search box. |
-| 8 | UI → API | `GET /parking-sessions?plate_number=plate` | UI sends a filtered session query to the API. |
-| 9 | API → ParkingSessionService | `find_active_session_by_plate(lotID, plate)` | Controller delegates plate lookup to the service. |
-| 10 | ParkingSessionService → DB | `query_active_session(lotID, plate)` | Service queries for an ACTIVE session matching the plate in this lot. |
-| 11 | DB → ParkingSessionService | `ParkingSession` | Repository returns the matching session with car and customer info. |
-| 12 | API → UI | `200 OK (SessionDetailOut)` | Controller returns session details. |
-| 13 | UI → Staff | Highlight matching slot & session details | UI highlights the matching slot in the grid and shows session info (car, customer, start time). |
+| 1 | Staff → UI | Request Slot Board | Staff opens the Slot Board for assigned lot. |
+| 2 | UI → System | `Request floor and slot layout` | UI requests floor and slot structure. |
+| 3 | System → DB | `Fetch floors and slots` | System retrieves floors and slots with current availability. |
+| 4 | DB → System | `Floors and Slots data` | Database returns current floor grid data. |
+| 5 | System → UI | `Return floor grid layout` | System responds with grid details. |
+| 6 | UI → Staff | Display Slot Board Grid | UI renders slot grid (green=AVAILABLE, red=OCCUPIED). |
+| 7 | Staff → UI | Enter plate_number in search | Staff types vehicle plate number. |
+| 8 | UI → System | `Search active session by plate` | UI requests active session matching plate. |
+| 9 | System → DB | `Search active session` | System queries database for active session. |
+| 10 | DB → System | `ParkingSession details` | Database returns active session info with car details. |
+| 11 | System → UI | `Return matching session details` | System returns session detail object. |
+| 12 | UI → Staff | Highlight matching slot | UI highlights target slot in grid and shows session popover. |
 
 ---
 
@@ -1348,48 +1283,43 @@ sequenceDiagram
 sequenceDiagram
     actor Staff
     participant UI as Management App
-    participant API as SessionController
-    participant Service as ParkingSessionService
-    participant DB as SessionRepository
+    participant System as Smart Parking System
+    participant DB as Database
 
-    Staff->>UI: Select active session and click Finish
-    UI->>API: PATCH /parking-sessions/sessionID/finish
-    activate API
-    API->>Service: finish_session(sessionID)
-    activate Service
-    Service->>DB: get_session(sessionID)
+    Staff->>UI: Select active session & click Finish
+    UI->>System: Request finish parking session
+    activate System
+    System->>DB: Fetch session details (start_time, rate_per_hour)
     activate DB
-    DB-->>Service: ParkingSession (start_time, rate_per_hour)
+    DB-->>System: ParkingSession details
     deactivate DB
-    Service->>Service: calculate_final_fee(start_time, now, rate)
-    Service->>DB: update_session(status=FINISHED, end_time=now, fee=final_fee)
+    System->>System: Calculate final fee based on duration
+    System->>DB: Update session (status=FINISHED, end_time, final_fee)
     activate DB
-    DB-->>Service: ParkingSession (status=FINISHED)
+    DB-->>System: Updated ParkingSession
     deactivate DB
-    Service->>DB: update_slot_status(slotID, status=AVAILABLE)
+    System->>DB: Update slot status (status=AVAILABLE)
     activate DB
-    DB-->>Service: ParkingSlot (status=AVAILABLE)
+    DB-->>System: Updated ParkingSlot
     deactivate DB
-    Service-->>API: FinishedSessionOut
-    deactivate Service
-    API-->>UI: 200 OK (FinishedSessionOut)
-    deactivate API
-    UI-->>Staff: Display final fee and mark slot AVAILABLE
+    System-->>UI: Return final receipt & calculated fee
+    deactivate System
+    UI-->>Staff: Display receipt & mark slot AVAILABLE
 ```
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Method | Description |
+| Step | From → To | Message / Operation | Description |
 |---|---|---|---|
-| 1 | Staff → UI | Select active session and click Finish | Staff finds the ACTIVE session for a vehicle and clicks the Finish button. |
-| 2 | UI → API | `PATCH /parking-sessions/{sessionID}/finish` | UI sends the finish request with the session ID. |
-| 3 | API → ParkingSessionService | `finish_session(sessionID)` | Controller delegates to the service to compute fee and close the session. |
-| 4 | ParkingSessionService → DB | `get_session(sessionID)` | Service retrieves the full session record including `start_time` and `rate_per_hour`. |
-| 5 | ParkingSessionService | `calculate_final_fee(start_time, now, rate)` | Service calculates: `fee = ceil(duration_hours) × rate_per_hour`. |
-| 6 | ParkingSessionService → DB | `update_session(status=FINISHED, end_time, fee)` | Service persists the finished state with the calculated fee and current timestamp as `end_time`. |
-| 7 | ParkingSessionService → DB | `update_slot_status(slotID, AVAILABLE)` | Service marks the parking slot as AVAILABLE so it can be booked again. |
-| 8 | API → UI | `200 OK (FinishedSessionOut)` | Controller returns the finished session with the final fee amount. |
-| 9 | UI → Staff | Display final fee and mark slot AVAILABLE | UI shows the receipt (duration, final fee) and the slot turns green in the board grid. |
+| 1 | Staff → UI | Select session & click Finish | Staff locates vehicle session and triggers checkout. |
+| 2 | UI → System | `Request finish parking session` | UI sends request to finish session. |
+| 3 | System → DB | `Fetch session details` | System retrieves start time and lot hourly rate. |
+| 4 | DB → System | `ParkingSession details` | Database returns session record. |
+| 5 | System | `Calculate final fee` | System calculates total duration and final fee (`ceil(hours) × rate`). |
+| 6 | System → DB | `Update session` | System updates session status to `FINISHED` with end timestamp and final fee. |
+| 7 | System → DB | `Update slot status` | System sets parking slot status back to `AVAILABLE`. |
+| 8 | System → UI | `Return final receipt & calculated fee` | System returns session receipt payload. |
+| 9 | UI → Staff | Display receipt & mark slot AVAILABLE | UI shows final receipt and updates slot color to green on board. |
 
 ---
 
@@ -1401,82 +1331,70 @@ sequenceDiagram
 sequenceDiagram
     actor Customer
     participant UI as Customer App
-    participant API as AuthController
-    participant Auth as AuthService
-    participant Email as EmailService
-    participant DB as UserRepository
+    participant System as Smart Parking System
+    participant Email as Email Service
+    participant DB as Database
 
-    Customer->>UI: Request customer registration page
+    Customer->>UI: Request registration page
     UI-->>Customer: Render registration form
     Customer->>UI: Submit credentials (name, email, password)
-    UI->>API: POST /auth/register (RegisterRequest)
-    activate API
-    API->>Auth: register_customer(payload)
-    activate Auth
-    Auth->>DB: check_email_exists(email)
+    UI->>System: Submit customer credentials
+    activate System
+    System->>DB: Check if email exists
     activate DB
-    DB-->>Auth: boolean (false)
+    DB-->>System: Email available (false)
     deactivate DB
-    Auth->>DB: create_user(is_verified=false, role=CUSTOMER)
+    System->>DB: Insert User (is_verified=false, role=CUSTOMER)
     activate DB
-    DB-->>Auth: User (id, email)
+    DB-->>System: Created Customer account
     deactivate DB
-    Auth-->>API: UserOut
-    deactivate Auth
-    API-->>UI: 201 Created (UserOut)
-    deactivate API
+    System-->>UI: Return account registration status
+    deactivate System
 
-    UI->>API: POST /auth/send-otp (SendOTPRequest)
-    activate API
-    API->>Email: send_otp_email(email, otp_code)
+    UI->>System: Request verification OTP
+    activate System
+    System->>Email: Send OTP verification code
     activate Email
-    Email-->>Customer: Deliver email with OTP code
+    Email-->>Customer: Deliver email with 6-digit OTP
     deactivate Email
-    API-->>UI: 200 OK (OTP Sent)
-    deactivate API
+    System-->>UI: Return OTP sent status
+    deactivate System
 
     Customer->>UI: Enter OTP code
-    UI->>API: POST /auth/verify-otp (VerifyOTPRequest)
-    activate API
-    API->>Auth: verify_otp(email, code)
-    activate Auth
-    Auth->>DB: update_user_verified(email, is_verified=true)
+    UI->>System: Submit OTP verification code
+    activate System
+    System->>DB: Verify OTP & update User (is_verified=true)
     activate DB
-    DB-->>Auth: User (is_verified=true)
+    DB-->>System: User verified
     deactivate DB
-    Auth->>DB: create_jwt_tokens(user_id)
-    activate DB
-    DB-->>Auth: access_token, refresh_token
-    deactivate DB
-    Auth-->>API: TokenResponse
-    deactivate Auth
-    API-->>UI: 200 OK (TokenResponse)
-    deactivate API
+    System->>System: Generate JWT access & refresh tokens
+    System-->>UI: Return authentication tokens (access_token)
+    deactivate System
     UI-->>Customer: Redirect to Customer Dashboard
 ```
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Method | Description |
+| Step | From → To | Message / Operation | Description |
 |---|---|---|---|
-| 1 | Customer → UI | Request customer registration page | Customer opens the Customer App registration URL. |
-| 2 | UI → Customer | Render registration form | UI shows the form: name, email, password. |
-| 3 | Customer → UI | Submit credentials | Customer fills the form and clicks Register. |
-| 4 | UI → API | `POST /auth/register` | UI sends `RegisterRequest` to the public auth endpoint. |
-| 5 | API → AuthService | `register_customer(payload)` | Controller delegates to the service layer. |
-| 6 | AuthService → DB | `check_email_exists(email)` | Service verifies the email is not already in use. |
-| 7 | AuthService → DB | `create_user(is_verified=false, role=CUSTOMER)` | Service creates the user with `is_verified=false` — login blocked until OTP verification. |
-| 8 | API → UI | `201 Created (UserOut)` | Controller returns the new user's profile. |
-| 9 | UI → API | `POST /auth/send-otp` | UI automatically requests the OTP email immediately after registration. |
-| 10 | API → EmailService | `send_otp_email(email, otp_code)` | API generates a 6-digit OTP and sends it via the email provider. |
-| 11 | EmailService → Customer | Deliver email with OTP code | Customer receives the email with the 6-digit code. |
-| 12 | API → UI | `200 OK (OTP Sent)` | UI shows the OTP entry field. |
-| 13 | Customer → UI | Enter OTP code | Customer types the code from the email. |
-| 14 | UI → API | `POST /auth/verify-otp` | UI sends `VerifyOTPRequest (email, code)`. |
-| 15 | AuthService → DB | `update_user_verified(email, is_verified=true)` | Service marks the user as verified, unblocking login. |
-| 16 | AuthService → DB | `create_jwt_tokens(user_id)` | Service immediately issues JWT tokens after verification. |
-| 17 | API → UI | `200 OK (TokenResponse)` | Controller returns the token pair. |
-| 18 | UI → Customer | Redirect to Customer Dashboard | Customer is now logged in and lands on the dashboard. |
+| 1 | Customer → UI | Request registration page | Customer opens Customer App signup screen. |
+| 2 | UI → Customer | Render registration form | UI presents registration fields. |
+| 3 | Customer → UI | Submit credentials | Customer submits account details. |
+| 4 | UI → System | `Submit customer credentials` | UI posts registration payload. |
+| 5 | System → DB | `Check if email exists` | System verifies email is unique. |
+| 6 | DB → System | `Email available` | Database confirms email is not taken. |
+| 7 | System → DB | `Insert User` | System creates User record with `is_verified=false`. |
+| 8 | System → UI | `Return account registration status` | System returns created account payload. |
+| 9 | UI → System | `Request verification OTP` | UI requests OTP verification code. |
+| 10 | System → Email | `Send OTP code` | System sends 6-digit OTP via Email Service. |
+| 11 | Email → Customer | Deliver OTP | Email Service delivers verification email to Customer inbox. |
+| 12 | System → UI | `Return OTP sent status` | System responds that OTP has been sent. |
+| 13 | Customer → UI | Enter OTP code | Customer submits OTP received via email. |
+| 14 | UI → System | `Submit OTP verification code` | UI posts OTP verification request. |
+| 15 | System → DB | `Update User status` | System marks user `is_verified=true` in DB. |
+| 16 | System | `Generate JWT tokens` | System generates JWT access and refresh tokens. |
+| 17 | System → UI | `Return authentication tokens` | System returns JWT token pair. |
+| 18 | UI → Customer | Display Dashboard | UI stores tokens and redirects Customer to dashboard. |
 
 ---
 
@@ -1486,98 +1404,79 @@ sequenceDiagram
 sequenceDiagram
     actor Customer
     participant UI as Customer App
-    participant API as SessionController
-    participant Service as ParkingSessionService
-    participant Wallet as WalletPaymentClient
-    participant DB as ParkingSessionRepository
+    participant System as Smart Parking System
+    participant Wallet as Payment Gateway
+    participant DB as Database
 
-    Customer->>UI: Select slot, duration & car, click Book
-    UI->>API: POST /parking-sessions/book (BookSessionRequest)
-    activate API
-    API->>Service: book_session(customer_id, bookingData)
-    activate Service
-    Service->>DB: validate_schedule_conflicts(slot_id, car_id, start, end)
+    Customer->>UI: Select slot, car & duration, click Book
+    UI->>System: Submit booking request (slot, car, duration)
+    activate System
+    System->>DB: Validate schedule conflicts & slot availability
     activate DB
-    DB-->>Service: boolean (no_conflict=true)
+    DB-->>System: No conflicts (slot available)
     deactivate DB
-    Service->>Service: calculate_estimated_fee(duration, hourly_rate)
-    Service->>DB: insert_session(status=PENDING)
+    System->>System: Calculate estimated fee
+    System->>DB: Insert ParkingSession (status=PENDING)
     activate DB
-    DB-->>Service: ParkingSession (id, status=PENDING, fee)
+    DB-->>System: Created session (id, estimated_fee)
     deactivate DB
-    Service-->>API: SessionBookOut
-    deactivate Service
-    API-->>UI: 201 Created (session_id, estimated_fee)
-    deactivate API
+    System-->>UI: Return booking reservation & estimated fee
+    deactivate System
 
     Customer->>UI: Click Pay Now & enter wallet phone
-    UI->>API: POST /parking-sessions/sessionID/pay/initiate (PayInitRequest)
-    activate API
-    API->>Service: initiate_payment(sessionID, walletPhone)
-    activate Service
-    Service->>Wallet: create_payment_request(amount, ref)
+    UI->>System: Initiate session payment (wallet_phone)
+    activate System
+    System->>Wallet: Payment Request (amount, phone)
     activate Wallet
-    Wallet-->>Service: PaymentInitResult (payment_ref, otp_sent=true)
+    Wallet-->>System: OTP Sent to Phone (payment_ref)
     deactivate Wallet
-    Service->>DB: insert_payment(status=PENDING)
+    System->>DB: Insert Payment record (status=PENDING)
     activate DB
-    DB-->>Service: Payment (id, ref)
+    DB-->>System: Payment record saved
     deactivate DB
-    Service-->>API: PaymentInitOut
-    deactivate Service
-    API-->>UI: 200 OK (Prompt OTP & PIN input)
-    deactivate API
+    System-->>UI: Return payment prompt (OTP required)
+    deactivate System
 
     Customer->>UI: Enter OTP & Wallet PIN
-    UI->>API: POST /parking-sessions/sessionID/pay/confirm (PayConfirmRequest)
-    activate API
-    API->>Service: confirm_payment(sessionID, otp, pin)
-    activate Service
-    Service->>Wallet: confirm_otp(payment_ref, otp, pin)
+    UI->>System: Submit payment verification (otp, pin)
+    activate System
+    System->>Wallet: Verify OTP & Deduct Funds
     activate Wallet
-    Wallet-->>Service: PaymentConfirmResult (status=SUCCESS, txn_no)
+    Wallet-->>System: Payment Confirmed (txn_id)
     deactivate Wallet
-    Service->>DB: update_session_status(sessionID, status=ACTIVE)
+    System->>DB: Update Session (status=ACTIVE) & Slot (status=OCCUPIED)
     activate DB
-    DB-->>Service: ParkingSession (status=ACTIVE)
+    DB-->>System: Updated records
     deactivate DB
-    Service->>DB: update_slot_status(slot_id, status=OCCUPIED)
-    activate DB
-    DB-->>Service: ParkingSlot (status=OCCUPIED)
-    deactivate DB
-    Service-->>API: PaymentSuccessOut
-    deactivate Service
-    API-->>UI: 200 OK (Payment Confirmed)
-    deactivate API
+    System-->>UI: Return payment confirmation & active pass
+    deactivate System
     UI-->>Customer: Display Active Parking Session
 ```
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Method | Description |
+| Step | From → To | Message / Operation | Description |
 |---|---|---|---|
-| 1 | Customer → UI | Select slot, duration & car, click Book | Customer browses the lot map, selects an AVAILABLE slot, chooses their registered car, sets booking start/end time, and clicks Book. |
-| 2 | UI → API | `POST /parking-sessions/book` | UI sends `BookSessionRequest` with `slot_id`, `car_id`, `start_time`, `end_time`. |
-| 3 | API → ParkingSessionService | `book_session(customer_id, bookingData)` | Controller delegates booking and validation to the service. |
-| 4 | ParkingSessionService → DB | `validate_schedule_conflicts(slot_id, car_id, start, end)` | Service checks that: (a) the slot has no overlapping sessions, and (b) the car has no other PENDING/ACTIVE sessions in the same time window (with 2-hour buffer gap). |
-| 5 | DB → ParkingSessionService | `boolean (no_conflict=true)` | No conflicts found; booking may proceed. |
-| 6 | ParkingSessionService | `calculate_estimated_fee(duration, hourly_rate)` | Service computes the estimated fee: `ceil(duration_hours) × rate_per_hour`. |
-| 7 | ParkingSessionService → DB | `insert_session(status=PENDING)` | Service creates the `ParkingSession` record in `PENDING` state (slot not yet marked occupied). |
-| 8 | API → UI | `201 Created (session_id, estimated_fee)` | UI receives the booking confirmation with session ID and the estimated fee. |
-| 9 | Customer → UI | Click Pay Now & enter wallet phone | Customer proceeds to the payment step and enters their wallet phone number. |
-| 10 | UI → API | `POST /parking-sessions/{sessionID}/pay/initiate` | UI sends payment initiation request. |
-| 11 | ParkingSessionService → Wallet | `create_payment_request(amount, ref)` | Service calls the external Wallet API with the estimated fee and a unique payment reference. |
-| 12 | Wallet → ParkingSessionService | `PaymentInitResult (payment_ref, otp_sent=true)` | Wallet API sends an OTP to the customer's wallet phone number. |
-| 13 | ParkingSessionService → DB | `insert_payment(status=PENDING)` | Service records the pending payment entry with the wallet reference. |
-| 14 | API → UI | `200 OK (Prompt OTP & PIN input)` | UI shows the OTP and wallet PIN entry form. |
-| 15 | Customer → UI | Enter OTP & Wallet PIN | Customer enters the OTP from their phone and their wallet PIN. |
-| 16 | UI → API | `POST /parking-sessions/{sessionID}/pay/confirm` | UI sends `PayConfirmRequest (otp, pin)`. |
-| 17 | ParkingSessionService → Wallet | `confirm_otp(payment_ref, otp, pin)` | Service calls the Wallet API to confirm the OTP and deduct the fee. |
-| 18 | Wallet → ParkingSessionService | `PaymentConfirmResult (status=SUCCESS, txn_no)` | Wallet confirms successful deduction and provides a transaction number. |
-| 19 | ParkingSessionService → DB | `update_session_status(sessionID, ACTIVE)` | Service activates the session — booking is now confirmed. |
-| 20 | ParkingSessionService → DB | `update_slot_status(slot_id, OCCUPIED)` | Service marks the parking slot as OCCUPIED, making it unavailable to other customers. |
-| 21 | API → UI | `200 OK (Payment Confirmed)` | Controller returns the final success response. |
-| 22 | UI → Customer | Display Active Parking Session | Customer is shown the active booking details: slot, floor, lot, duration, and payment receipt. |
+| 1 | Customer → UI | Select slot, car & duration | Customer selects slot, vehicle, and start/end time. |
+| 2 | UI → System | `Submit booking request` | UI sends booking reservation call. |
+| 3 | System → DB | `Validate schedule conflicts` | System checks DB for slot overlap or car double-booking (2-hour buffer gap). |
+| 4 | DB → System | `No conflicts` | Database confirms schedule is available. |
+| 5 | System | `Calculate estimated fee` | System calculates estimated fee based on slot hourly rate. |
+| 6 | System → DB | `Insert ParkingSession` | System saves pending session record. |
+| 7 | System → UI | `Return booking reservation` | System returns session ID and estimated fee. |
+| 8 | Customer → UI | Enter wallet phone & click Pay | Customer inputs wallet phone number. |
+| 9 | UI → System | `Initiate session payment` | UI sends payment initiation request. |
+| 10 | System → Wallet | `Payment Request` | System initiates payment request via Payment Gateway. |
+| 11 | Wallet → System | `OTP Sent` | Gateway dispatches SMS OTP code to Customer's phone. |
+| 12 | System → DB | `Insert Payment` | System logs pending Payment record. |
+| 13 | System → UI | `Return payment prompt` | System instructs UI to show OTP and PIN prompt. |
+| 14 | Customer → UI | Enter OTP & PIN | Customer inputs received OTP and wallet PIN. |
+| 15 | UI → System | `Submit payment verification` | UI sends payment confirmation call. |
+| 16 | System → Wallet | `Verify OTP & Deduct` | Gateway validates OTP and deducts funds. |
+| 17 | Wallet → System | `Payment Confirmed` | Gateway returns transaction confirmation. |
+| 18 | System → DB | `Update Session & Slot` | System sets session to `ACTIVE` and slot status to `OCCUPIED`. |
+| 19 | System → UI | `Return payment confirmation` | System sends success response. |
+| 20 | UI → Customer | Display Active Session | UI displays active booking pass and receipt. |
 
 ---
 
