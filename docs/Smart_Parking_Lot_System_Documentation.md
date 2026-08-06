@@ -316,7 +316,34 @@ erDiagram
 
 ## 2.2 Class Diagram
 
-The following class diagram shows the primary domain models and their key attributes and relationships in the backend application layer.
+The class diagram below represents the full domain model of the Smart Parking Lot System backend. It maps directly to the SQLAlchemy ORM models defined under `app/models/`. Each class corresponds to a database table; attributes represent columns; and methods capture the business operations that operate on the entity's state.
+
+### Notation Guide
+
+| Symbol | Meaning |
+|---|---|
+| `+` | Public member (attribute or method) |
+| `-->`  | Association / Composition (one class references another) |
+| `"1" --> "0..*"` | Multiplicity — one instance relates to zero-or-more instances |
+
+### Class Descriptions
+
+| Class | Layer | Purpose | Key Business Rules |
+|---|---|---|---|
+| **Role** | Auth | Defines the four platform roles (`ADMIN`, `OWNER`, `STAFF`, `CUSTOMER`). Seeded at startup. | Each `User` is assigned exactly one role; role drives all RBAC checks. |
+| **User** | Auth | Core account entity shared by all roles. Stores credentials and profile. | Password stored as bcrypt hash. `is_verified` must be `true` before login is permitted. |
+| **ParkingOwner** | Profile | Owner-specific profile linked 1-to-1 with a `User`. | Must hold an active `OwnerSubscription` to create lots or invite staff. |
+| **Customer** | Profile | Customer-specific profile linked 1-to-1 with a `User`. | Stores optional geolocation (`lat/lng`) for proximity-based lot discovery. |
+| **ParkingStaff** | Profile | Staff profile linked to both a `User` and a specific `ParkingLot`. | Staff can only manage sessions belonging to their assigned lot. |
+| **Car** | Vehicle | A registered vehicle (plate, brand, colour) belonging to a `Customer`. | Plate number must be globally unique. A car may not have two overlapping `PENDING`/`ACTIVE` sessions. |
+| **ParkingLot** | Infrastructure | Top-level parking facility. Contains floors and staff. | `is_active` controls customer visibility. `rate_per_hour` drives fee calculation. |
+| **ParkingFloor** | Infrastructure | Named floor within a lot (e.g., "Ground", "Level 1"). | A floor must belong to a lot; deleting a floor cascades to its slots. |
+| **ParkingSlot** | Infrastructure | Individual bookable space on a floor. Tracks `status` (AVAILABLE / OCCUPIED). | A slot may not be double-booked; a 2-hour buffer gap is enforced between consecutive sessions. |
+| **ParkingSession** | Session | Records a booking from `PENDING → ACTIVE → FINISHED`. Tracks start/end times, duration, and computed fee. | Fee is recalculated at finish time using actual duration × `rate_per_hour`. |
+| **Package** | Subscription | Subscription tier defined by Admin (price, duration, lot cap, staff cap). | `is_active=false` hides a package from the owner marketplace without deleting historical subscriptions. |
+| **OwnerSubscription** | Subscription | Instance of an owner purchasing a package. Tracks `PENDING → ACTIVE` state. | An owner may only have one `ACTIVE` subscription at a time. Lot/staff limits come from the associated `Package`. |
+| **WalletAccount** | Payment | Digital wallet API credentials (API key, phone) belonging to either Admin (subscription fees) or Owner (session fees). | The API key is used to initiate and confirm two-phase wallet payments. |
+| **Payment** | Payment | Ledger record for a single wallet transaction. Linked to either a `ParkingSession` or an `OwnerSubscription`. | Tracks `PENDING → COMPLETED / FAILED` status and stores the wallet transaction reference for audit. |
 
 ```mermaid
 classDiagram
@@ -563,11 +590,28 @@ classDiagram
 
 ## 2.3 Use Case Diagram
 
-The system defines four actors — **System Admin**, **Parking Owner**, **Parking Staff**, and **Customer** — each with a distinct set of permitted actions. The subsections below present standard UML Use Case Diagrams for each role, with an outer **System Boundary** box enclosing oval use cases and explicit `<<include>>` / `<<extend>>` relationships:
+The system defines four actors — **System Admin**, **Parking Owner**, **Parking Staff**, and **Customer** — each with a distinct set of permitted actions. The subsections below present standard UML Use Case Diagrams for each role, with an outer **System Boundary** box enclosing oval use cases and explicit `include` / `extend` relationships:
 
 - **Solid line** `---` — Actor association to entry-point use cases.
-- **Dashed arrow** `-.->` labelled `<<include>>` — mandatory dependency (base use case **always** triggers included use case).
-- **Dashed arrow** `-.->` labelled `<<extend>>` — optional functionality (extending use case conditionally extends base use case).
+- **Dashed arrow** `-.->` labelled `include` — mandatory dependency (base use case **always** triggers included use case).
+- **Dashed arrow** `-.->` labelled `extend` — optional functionality (extending use case conditionally extends base use case).
+
+### Actor Summary
+
+| Actor | Description | Entry Point | Scope of Authority |
+|---|---|---|---|
+| **System Admin** | Platform super-user seeded at system startup. Not self-registered. | Admin Portal login | Platform-wide: user management, owner monitoring, subscription packages, wallet configuration, read-only access to all lots, sessions, and payments. |
+| **Parking Owner** | Business operator who self-registers and manages parking facilities. | Owner Portal login after registration | Own resources: lots, floors, slots, staff, subscriptions, and revenue data. |
+| **Parking Staff** | Operational user assigned to a single lot by the owner. | Staff Portal login | Single lot: slot board monitoring, session list, and finishing active sessions. |
+| **Customer** | End user of the customer-facing app. Self-registers with email verification. | Customer App login after OTP | Own account: vehicle management, lot discovery, slot booking, wallet payments, and session history. |
+
+### Relationship Notation
+
+| Notation | Name | When To Use |
+|---|---|---|
+| Solid actor line `---` | **Association** | Connects an actor to a use case they can directly initiate. |
+| Dashed arrow `include` | **Include** | The source use case **always and unconditionally** triggers the target use case (mandatory sub-flow). |
+| Dashed arrow `extend` | **Extend** | The source use case **optionally and conditionally** extends the target use case (optional behaviour). |
 
 ---
 
@@ -577,24 +621,24 @@ The System Admin is the platform super-user. Admin accounts are seeded by the sy
 
 ```mermaid
 graph LR
-    Admin["👤 System Admin"]
+    Admin["System Admin"]
 
     subgraph "System Boundary - Smart Parking Admin Portal"
-        A1(["1. Login & Logout"])
-        A2(["2. Change Password"])
-        A3(["3. Update Profile"])
-        B1(["4. View All Users"])
-        B2(["5. Activate/Deactivate User"])
-        C1(["6. View Parking Owners"])
-        C2(["7. Deactivate Owner Account"])
-        D1(["8. Create Subscription Package"])
-        D2(["9. Edit Subscription Package"])
-        D3(["10. Toggle Package Status"])
-        E1(["11. View Parking Lots"])
-        E2(["12. View Subscriptions"])
-        E3(["13. View Payments"])
-        E4(["14. View System Dashboard"])
-        F1(["15. Manage Platform Wallet"])
+        A1(["Login and Logout"])
+        A2(["Change Password"])
+        A3(["Update Profile"])
+        B1(["View All Users"])
+        B2(["Activate or Deactivate User"])
+        C1(["View Parking Owners"])
+        C2(["Deactivate Owner Account"])
+        D1(["Create Subscription Package"])
+        D2(["Edit Subscription Package"])
+        D3(["Toggle Package Status"])
+        E1(["View Parking Lots"])
+        E2(["View Subscriptions"])
+        E3(["View Payments"])
+        E4(["View System Dashboard"])
+        F1(["Manage Platform Wallet"])
     end
 
     Admin --- A1
@@ -608,12 +652,12 @@ graph LR
     Admin --- E4
     Admin --- F1
 
-    %% include & extend relationships
-    E2 -.->|"<<include>>"| C1
-    B2 -.->|"<<extend>>"| B1
-    C2 -.->|"<<extend>>"| C1
-    D2 -.->|"<<extend>>"| D1
-    D3 -.->|"<<extend>>"| D2
+    %% include and extend relationships
+    E2 -.->|include| C1
+    B2 -.->|extend| B1
+    C2 -.->|extend| C1
+    D2 -.->|extend| D1
+    D3 -.->|extend| D2
 ```
 
 | Use Case | Relationship | Description |
@@ -622,18 +666,18 @@ graph LR
 | **Change Password** | — | Update the account password by providing the current password and a new password. |
 | **Update Profile** | — | Edit account name and phone number. |
 | **View All Users** | — | Browse and search all registered users across every role on the platform. |
-| **Activate or Deactivate User** | `<<extend>>` View All Users | Optional action performed while viewing users — toggled without leaving the list view. |
+| **Activate or Deactivate User** | `extend` View All Users | Optional action performed while viewing users — toggled without leaving the list view. |
 | **View All Parking Owners** | — | List all registered parking owner accounts with their company names and subscription status. |
-| **Deactivate Owner Account** | `<<extend>>` View All Parking Owners | Optional suspension action available when viewing an owner's detail record. |
+| **Deactivate Owner Account** | `extend` View All Parking Owners | Optional suspension action available when viewing an owner's detail record. |
 | **Create Subscription Package** | — | Define a new tiered subscription plan with price, duration, and lot/staff limits. |
-| **Edit Subscription Package** | `<<extend>>` Create Subscription Package | Optional modification of an existing package after it has been created. |
-| **Activate or Deactivate Package** | `<<extend>>` Edit Subscription Package | Optional availability toggle, always triggered through the edit flow. |
+| **Edit Subscription Package** | `extend` Create Subscription Package | Optional modification of an existing package after it has been created. |
+| **Activate or Deactivate Package** | `extend` Edit Subscription Package | Optional availability toggle, always triggered through the edit flow. |
 | **View All Parking Lots** | — | Read-only platform-wide overview of all registered lots. |
-| **View All Subscriptions** | `<<include>>` View All Parking Owners | Always displays owner context alongside each subscription record. |
+| **View All Subscriptions** | `include` View All Parking Owners | Always displays owner context alongside each subscription record. |
 | **View All Payments** | — | Audit the complete payment ledger for session fees and subscription purchases. |
 | **View System Dashboard** | — | Aggregated platform statistics: total revenue, active sessions, users, and owner counts. |
 | **Create Platform Wallet Account** | — | Register the Admin's digital wallet API key that receives subscription fees. |
-| **Update Platform Wallet Account** | `<<extend>>` Create Platform Wallet Account | Optional rotation of API key or wallet phone after the account has been created. |
+| **Update Platform Wallet Account** | `extend` Create Platform Wallet Account | Optional rotation of API key or wallet phone after the account has been created. |
 
 ---
 
@@ -643,28 +687,28 @@ A Parking Owner manages one or more parking facilities on the platform. Parking 
 
 ```mermaid
 graph LR
-    Owner["🏢 Parking Owner"]
+    Owner["Parking Owner"]
 
     subgraph "System Boundary - Smart Parking Owner Portal"
-        A0(["1. Self-Register Owner Account"])
-        A1(["2. Login & Logout"])
-        A2(["3. Manage Profile & Password"])
-        B1(["4. Browse Packages"])
-        B2(["5. Purchase Subscription"])
-        B3(["6. Pay via Wallet"])
-        B4(["7. Confirm Payment with OTP"])
-        B5(["8. View Subscription Status"])
-        C1(["9. Manage Owner Wallet Account"])
-        D1(["10. Create Parking Lot"])
-        D2(["11. Edit Parking Lot Details"])
-        D3(["12. Add Parking Floor"])
-        D4(["13. Add Parking Slot"])
-        D5(["14. Edit/Delete Slot"])
-        E1(["15. Invite Staff to Lot"])
-        E2(["16. View Staff List"])
-        F1(["17. View Parking Sessions"])
-        F2(["18. View Revenue Summary"])
-        F3(["19. View Owner Dashboard"])
+        A0(["Self-Register Owner Account"])
+        A1(["Login and Logout"])
+        A2(["Manage Profile and Password"])
+        B1(["Browse Packages"])
+        B2(["Purchase Subscription"])
+        B3(["Pay via Wallet"])
+        B4(["Confirm Payment with OTP"])
+        B5(["View Subscription Status"])
+        C1(["Manage Owner Wallet Account"])
+        D1(["Create Parking Lot"])
+        D2(["Edit Parking Lot Details"])
+        D3(["Add Parking Floor"])
+        D4(["Add Parking Slot"])
+        D5(["Edit or Delete Slot"])
+        E1(["Invite Staff to Lot"])
+        E2(["View Staff List"])
+        F1(["View Parking Sessions"])
+        F2(["View Revenue Summary"])
+        F3(["View Owner Dashboard"])
     end
 
     Owner --- A0
@@ -679,15 +723,15 @@ graph LR
     Owner --- F1
     Owner --- F3
 
-    %% include & extend relationships
-    B3 -.->|"<<include>>"| B2
-    B4 -.->|"<<include>>"| B3
-    D3 -.->|"<<include>>"| D1
-    D4 -.->|"<<include>>"| D3
-    E1 -.->|"<<include>>"| D1
-    D2 -.->|"<<extend>>"| D1
-    D5 -.->|"<<extend>>"| D4
-    F2 -.->|"<<extend>>"| F1
+    %% include and extend relationships
+    B3 -.->|include| B2
+    B4 -.->|include| B3
+    D3 -.->|include| D1
+    D4 -.->|include| D3
+    E1 -.->|include| D1
+    D2 -.->|extend| D1
+    D5 -.->|extend| D4
+    F2 -.->|extend| F1
 ```
 
 | Use Case | Relationship | Description |
@@ -698,23 +742,23 @@ graph LR
 | **Update Profile** | — | Edit display name and phone number. |
 | **Browse Available Packages** | — | View all active subscription packages with price, duration, and lot/staff limits. |
 | **Purchase Subscription** | — | Initiate a subscription to a chosen package, creating a PENDING subscription record. |
-| **Pay Subscription via Wallet** | `<<include>>` Purchase Subscription | Always triggered after initiating a subscription — starts the two-phase wallet payment. |
-| **Confirm Subscription Payment with OTP** | `<<include>>` Pay Subscription via Wallet | Always required to finalise payment — submits OTP and PIN to activate the subscription. |
+| **Pay Subscription via Wallet** | `include` Purchase Subscription | Always triggered after initiating a subscription — starts the two-phase wallet payment. |
+| **Confirm Subscription Payment with OTP** | `include` Pay Subscription via Wallet | Always required to finalise payment — submits OTP and PIN to activate the subscription. |
 | **View Subscription Status** | — | Check current expiry date, package tier, and payment history. |
 | **Create Owner Wallet Account** | — | Register the digital wallet API key that receives parking session fees from customers. |
-| **Update Owner Wallet Account** | `<<extend>>` Create Owner Wallet Account | Optionally rotate API key or update wallet phone after initial creation. |
+| **Update Owner Wallet Account** | `extend` Create Owner Wallet Account | Optionally rotate API key or update wallet phone after initial creation. |
 | **Create Parking Lot** | — | Add a new lot with name, type, hourly rate, and map URL. Requires an active subscription within lot limits. |
-| **Edit Parking Lot Details** | `<<extend>>` Create Parking Lot | Optionally update lot name, rate, map URL, or type after creation. |
-| **Activate or Deactivate Lot** | `<<extend>>` Edit Parking Lot Details | Optionally toggle lot visibility from within the edit flow. |
-| **Add Parking Floor** | `<<include>>` Create Parking Lot | Always requires an existing lot — floor cannot exist independently. |
-| **Edit or Delete Floor** | `<<extend>>` Add Parking Floor | Optionally rename or remove a floor after it has been created. |
-| **Add Parking Slot** | `<<include>>` Add Parking Floor | Always requires an existing floor — slot cannot exist without a floor. |
-| **Edit or Delete Slot** | `<<extend>>` Add Parking Slot | Optionally update slot details or remove a slot after creation. |
-| **Invite Staff to Lot** | `<<include>>` Create Parking Lot | Always requires an existing lot to assign staff to. Respects max_staff subscription limit. |
-| **Remove Staff from Lot** | `<<extend>>` View Staff List | Optionally unlinks a staff member when viewing the staff list. |
+| **Edit Parking Lot Details** | `extend` Create Parking Lot | Optionally update lot name, rate, map URL, or type after creation. |
+| **Activate or Deactivate Lot** | `extend` Edit Parking Lot Details | Optionally toggle lot visibility from within the edit flow. |
+| **Add Parking Floor** | `include` Create Parking Lot | Always requires an existing lot — floor cannot exist independently. |
+| **Edit or Delete Floor** | `extend` Add Parking Floor | Optionally rename or remove a floor after it has been created. |
+| **Add Parking Slot** | `include` Add Parking Floor | Always requires an existing floor — slot cannot exist without a floor. |
+| **Edit or Delete Slot** | `extend` Add Parking Slot | Optionally update slot details or remove a slot after creation. |
+| **Invite Staff to Lot** | `include` Create Parking Lot | Always requires an existing lot to assign staff to. Respects max_staff subscription limit. |
+| **Remove Staff from Lot** | `extend` View Staff List | Optionally unlinks a staff member when viewing the staff list. |
 | **View Staff List** | — | See all staff members assigned to each of the owner's lots. |
 | **View Parking Sessions** | — | List all sessions (PENDING, ACTIVE, FINISHED) across the owner's lots. |
-| **View Revenue Summary** | `<<extend>>` View Parking Sessions | Optional aggregated revenue view triggered from within the sessions page. |
+| **View Revenue Summary** | `extend` View Parking Sessions | Optional aggregated revenue view triggered from within the sessions page. |
 | **View Owner Dashboard** | — | Summary cards: active sessions, today's revenue, slot occupancy rate, subscription status. |
 
 ---
@@ -725,18 +769,18 @@ Parking Staff are operational users assigned to a specific parking lot by its ow
 
 ```mermaid
 graph LR
-    Staff["👷 Parking Staff"]
+    Staff["Parking Staff"]
 
     subgraph "System Boundary - Smart Parking Staff Portal"
-        A1(["1. Login & Logout"])
-        A2(["2. Manage Profile & Password"])
-        B1(["3. View Slot Board"])
-        B2(["4. Filter Slots by Floor"])
-        B3(["5. Search Session by Plate Number"])
-        C1(["6. View Session List"])
-        C2(["7. View Session Details"])
-        C3(["8. Finish Active Session"])
-        D1(["9. View Staff Dashboard"])
+        A1(["Login and Logout"])
+        A2(["Manage Profile and Password"])
+        B1(["View Slot Board"])
+        B2(["Filter Slots by Floor"])
+        B3(["Search Session by Plate Number"])
+        C1(["View Session List"])
+        C2(["View Session Details"])
+        C3(["Finish Active Session"])
+        D1(["View Staff Dashboard"])
     end
 
     Staff --- A1
@@ -745,11 +789,11 @@ graph LR
     Staff --- C1
     Staff --- D1
 
-    %% include & extend relationships
-    B2 -.->|"<<include>>"| B1
-    C2 -.->|"<<include>>"| C1
-    C3 -.->|"<<include>>"| C2
-    B3 -.->|"<<extend>>"| B1
+    %% include and extend relationships
+    B2 -.->|include| B1
+    C2 -.->|include| C1
+    C3 -.->|include| C2
+    B3 -.->|extend| B1
 ```
 
 | Use Case | Relationship | Description |
@@ -758,11 +802,11 @@ graph LR
 | **Change Password** | — | Update account password via the profile settings page. |
 | **Update Profile** | — | Edit display name and phone number. |
 | **View Slot Board for Assigned Lot** | — | Real-time occupancy grid of all slots across floors for the assigned lot. |
-| **View Slot Availability by Floor** | `<<include>>` View Slot Board | Always triggered as part of viewing the slot board — the board is organised by floor tabs. |
-| **Search Session by Plate Number** | `<<extend>>` View Slot Board | Optional search action available from the slot board to locate a session by plate. |
+| **View Slot Availability by Floor** | `include` View Slot Board | Always triggered as part of viewing the slot board — the board is organised by floor tabs. |
+| **Search Session by Plate Number** | `extend` View Slot Board | Optional search action available from the slot board to locate a session by plate. |
 | **View Session List** | — | Browse all sessions visible to this staff member's assigned lot, with status filters. |
-| **View Session Details** | `<<include>>` View Session List | Always navigated to from the session list — requires a session record to be selected first. |
-| **Finish Active Parking Session** | `<<include>>` View Session Details · `<<extend>>` View Session Details | Always requires viewing session details first; the finish action is then optionally triggered from that detail view. |
+| **View Session Details** | `include` View Session List | Always navigated to from the session list — requires a session record to be selected first. |
+| **Finish Active Parking Session** | `include` View Session Details · `extend` View Session Details | Always requires viewing session details first; the finish action is then optionally triggered from that detail view. |
 | **View Staff Dashboard** | — | Summary of active sessions in progress at the assigned lot and any pending actions. |
 
 ---
@@ -773,23 +817,23 @@ Customers are end-users of the parking platform. They self-register, manage vehi
 
 ```mermaid
 graph LR
-    Customer["🚗 Customer"]
+    Customer["Customer"]
 
     subgraph "System Boundary - Smart Parking Customer App"
-        A1(["1. Register Account"])
-        A2(["2. Verify Email via OTP"])
-        A3(["3. Login & Logout"])
-        A4(["4. Manage Profile & Vehicles"])
-        B1(["5. Browse Parking Lots"])
-        B2(["6. View Lot & Slot Availability"])
-        B3(["7. View 3D Parking Layout"])
-        C1(["8. Book Parking Slot"])
-        C2(["9. Initiate Wallet Payment"])
-        C3(["10. Confirm Payment with OTP"])
-        D1(["11. View Session History"])
-        D2(["12. View Session Details"])
-        D3(["13. Finish Own Session"])
-        E1(["14. View Customer Dashboard"])
+        A1(["Register Account"])
+        A2(["Verify Email via OTP"])
+        A3(["Login and Logout"])
+        A4(["Manage Profile and Vehicles"])
+        B1(["Browse Parking Lots"])
+        B2(["View Lot and Slot Availability"])
+        B3(["View 3D Parking Layout"])
+        C1(["Book Parking Slot"])
+        C2(["Initiate Wallet Payment"])
+        C3(["Confirm Payment with OTP"])
+        D1(["View Session History"])
+        D2(["View Session Details"])
+        D3(["Finish Own Session"])
+        E1(["View Customer Dashboard"])
     end
 
     Customer --- A1
@@ -799,45 +843,64 @@ graph LR
     Customer --- D1
     Customer --- E1
 
-    %% include & extend relationships
-    A2 -.->|"<<include>>"| A1
-    B2 -.->|"<<include>>"| B1
-    C1 -.->|"<<include>>"| B2
-    C2 -.->|"<<include>>"| C1
-    C3 -.->|"<<include>>"| C2
-    D2 -.->|"<<include>>"| D1
-    B3 -.->|"<<extend>>"| B2
-    D3 -.->|"<<extend>>"| D1
+    %% include and extend relationships
+    A2 -.->|include| A1
+    B2 -.->|include| B1
+    C1 -.->|include| B2
+    C2 -.->|include| C1
+    C3 -.->|include| C2
+    D2 -.->|include| D1
+    B3 -.->|extend| B2
+    D3 -.->|extend| D1
 ```
 
 | Use Case | Relationship | Description |
 |---|---|---|
 | **Register New Account** | — | Self-register with name, email, and password. Account starts in an unverified state. |
-| **Verify Email via OTP** | `<<include>>` Register New Account | Always required immediately after registration — submits the OTP sent to the registered email. |
+| **Verify Email via OTP** | `include` Register New Account | Always required immediately after registration — submits the OTP sent to the registered email. |
 | **Login and Logout** | — | Authenticate with email and password. Logout revokes the refresh token. |
 | **Change Password** | — | Update account password from the profile page. |
 | **Update Profile** | — | Edit display name and phone number. |
 | **Add Vehicle** | — | Register a car with plate number, brand, and colour. Plate must be unique across the platform. |
-| **Edit Vehicle Details** | `<<extend>>` View Vehicle List | Optionally triggered when viewing the vehicle list to update brand or colour. |
-| **Delete Vehicle** | `<<extend>>` View Vehicle List | Optionally remove a vehicle from the list. Vehicles with active sessions cannot be deleted. |
+| **Edit Vehicle Details** | `extend` View Vehicle List | Optionally triggered when viewing the vehicle list to update brand or colour. |
+| **Delete Vehicle** | `extend` View Vehicle List | Optionally remove a vehicle from the list. Vehicles with active sessions cannot be deleted. |
 | **View Vehicle List** | — | See all registered cars linked to the customer account. |
 | **Browse Available Parking Lots** | — | View active PUBLIC parking lots with names, locations, and hourly rates. |
-| **View Lot Details and Location** | `<<include>>` Browse Available Parking Lots | Always navigated to from the lot list — requires a lot to be selected first. |
-| **View Floor and Slot Availability** | `<<include>>` View Lot Details and Location | Always loaded as part of the lot detail page — shows per-floor slot grid. |
-| **View 3D Parking Layout** | `<<extend>>` View Floor and Slot Availability | Optionally switch to an interactive 3D floor view from the slot grid. |
-| **View 3D Slot View** | `<<extend>>` View 3D Parking Layout | Optionally drill into an immersive 3D view of a single slot from the 3D floor view. |
-| **Book Parking Slot for Time Window** | `<<include>>` View Floor and Slot Availability | Always triggered from the slot grid — requires a visible AVAILABLE slot to book. |
-| **Initiate Wallet Payment for Session** | `<<include>>` Book Parking Slot | Always triggered immediately after a booking is created — starts the two-phase wallet payment. |
-| **Confirm Payment with OTP and PIN** | `<<include>>` Initiate Wallet Payment | Always required to finalise payment — submits OTP and PIN; on success the session becomes ACTIVE. |
-| **Finish Own Parking Session** | `<<extend>>` View Own Sessions | Optionally mark an ACTIVE session as FINISHED from the sessions list, releasing the slot. |
+| **View Lot Details and Location** | `include` Browse Available Parking Lots | Always navigated to from the lot list — requires a lot to be selected first. |
+| **View Floor and Slot Availability** | `include` View Lot Details and Location | Always loaded as part of the lot detail page — shows per-floor slot grid. |
+| **View 3D Parking Layout** | `extend` View Floor and Slot Availability | Optionally switch to an interactive 3D floor view from the slot grid. |
+| **View 3D Slot View** | `extend` View 3D Parking Layout | Optionally drill into an immersive 3D view of a single slot from the 3D floor view. |
+| **Book Parking Slot for Time Window** | `include` View Floor and Slot Availability | Always triggered from the slot grid — requires a visible AVAILABLE slot to book. |
+| **Initiate Wallet Payment for Session** | `include` Book Parking Slot | Always triggered immediately after a booking is created — starts the two-phase wallet payment. |
+| **Confirm Payment with OTP and PIN** | `include` Initiate Wallet Payment | Always required to finalise payment — submits OTP and PIN; on success the session becomes ACTIVE. |
+| **Finish Own Parking Session** | `extend` View Own Sessions | Optionally mark an ACTIVE session as FINISHED from the sessions list, releasing the slot. |
 | **View Own Sessions** | — | Browse all personal sessions with status filters and fee summaries. |
-| **View Session Details and Fee** | `<<include>>` View Own Sessions | Always navigated to from the session list to view the full session record and payment reference. |
+| **View Session Details and Fee** | `include` View Own Sessions | Always navigated to from the session list to view the full session record and payment reference. |
 | **View Customer Dashboard** | — | Summary showing the current active session, recent history, and quick links to browse lots and manage vehicles. |
 
 
 ## 2.4 Sequence Diagram
 
-Each role's core workflows are illustrated below using sequence diagrams. Actors interact left-to-right through the **Management App** or **Customer App** → **Smart Parking API** → **Database**, with external services (Email, Digital Wallet) where applicable.
+Each role's core workflows are illustrated below using standard UML sequence diagrams. Actors interact with the system via the **Management App** or **Customer App** (UI), which communicates with the backend **Controller / Service** layer and the **Database**, plus external services (Email, Digital Wallet) where applicable. Lifelines feature vertical activation bars representing active execution states.
+
+### Participants / Lifelines Legend
+
+| Participant Alias | Full Name | Role |
+|---|---|---|
+| **UI** | Management App / Customer App | Frontend SPA that presents forms and sends API requests. |
+| **API** | `*Controller` (e.g., AuthController, PackageController) | FastAPI router that validates requests and delegates to the service layer. |
+| **Service** | `*Service` (e.g., AuthService, ParkingSessionService) | Business logic layer; orchestrates DB calls and external integrations. |
+| **DB** | `*Repository` (e.g., UserRepository, SessionRepository) | SQLAlchemy data-access layer; executes ORM queries against PostgreSQL. |
+| **Email** | EmailService | SMTP / third-party email provider that sends OTP verification emails. |
+| **Wallet** | WalletPaymentClient | External digital wallet API used for two-phase payment (initiate + confirm OTP). |
+
+### Lifeline Notation
+
+| Symbol | Meaning |
+|---|---|
+| `activate` / `deactivate` | Vertical activation bar showing when a lifeline is processing a request. |
+| `->>` | Synchronous message call (request). |
+| `-->>` | Return message (response). |
 
 ---
 
@@ -847,21 +910,52 @@ Each role's core workflows are illustrated below using sequence diagrams. Actors
 
 ```mermaid
 sequenceDiagram
-    participant Admin
-    participant App as Management App
-    participant API as Smart Parking API
-    participant DB as Database
+    actor Admin
+    participant UI as Management App
+    participant API as AuthController
+    participant Auth as AuthService
+    participant DB as UserRepository
 
-    Admin->>App: Open login page and enter email and password
-    App->>API: POST /auth/login
-    API->>DB: Lookup user by email
-    DB-->>API: User record with hashed password and role
-    API->>API: Verify bcrypt password hash
-    API->>DB: Issue JWT access token and refresh token
-    DB-->>API: Tokens stored
-    API-->>App: 200 OK - access token and refresh token
-    App-->>Admin: Redirect to Admin Dashboard
+    Admin->>UI: Request login page
+    UI-->>Admin: Render login form
+    Admin->>UI: Submit credentials (email, password)
+    UI->>API: POST /auth/login (LoginRequest)
+    activate API
+    API->>Auth: authenticate(email, password)
+    activate Auth
+    Auth->>DB: get_by_email(email)
+    activate DB
+    DB-->>Auth: User (hashed_password, role)
+    deactivate DB
+    Auth->>Auth: verify_password(password, hashed_password)
+    Auth->>DB: create_jwt_tokens(user_id)
+    activate DB
+    DB-->>Auth: access_token, refresh_token
+    deactivate DB
+    Auth-->>API: TokenResponse (access_token, refresh_token)
+    deactivate Auth
+    API-->>UI: 200 OK (TokenResponse)
+    deactivate API
+    UI-->>Admin: Display Dashboard
 ```
+
+#### Step-by-Step Description
+
+| Step | From → To | Message / Method | Description |
+|---|---|---|---|
+| 1 | Admin → UI | Request login page | Admin opens the Management App login URL. |
+| 2 | UI → Admin | Render login form | UI renders the email/password input form. |
+| 3 | Admin → UI | Submit credentials | Admin enters email and password and clicks Sign In. |
+| 4 | UI → API | `POST /auth/login` | UI sends `LoginRequest` payload to the auth endpoint. |
+| 5 | API → AuthService | `authenticate(email, password)` | Controller delegates credential validation to the service layer. |
+| 6 | AuthService → DB | `get_by_email(email)` | Service fetches the User record including the hashed password and role. |
+| 7 | DB → AuthService | `User` | Repository returns the matching user record. |
+| 8 | AuthService | `verify_password()` | Service hashes the submitted password and compares against the stored hash. |
+| 9 | AuthService → DB | `create_jwt_tokens(user_id)` | On password match, service requests new JWT access + refresh token pair. |
+| 10 | DB → AuthService | `access_token, refresh_token` | Token pair returned to the service. |
+| 11 | AuthService → API | `TokenResponse` | Service returns the token response object to the controller. |
+| 12 | API → UI | `200 OK (TokenResponse)` | Controller sends the token pair back to the frontend. |
+| 13 | UI → Admin | Display Dashboard | UI stores tokens and redirects the admin to the dashboard page. |
 
 ---
 
@@ -869,28 +963,62 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant Admin
-    participant App as Management App
-    participant API as Smart Parking API
-    participant DB as Database
+    actor Admin
+    participant UI as Management App
+    participant API as PackageController
+    participant Service as PackageService
+    participant DB as PackageRepository
 
-    Admin->>App: Fill package form - name, price, duration days, max lots, max staff
-    App->>API: POST /packages
-    API->>DB: Validate ADMIN role from JWT token
-    DB-->>API: Role confirmed
-    API->>DB: Create Package record with is_active set to true
-    DB-->>API: Package created with assigned id
-    API-->>App: 201 Created - package details
-    App-->>Admin: Package appears in active list
+    Admin->>UI: Select Create Package
+    UI-->>Admin: Render package form
+    Admin->>UI: Submit packageData (name, price, duration, limits)
+    UI->>API: POST /packages (PackageCreate)
+    activate API
+    API->>Service: create_package(packageData)
+    activate Service
+    Service->>DB: insert(packageData)
+    activate DB
+    DB-->>Service: Package (id, name, price, is_active=true)
+    deactivate DB
+    Service-->>API: Package
+    deactivate Service
+    API-->>UI: 201 Created (Package)
+    deactivate API
+    UI-->>Admin: Display Package List
 
-    Admin->>App: Click Deactivate on a package
-    App->>API: PATCH /packages/ID/deactivate
-    API->>DB: Validate ADMIN role
-    API->>DB: Set package is_active to false
-    DB-->>API: Updated
-    API-->>App: 200 OK - package status deactivated
-    App-->>Admin: Package badge changes to inactive
+    Admin->>UI: Click Deactivate Package (packageID)
+    UI->>API: PATCH /packages/packageID/deactivate
+    activate API
+    API->>Service: deactivate_package(packageID)
+    activate Service
+    Service->>DB: update_status(packageID, is_active=false)
+    activate DB
+    DB-->>Service: boolean (true)
+    deactivate DB
+    Service-->>API: SuccessResponse
+    deactivate Service
+    API-->>UI: 200 OK (SuccessResponse)
+    deactivate API
+    UI-->>Admin: Update Package Status Badge
 ```
+
+#### Step-by-Step Description
+
+| Step | From → To | Message / Method | Description |
+|---|---|---|---|
+| 1 | Admin → UI | Select Create Package | Admin navigates to the Package Management page and clicks "New Package". |
+| 2 | Admin → UI | Submit form (name, price, duration, lot_cap, staff_cap) | Admin fills in package details. |
+| 3 | UI → API | `POST /packages` | UI sends `PackageCreate` payload to the packages endpoint. |
+| 4 | API → PackageService | `create_package(packageData)` | Controller delegates to the service layer. |
+| 5 | PackageService → DB | `insert(packageData)` | Service persists the new package record with `is_active=true`. |
+| 6 | DB → PackageService | `Package` | Repository returns the newly created package. |
+| 7 | API → UI | `201 Created (Package)` | Controller returns the created Package to the UI. |
+| 8 | UI → Admin | Display Package List | Package appears in the active package list. |
+| 9 | Admin → UI | Click Deactivate Package | Admin selects an existing package and clicks Deactivate. |
+| 10 | UI → API | `PATCH /packages/{packageID}/deactivate` | UI sends deactivation request. |
+| 11 | PackageService → DB | `update_status(packageID, is_active=false)` | Service updates the package's `is_active` flag to `false`. |
+| 12 | API → UI | `200 OK (SuccessResponse)` | Controller confirms deactivation. |
+| 13 | UI → Admin | Update Package Status Badge | Package badge switches from Active to Inactive in the list. |
 
 ---
 
@@ -898,20 +1026,43 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant Admin
-    participant App as Management App
-    participant API as Smart Parking API
-    participant DB as Database
+    actor Admin
+    participant UI as Management App
+    participant API as OwnerController
+    participant Service as OwnerService
+    participant DB as UserRepository
 
-    Admin->>App: View owner list and click Deactivate on owner
-    App->>API: PATCH /owners/ID/deactivate
-    API->>DB: Validate ADMIN role from JWT token
-    DB-->>API: Role confirmed
-    API->>DB: Set user is_active status to false
-    DB-->>API: Owner account deactivated
-    API-->>App: 200 OK - owner account deactivated
-    App-->>Admin: Owner status badge updates to inactive
+    Admin->>UI: Search owner and click Deactivate (ownerID)
+    UI-->>Admin: Prompt confirmation dialog
+    Admin->>UI: Confirm deactivation
+    UI->>API: PATCH /owners/ownerID/deactivate
+    activate API
+    API->>Service: deactivate_owner(ownerID)
+    activate Service
+    Service->>DB: set_active_status(ownerID, is_active=false)
+    activate DB
+    DB-->>Service: boolean (true)
+    deactivate DB
+    Service-->>API: SuccessResponse
+    deactivate Service
+    API-->>UI: 200 OK (SuccessResponse)
+    deactivate API
+    UI-->>Admin: Update Owner Status to Deactivated
 ```
+
+#### Step-by-Step Description
+
+| Step | From → To | Message / Method | Description |
+|---|---|---|---|
+| 1 | Admin → UI | Search owner and click Deactivate | Admin finds the parking owner by name/email and clicks Deactivate. |
+| 2 | UI → Admin | Prompt confirmation dialog | UI shows a confirmation modal: "Are you sure you want to deactivate this owner?". |
+| 3 | Admin → UI | Confirm deactivation | Admin clicks Confirm in the dialog. |
+| 4 | UI → API | `PATCH /owners/{ownerID}/deactivate` | UI sends deactivation request with the owner's ID. |
+| 5 | API → OwnerService | `deactivate_owner(ownerID)` | Controller delegates to the service layer. |
+| 6 | OwnerService → DB | `set_active_status(ownerID, is_active=false)` | Service updates the User record's `is_active` to `false`, revoking login access. |
+| 7 | DB → OwnerService | `boolean (true)` | Repository confirms the update. |
+| 8 | API → UI | `200 OK (SuccessResponse)` | Controller returns a success response. |
+| 9 | UI → Admin | Update Owner Status to Deactivated | Owner's status badge changes to Deactivated in the owner list. |
 
 ---
 
@@ -921,21 +1072,49 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant Owner
-    participant App as Management App
-    participant API as Smart Parking API
-    participant DB as Database
+    actor Owner
+    participant UI as Management App
+    participant API as AuthController
+    participant Service as AuthService
+    participant DB as UserRepository
 
-    Owner->>App: Fill owner registration form (name, email, password, company name)
-    App->>API: POST /auth/register-owner
-    API->>DB: Check email uniqueness
-    DB-->>API: Email is available
-    API->>DB: Create User record (role=OWNER, is_verified=true)
-    API->>DB: Create ParkingOwner profile with company name
-    DB-->>API: User and Owner profile created
-    API-->>App: 201 Created - owner account created
-    App-->>Owner: Redirect to Login page
+    Owner->>UI: Request registration page
+    UI-->>Owner: Render owner registration form
+    Owner->>UI: Submit ownerData (name, email, password, company_name)
+    UI->>API: POST /auth/register-owner (RegisterOwnerRequest)
+    activate API
+    API->>Service: register_owner(ownerData)
+    activate Service
+    Service->>DB: check_email_exists(email)
+    activate DB
+    DB-->>Service: boolean (false)
+    deactivate DB
+    Service->>DB: create_owner_user(user, owner_profile)
+    activate DB
+    DB-->>Service: User (id, role=OWNER, is_verified=true)
+    deactivate DB
+    Service-->>API: UserOut
+    deactivate Service
+    API-->>UI: 201 Created (UserOut)
+    deactivate API
+    UI-->>Owner: Redirect to Login Page
 ```
+
+#### Step-by-Step Description
+
+| Step | From → To | Message / Method | Description |
+|---|---|---|---|
+| 1 | Owner → UI | Request registration page | Owner opens the Owner Registration URL (public endpoint — no login required). |
+| 2 | UI → Owner | Render owner registration form | UI renders the form with fields: name, email, password, company name. |
+| 3 | Owner → UI | Submit ownerData | Owner fills the form and clicks Register. |
+| 4 | UI → API | `POST /auth/register-owner` | UI sends `RegisterOwnerRequest` to the unprotected registration endpoint. |
+| 5 | API → AuthService | `register_owner(ownerData)` | Controller delegates registration logic to the service. |
+| 6 | AuthService → DB | `check_email_exists(email)` | Service checks whether the email is already in use. |
+| 7 | DB → AuthService | `boolean (false)` | Email is unique; proceed with registration. |
+| 8 | AuthService → DB | `create_owner_user(user, owner_profile)` | Service atomically creates a User record and a linked ParkingOwner profile. `is_verified=true` is set automatically (no OTP needed for owners). |
+| 9 | DB → AuthService | `User (role=OWNER)` | Newly created user returned. |
+| 10 | API → UI | `201 Created (UserOut)` | Controller returns the owner's profile to the UI. |
+| 11 | UI → Owner | Redirect to Login Page | Owner is directed to the login page to log in with the new credentials. |
 
 ---
 
@@ -943,37 +1122,77 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant Owner
-    participant App as Management App
-    participant API as Smart Parking API
-    participant DB as Database
+    actor Owner
+    participant UI as Management App
+    participant API as LotController
+    participant Service as ParkingLotService
+    participant DB as ParkingLotRepository
 
-    Owner->>App: Fill lot form - name, type, rate per hour, map url
-    App->>API: POST /parking-lots
-    API->>DB: Validate OWNER role and active subscription
-    API->>DB: Check current lot count against max lots limit
-    DB-->>API: Within subscription limits
-    API->>DB: Create ParkingLot record
-    DB-->>API: Lot created with assigned id
-    API-->>App: 201 Created - lot details
-    App-->>Owner: Lot appears in lot list
+    Owner->>UI: Fill lot form (name, type, rate, map_url)
+    UI->>API: POST /parking-lots (ParkingLotCreate)
+    activate API
+    API->>Service: create_parking_lot(owner_id, lotData)
+    activate Service
+    Service->>DB: check_subscription_limits(owner_id)
+    activate DB
+    DB-->>Service: boolean (within_limit=true)
+    deactivate DB
+    Service->>DB: insert_parking_lot(lotData)
+    activate DB
+    DB-->>Service: ParkingLot (id, name)
+    deactivate DB
+    Service-->>API: ParkingLotOut
+    deactivate Service
+    API-->>UI: 201 Created (ParkingLotOut)
+    deactivate API
 
-    Owner->>App: Click Add Floor inside lot detail page
-    App->>API: POST /parking-lots/ID/floors with floor name
-    API->>DB: Validate owner owns this lot
-    API->>DB: Create ParkingFloor record linked to lot
-    DB-->>API: Floor created
-    API-->>App: 201 Created - floor details
-    App-->>Owner: New floor tab appears in lot detail view
+    Owner->>UI: Add Floor (floor_name)
+    UI->>API: POST /parking-lots/lotID/floors (FloorCreate)
+    activate API
+    API->>Service: add_floor(lotID, floor_name)
+    activate Service
+    Service->>DB: insert_floor(lotID, floor_name)
+    activate DB
+    DB-->>Service: ParkingFloor (id, floor_name)
+    deactivate DB
+    Service-->>API: FloorOut
+    deactivate Service
+    API-->>UI: 201 Created (FloorOut)
+    deactivate API
 
-    Owner->>App: Click Add Slot inside the floor tab
-    App->>API: POST /parking-floors/ID/slots with slot number and section
-    API->>DB: Validate owner owns parent lot
-    API->>DB: Create ParkingSlot with initial status AVAILABLE
-    DB-->>API: Slot created
-    API-->>App: 201 Created - slot details
-    App-->>Owner: Slot card appears in the floor grid
+    Owner->>UI: Add Slot (slot_number, section)
+    UI->>API: POST /parking-floors/floorID/slots (SlotCreate)
+    activate API
+    API->>Service: add_slot(floorID, slot_number, section)
+    activate Service
+    Service->>DB: insert_slot(floorID, slot_number, section, status=AVAILABLE)
+    activate DB
+    DB-->>Service: ParkingSlot (id, status=AVAILABLE)
+    deactivate DB
+    Service-->>API: SlotOut
+    deactivate Service
+    API-->>UI: 201 Created (SlotOut)
+    deactivate API
+    UI-->>Owner: Display Slot in Floor Board
 ```
+
+#### Step-by-Step Description
+
+| Step | From → To | Message / Method | Description |
+|---|---|---|---|
+| 1 | Owner → UI | Fill lot form | Owner fills in the new lot's name, type (indoor/outdoor), rate_per_hour, and optional map_url. |
+| 2 | UI → API | `POST /parking-lots` | UI sends `ParkingLotCreate` payload. |
+| 3 | API → ParkingLotService | `create_parking_lot(owner_id, lotData)` | Service checks the owner's active subscription lot limit before creating. |
+| 4 | ParkingLotService → DB | `check_subscription_limits(owner_id)` | Service queries the DB to verify the owner has not exceeded their package's `max_lots` cap. |
+| 5 | API → UI | `201 Created (ParkingLotOut)` | The new lot is returned to the UI. |
+| 6 | Owner → UI | Add Floor (name, level) | Owner clicks Add Floor and fills the floor form for the created lot. |
+| 7 | UI → API | `POST /parking-lots/{lotID}/floors` | UI sends `FloorCreate` request. |
+| 8 | ParkingLotService → DB | `insert_floor(lotID, floorData)` | Service persists the floor record linked to the lot. |
+| 9 | API → UI | `201 Created (FloorOut)` | New floor returned to UI and displayed. |
+| 10 | Owner → UI | Add Slot (slot_number, type) | Owner clicks Add Slot on the floor panel. |
+| 11 | UI → API | `POST /parking-lots/{lotID}/floors/{floorID}/slots` | UI sends `SlotCreate` request. |
+| 12 | ParkingLotService → DB | `insert_slot(floorID, slotData)` | Service persists the slot with `status=AVAILABLE`. |
+| 13 | API → UI | `201 Created (SlotOut)` | New slot returned and shown in the floor board grid. |
 
 ---
 
@@ -981,42 +1200,86 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant Owner
-    participant App as Management App
-    participant API as Smart Parking API
-    participant DB as Database
-    participant Wallet as Digital Wallet Backend
+    actor Owner
+    participant UI as Management App
+    participant API as SubscriptionController
+    participant Service as SubscriptionService
+    participant Wallet as WalletPaymentClient
+    participant DB as SubscriptionRepository
 
-    Owner->>App: Browse available packages
-    App->>API: GET /packages
-    API->>DB: List packages where is_active is true
-    DB-->>API: Package list
-    API-->>App: Packages with price, max lots, max staff, duration
+    Owner->>UI: Select package and click Subscribe
+    UI->>API: POST /subscriptions (SubscriptionCreate)
+    activate API
+    API->>Service: create_subscription(owner_id, package_id)
+    activate Service
+    Service->>DB: insert_subscription(status=PENDING)
+    activate DB
+    DB-->>Service: OwnerSubscription (id, status=PENDING)
+    deactivate DB
+    Service-->>API: SubscriptionOut
+    deactivate Service
+    API-->>UI: 201 Created (subscription_id)
+    deactivate API
 
-    Owner->>App: Select package and click Subscribe
-    App->>API: POST /subscriptions with package id
-    API->>DB: Create OwnerSubscription with status PENDING
-    DB-->>API: Subscription created
-    API-->>App: subscription id returned
+    Owner->>UI: Initiate Payment
+    UI->>API: POST /subscriptions/subID/pay/initiate
+    activate API
+    API->>Service: initiate_payment(subID)
+    activate Service
+    Service->>Wallet: create_payment_request(amount, reference)
+    activate Wallet
+    Wallet-->>Service: PaymentInitResult (payment_ref, otp_sent=true)
+    deactivate Wallet
+    Service->>DB: insert_payment(status=PENDING)
+    activate DB
+    DB-->>Service: Payment (id, ref)
+    deactivate DB
+    Service-->>API: PaymentInitResponse
+    deactivate Service
+    API-->>UI: 200 OK (Prompt OTP input)
+    deactivate API
 
-    Owner->>App: Click Pay Subscription
-    App->>API: POST /subscriptions/ID/pay/initiate
-    API->>DB: Lookup Admin platform WalletAccount and API key
-    API->>Wallet: Create payment request with amount and reference
-    Wallet-->>API: payment url and OTP sent to owner phone
-    API->>DB: Create Payment record with status PENDING
-    API-->>App: payment url
-
-    Owner->>App: Confirm with OTP and PIN
-    App->>API: POST /subscriptions/ID/pay/confirm
-    API->>Wallet: Confirm payment with OTP and PIN
-    Wallet-->>API: transaction number and SUCCESS status
-    API->>DB: Update Payment to COMPLETED
-    API->>DB: Update OwnerSubscription to ACTIVE with start and expiry dates
-    DB-->>API: Done
-    API-->>App: 200 OK - subscription is now active
-    App-->>Owner: Subscription activated
+    Owner->>UI: Submit OTP & Wallet PIN
+    UI->>API: POST /subscriptions/subID/pay/confirm (ConfirmPaymentRequest)
+    activate API
+    API->>Service: confirm_payment(subID, otp, pin)
+    activate Service
+    Service->>Wallet: confirm_otp(payment_ref, otp, pin)
+    activate Wallet
+    Wallet-->>Service: PaymentConfirmResult(status=SUCCESS, txn_no)
+    deactivate Wallet
+    Service->>DB: update_subscription_status(subID, status=ACTIVE)
+    activate DB
+    DB-->>Service: OwnerSubscription (status=ACTIVE)
+    deactivate DB
+    Service-->>API: SuccessResponse
+    deactivate Service
+    API-->>UI: 200 OK (Subscription Activated)
+    deactivate API
+    UI-->>Owner: Display Active Subscription
 ```
+
+#### Step-by-Step Description
+
+| Step | From → To | Message / Method | Description |
+|---|---|---|---|
+| 1 | Owner → UI | Select package and click Subscribe | Owner browses the available packages and clicks Subscribe on the chosen tier. |
+| 2 | UI → API | `POST /subscriptions` | UI sends `SubscriptionCreate` payload with `package_id`. |
+| 3 | SubscriptionService → DB | `insert_subscription(status=PENDING)` | Service creates an `OwnerSubscription` record in `PENDING` state awaiting payment. |
+| 4 | API → UI | `201 Created (subscription_id)` | Controller returns the new subscription ID to the UI. |
+| 5 | Owner → UI | Initiate Payment | Owner clicks Pay Now to begin the digital wallet payment process. |
+| 6 | UI → API | `POST /subscriptions/{subID}/pay/initiate` | UI sends a payment initiation request. |
+| 7 | SubscriptionService → Wallet | `create_payment_request(amount, reference)` | Service calls the external Wallet API to create a payment request for the package price. |
+| 8 | Wallet → SubscriptionService | `PaymentInitResult (payment_ref, otp_sent=true)` | Wallet API sends an OTP to the owner's registered wallet phone number. |
+| 9 | SubscriptionService → DB | `insert_payment(status=PENDING)` | Service records the pending payment with the wallet reference. |
+| 10 | API → UI | `200 OK (Prompt OTP input)` | UI shows the OTP entry field to the owner. |
+| 11 | Owner → UI | Submit OTP & Wallet PIN | Owner enters the OTP received on their phone and their wallet PIN. |
+| 12 | UI → API | `POST /subscriptions/{subID}/pay/confirm` | UI sends the confirmation payload. |
+| 13 | SubscriptionService → Wallet | `confirm_otp(payment_ref, otp, pin)` | Service calls the Wallet API to confirm the OTP and deduct funds. |
+| 14 | Wallet → SubscriptionService | `PaymentConfirmResult (status=SUCCESS)` | Wallet confirms the transaction. |
+| 15 | SubscriptionService → DB | `update_subscription_status(subID, ACTIVE)` | Service activates the subscription record. |
+| 16 | API → UI | `200 OK (Subscription Activated)` | Controller confirms activation. |
+| 17 | UI → Owner | Display Active Subscription | Owner's portal shows the active tier, expiry date, and feature limits. |
 
 ---
 
@@ -1026,29 +1289,56 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant Staff
-    participant App as Management App
-    participant API as Smart Parking API
-    participant DB as Database
+    actor Staff
+    participant UI as Management App
+    participant API as SlotBoardController
+    participant Service as ParkingSessionService
+    participant DB as ParkingRepository
 
-    Staff->>App: Open Slot Board page for assigned lot
-    App->>API: GET /parking-lots/ID/floors
-    API->>DB: Query floors for the staff assigned lot
-    DB-->>API: Floor list
-    API-->>App: Floor list with slot counts per floor
-    App->>API: GET /parking-floors/ID/slots for first floor tab
-    API->>DB: Query all slots for selected floor
-    DB-->>API: Slot list with status AVAILABLE or OCCUPIED
-    API-->>App: Slot grid data
-    App-->>Staff: Slot board with colour-coded status badges
+    Staff->>UI: Request Slot Board for assigned lot
+    UI->>API: GET /parking-lots/lotID/floors
+    activate API
+    API->>DB: get_floors_with_slots(lotID)
+    activate DB
+    DB-->>API: list of ParkingFloor & ParkingSlot
+    deactivate DB
+    API-->>UI: 200 OK (FloorGridData)
+    deactivate API
+    UI-->>Staff: Display Slot Board Grid
 
-    Staff->>App: Enter plate number in search box
-    App->>API: GET /parking-sessions with plate number filter
-    API->>DB: Query active session matching the plate number
-    DB-->>API: Session record with car and customer info
-    API-->>App: Session details - slot location, start time, customer contact
-    App-->>Staff: Highlight matching slot and display session card
+    Staff->>UI: Enter plate_number in search
+    UI->>API: GET /parking-sessions?plate_number=plate
+    activate API
+    API->>Service: find_active_session_by_plate(lotID, plate)
+    activate Service
+    Service->>DB: query_active_session(lotID, plate)
+    activate DB
+    DB-->>Service: ParkingSession (id, car, customer, start_time)
+    deactivate DB
+    Service-->>API: SessionDetailOut
+    deactivate Service
+    API-->>UI: 200 OK (SessionDetailOut)
+    deactivate API
+    UI-->>Staff: Highlight matching slot & session details
 ```
+
+#### Step-by-Step Description
+
+| Step | From → To | Message / Method | Description |
+|---|---|---|---|
+| 1 | Staff → UI | Request Slot Board for assigned lot | Staff opens the Slot Board page for their assigned parking lot. |
+| 2 | UI → API | `GET /parking-lots/{lotID}/floors` | UI requests all floors and their slot grid for the lot. |
+| 3 | API → DB | `get_floors_with_slots(lotID)` | Controller directly queries the repository for the floor-slot hierarchy. |
+| 4 | DB → API | `list[ParkingFloor & ParkingSlot]` | Repository returns the full floor-slot data with current slot status. |
+| 5 | API → UI | `200 OK (FloorGridData)` | UI receives the grid data. |
+| 6 | UI → Staff | Display Slot Board Grid | UI renders a colour-coded grid: green = AVAILABLE, red = OCCUPIED. |
+| 7 | Staff → UI | Enter plate_number in search | Staff types a vehicle plate number into the search box. |
+| 8 | UI → API | `GET /parking-sessions?plate_number=plate` | UI sends a filtered session query to the API. |
+| 9 | API → ParkingSessionService | `find_active_session_by_plate(lotID, plate)` | Controller delegates plate lookup to the service. |
+| 10 | ParkingSessionService → DB | `query_active_session(lotID, plate)` | Service queries for an ACTIVE session matching the plate in this lot. |
+| 11 | DB → ParkingSessionService | `ParkingSession` | Repository returns the matching session with car and customer info. |
+| 12 | API → UI | `200 OK (SessionDetailOut)` | Controller returns session details. |
+| 13 | UI → Staff | Highlight matching slot & session details | UI highlights the matching slot in the grid and shows session info (car, customer, start time). |
 
 ---
 
@@ -1056,29 +1346,50 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant Staff
-    participant App as Management App
-    participant API as Smart Parking API
-    participant DB as Database
+    actor Staff
+    participant UI as Management App
+    participant API as SessionController
+    participant Service as ParkingSessionService
+    participant DB as SessionRepository
 
-    Staff->>App: Click on an OCCUPIED slot or open session detail
-    App->>API: GET /parking-sessions/ID
-    API->>DB: Fetch session record
-    DB-->>API: Session with car, customer, start time, fee
-    API-->>App: Session details
-    App-->>Staff: Display active session info with Finish button
-
-    Staff->>App: Click Finish Session
-    App->>API: PATCH /parking-sessions/ID/finish
-    API->>DB: Validate session status is ACTIVE
-    API->>DB: Calculate actual duration from start time to now
-    API->>DB: Recalculate final fee from actual duration and lot rate
-    API->>DB: Set session status to FINISHED and record actual end time
-    API->>DB: Set slot status back to AVAILABLE
-    DB-->>API: All updates committed
-    API-->>App: 200 OK - finished session with final fee
-    App-->>Staff: Session card closed, slot badge turns AVAILABLE
+    Staff->>UI: Select active session and click Finish
+    UI->>API: PATCH /parking-sessions/sessionID/finish
+    activate API
+    API->>Service: finish_session(sessionID)
+    activate Service
+    Service->>DB: get_session(sessionID)
+    activate DB
+    DB-->>Service: ParkingSession (start_time, rate_per_hour)
+    deactivate DB
+    Service->>Service: calculate_final_fee(start_time, now, rate)
+    Service->>DB: update_session(status=FINISHED, end_time=now, fee=final_fee)
+    activate DB
+    DB-->>Service: ParkingSession (status=FINISHED)
+    deactivate DB
+    Service->>DB: update_slot_status(slotID, status=AVAILABLE)
+    activate DB
+    DB-->>Service: ParkingSlot (status=AVAILABLE)
+    deactivate DB
+    Service-->>API: FinishedSessionOut
+    deactivate Service
+    API-->>UI: 200 OK (FinishedSessionOut)
+    deactivate API
+    UI-->>Staff: Display final fee and mark slot AVAILABLE
 ```
+
+#### Step-by-Step Description
+
+| Step | From → To | Message / Method | Description |
+|---|---|---|---|
+| 1 | Staff → UI | Select active session and click Finish | Staff finds the ACTIVE session for a vehicle and clicks the Finish button. |
+| 2 | UI → API | `PATCH /parking-sessions/{sessionID}/finish` | UI sends the finish request with the session ID. |
+| 3 | API → ParkingSessionService | `finish_session(sessionID)` | Controller delegates to the service to compute fee and close the session. |
+| 4 | ParkingSessionService → DB | `get_session(sessionID)` | Service retrieves the full session record including `start_time` and `rate_per_hour`. |
+| 5 | ParkingSessionService | `calculate_final_fee(start_time, now, rate)` | Service calculates: `fee = ceil(duration_hours) × rate_per_hour`. |
+| 6 | ParkingSessionService → DB | `update_session(status=FINISHED, end_time, fee)` | Service persists the finished state with the calculated fee and current timestamp as `end_time`. |
+| 7 | ParkingSessionService → DB | `update_slot_status(slotID, AVAILABLE)` | Service marks the parking slot as AVAILABLE so it can be booked again. |
+| 8 | API → UI | `200 OK (FinishedSessionOut)` | Controller returns the finished session with the final fee amount. |
+| 9 | UI → Staff | Display final fee and mark slot AVAILABLE | UI shows the receipt (duration, final fee) and the slot turns green in the board grid. |
 
 ---
 
@@ -1088,34 +1399,84 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant Customer
-    participant App as Customer App
-    participant API as Smart Parking API
-    participant DB as Database
-    participant Email as Email Service
+    actor Customer
+    participant UI as Customer App
+    participant API as AuthController
+    participant Auth as AuthService
+    participant Email as EmailService
+    participant DB as UserRepository
 
-    Customer->>App: Fill registration form
-    App->>API: POST /auth/register
-    API->>DB: Check email uniqueness
-    DB-->>API: Email available
-    API->>DB: Create User with role CUSTOMER, unverified
-    API->>DB: Create Customer profile
-    DB-->>API: User and Customer created
-    API-->>App: 201 Created - user object
-    App->>API: POST /auth/send-otp with email
-    API->>DB: Generate OTP record, 10-min TTL
-    API->>Email: Send OTP email to customer
-    Email-->>Customer: Email with OTP code
-    Customer->>App: Enter OTP code
-    App->>API: POST /auth/verify-otp with email and code
-    API->>DB: Validate OTP - not expired, not used
-    DB-->>API: OTP valid
-    API->>DB: Mark OTP used, set user as verified
-    API->>DB: Generate Access Token and Refresh Token
-    DB-->>API: Tokens issued
-    API-->>App: 200 OK - access token and refresh token
-    App-->>Customer: Redirect to Dashboard
+    Customer->>UI: Request customer registration page
+    UI-->>Customer: Render registration form
+    Customer->>UI: Submit credentials (name, email, password)
+    UI->>API: POST /auth/register (RegisterRequest)
+    activate API
+    API->>Auth: register_customer(payload)
+    activate Auth
+    Auth->>DB: check_email_exists(email)
+    activate DB
+    DB-->>Auth: boolean (false)
+    deactivate DB
+    Auth->>DB: create_user(is_verified=false, role=CUSTOMER)
+    activate DB
+    DB-->>Auth: User (id, email)
+    deactivate DB
+    Auth-->>API: UserOut
+    deactivate Auth
+    API-->>UI: 201 Created (UserOut)
+    deactivate API
+
+    UI->>API: POST /auth/send-otp (SendOTPRequest)
+    activate API
+    API->>Email: send_otp_email(email, otp_code)
+    activate Email
+    Email-->>Customer: Deliver email with OTP code
+    deactivate Email
+    API-->>UI: 200 OK (OTP Sent)
+    deactivate API
+
+    Customer->>UI: Enter OTP code
+    UI->>API: POST /auth/verify-otp (VerifyOTPRequest)
+    activate API
+    API->>Auth: verify_otp(email, code)
+    activate Auth
+    Auth->>DB: update_user_verified(email, is_verified=true)
+    activate DB
+    DB-->>Auth: User (is_verified=true)
+    deactivate DB
+    Auth->>DB: create_jwt_tokens(user_id)
+    activate DB
+    DB-->>Auth: access_token, refresh_token
+    deactivate DB
+    Auth-->>API: TokenResponse
+    deactivate Auth
+    API-->>UI: 200 OK (TokenResponse)
+    deactivate API
+    UI-->>Customer: Redirect to Customer Dashboard
 ```
+
+#### Step-by-Step Description
+
+| Step | From → To | Message / Method | Description |
+|---|---|---|---|
+| 1 | Customer → UI | Request customer registration page | Customer opens the Customer App registration URL. |
+| 2 | UI → Customer | Render registration form | UI shows the form: name, email, password. |
+| 3 | Customer → UI | Submit credentials | Customer fills the form and clicks Register. |
+| 4 | UI → API | `POST /auth/register` | UI sends `RegisterRequest` to the public auth endpoint. |
+| 5 | API → AuthService | `register_customer(payload)` | Controller delegates to the service layer. |
+| 6 | AuthService → DB | `check_email_exists(email)` | Service verifies the email is not already in use. |
+| 7 | AuthService → DB | `create_user(is_verified=false, role=CUSTOMER)` | Service creates the user with `is_verified=false` — login blocked until OTP verification. |
+| 8 | API → UI | `201 Created (UserOut)` | Controller returns the new user's profile. |
+| 9 | UI → API | `POST /auth/send-otp` | UI automatically requests the OTP email immediately after registration. |
+| 10 | API → EmailService | `send_otp_email(email, otp_code)` | API generates a 6-digit OTP and sends it via the email provider. |
+| 11 | EmailService → Customer | Deliver email with OTP code | Customer receives the email with the 6-digit code. |
+| 12 | API → UI | `200 OK (OTP Sent)` | UI shows the OTP entry field. |
+| 13 | Customer → UI | Enter OTP code | Customer types the code from the email. |
+| 14 | UI → API | `POST /auth/verify-otp` | UI sends `VerifyOTPRequest (email, code)`. |
+| 15 | AuthService → DB | `update_user_verified(email, is_verified=true)` | Service marks the user as verified, unblocking login. |
+| 16 | AuthService → DB | `create_jwt_tokens(user_id)` | Service immediately issues JWT tokens after verification. |
+| 17 | API → UI | `200 OK (TokenResponse)` | Controller returns the token pair. |
+| 18 | UI → Customer | Redirect to Customer Dashboard | Customer is now logged in and lands on the dashboard. |
 
 ---
 
@@ -1123,48 +1484,107 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant Customer
-    participant App as Customer App
-    participant API as Smart Parking API
-    participant DB as Database
-    participant Wallet as Digital Wallet Backend
+    actor Customer
+    participant UI as Customer App
+    participant API as SessionController
+    participant Service as ParkingSessionService
+    participant Wallet as WalletPaymentClient
+    participant DB as ParkingSessionRepository
 
-    Customer->>App: Browse lots, select floor tab, pick AVAILABLE slot
-    App->>API: POST /parking-sessions/book
-    API->>DB: Validate car belongs to customer
-    API->>DB: Check slot exists and is in an active lot
-    API->>DB: Check scheduling conflicts for car and slot
-    API->>DB: Calculate estimated fee from duration and hourly rate
-    API->>DB: Create ParkingSession with status PENDING
-    DB-->>API: Session created
-    API-->>App: 201 Created - session id and estimated fee
+    Customer->>UI: Select slot, duration & car, click Book
+    UI->>API: POST /parking-sessions/book (BookSessionRequest)
+    activate API
+    API->>Service: book_session(customer_id, bookingData)
+    activate Service
+    Service->>DB: validate_schedule_conflicts(slot_id, car_id, start, end)
+    activate DB
+    DB-->>Service: boolean (no_conflict=true)
+    deactivate DB
+    Service->>Service: calculate_estimated_fee(duration, hourly_rate)
+    Service->>DB: insert_session(status=PENDING)
+    activate DB
+    DB-->>Service: ParkingSession (id, status=PENDING, fee)
+    deactivate DB
+    Service-->>API: SessionBookOut
+    deactivate Service
+    API-->>UI: 201 Created (session_id, estimated_fee)
+    deactivate API
 
-    Customer->>App: Click Pay Now
-    App->>API: POST /parking-sessions/ID/pay/initiate
-    API->>DB: Lookup owner WalletAccount and API key
-    API->>Wallet: Create payment request with amount and reference
-    Wallet-->>API: payment reference, payment url, OTP sent to customer phone
-    API->>DB: Create Payment record with status PENDING
-    API-->>App: payment url and OTP required flag
-    App-->>Customer: Show OTP input form
+    Customer->>UI: Click Pay Now & enter wallet phone
+    UI->>API: POST /parking-sessions/sessionID/pay/initiate (PayInitRequest)
+    activate API
+    API->>Service: initiate_payment(sessionID, walletPhone)
+    activate Service
+    Service->>Wallet: create_payment_request(amount, ref)
+    activate Wallet
+    Wallet-->>Service: PaymentInitResult (payment_ref, otp_sent=true)
+    deactivate Wallet
+    Service->>DB: insert_payment(status=PENDING)
+    activate DB
+    DB-->>Service: Payment (id, ref)
+    deactivate DB
+    Service-->>API: PaymentInitOut
+    deactivate Service
+    API-->>UI: 200 OK (Prompt OTP & PIN input)
+    deactivate API
 
-    Customer->>App: Enter OTP and wallet PIN
-    App->>API: POST /parking-sessions/ID/pay/confirm
-    API->>Wallet: Forward OTP and PIN for confirmation
-    Wallet-->>API: transaction number and SUCCESS status
-    API->>DB: Update Payment status to COMPLETED with transaction number
-    API->>DB: Update ParkingSession status to ACTIVE
-    API->>DB: Update ParkingSlot status to OCCUPIED
-    DB-->>API: All updates committed
-    API-->>App: 200 OK - payment confirmed and session active
-    App-->>Customer: Parking session is now active
+    Customer->>UI: Enter OTP & Wallet PIN
+    UI->>API: POST /parking-sessions/sessionID/pay/confirm (PayConfirmRequest)
+    activate API
+    API->>Service: confirm_payment(sessionID, otp, pin)
+    activate Service
+    Service->>Wallet: confirm_otp(payment_ref, otp, pin)
+    activate Wallet
+    Wallet-->>Service: PaymentConfirmResult (status=SUCCESS, txn_no)
+    deactivate Wallet
+    Service->>DB: update_session_status(sessionID, status=ACTIVE)
+    activate DB
+    DB-->>Service: ParkingSession (status=ACTIVE)
+    deactivate DB
+    Service->>DB: update_slot_status(slot_id, status=OCCUPIED)
+    activate DB
+    DB-->>Service: ParkingSlot (status=OCCUPIED)
+    deactivate DB
+    Service-->>API: PaymentSuccessOut
+    deactivate Service
+    API-->>UI: 200 OK (Payment Confirmed)
+    deactivate API
+    UI-->>Customer: Display Active Parking Session
 ```
+
+#### Step-by-Step Description
+
+| Step | From → To | Message / Method | Description |
+|---|---|---|---|
+| 1 | Customer → UI | Select slot, duration & car, click Book | Customer browses the lot map, selects an AVAILABLE slot, chooses their registered car, sets booking start/end time, and clicks Book. |
+| 2 | UI → API | `POST /parking-sessions/book` | UI sends `BookSessionRequest` with `slot_id`, `car_id`, `start_time`, `end_time`. |
+| 3 | API → ParkingSessionService | `book_session(customer_id, bookingData)` | Controller delegates booking and validation to the service. |
+| 4 | ParkingSessionService → DB | `validate_schedule_conflicts(slot_id, car_id, start, end)` | Service checks that: (a) the slot has no overlapping sessions, and (b) the car has no other PENDING/ACTIVE sessions in the same time window (with 2-hour buffer gap). |
+| 5 | DB → ParkingSessionService | `boolean (no_conflict=true)` | No conflicts found; booking may proceed. |
+| 6 | ParkingSessionService | `calculate_estimated_fee(duration, hourly_rate)` | Service computes the estimated fee: `ceil(duration_hours) × rate_per_hour`. |
+| 7 | ParkingSessionService → DB | `insert_session(status=PENDING)` | Service creates the `ParkingSession` record in `PENDING` state (slot not yet marked occupied). |
+| 8 | API → UI | `201 Created (session_id, estimated_fee)` | UI receives the booking confirmation with session ID and the estimated fee. |
+| 9 | Customer → UI | Click Pay Now & enter wallet phone | Customer proceeds to the payment step and enters their wallet phone number. |
+| 10 | UI → API | `POST /parking-sessions/{sessionID}/pay/initiate` | UI sends payment initiation request. |
+| 11 | ParkingSessionService → Wallet | `create_payment_request(amount, ref)` | Service calls the external Wallet API with the estimated fee and a unique payment reference. |
+| 12 | Wallet → ParkingSessionService | `PaymentInitResult (payment_ref, otp_sent=true)` | Wallet API sends an OTP to the customer's wallet phone number. |
+| 13 | ParkingSessionService → DB | `insert_payment(status=PENDING)` | Service records the pending payment entry with the wallet reference. |
+| 14 | API → UI | `200 OK (Prompt OTP & PIN input)` | UI shows the OTP and wallet PIN entry form. |
+| 15 | Customer → UI | Enter OTP & Wallet PIN | Customer enters the OTP from their phone and their wallet PIN. |
+| 16 | UI → API | `POST /parking-sessions/{sessionID}/pay/confirm` | UI sends `PayConfirmRequest (otp, pin)`. |
+| 17 | ParkingSessionService → Wallet | `confirm_otp(payment_ref, otp, pin)` | Service calls the Wallet API to confirm the OTP and deduct the fee. |
+| 18 | Wallet → ParkingSessionService | `PaymentConfirmResult (status=SUCCESS, txn_no)` | Wallet confirms successful deduction and provides a transaction number. |
+| 19 | ParkingSessionService → DB | `update_session_status(sessionID, ACTIVE)` | Service activates the session — booking is now confirmed. |
+| 20 | ParkingSessionService → DB | `update_slot_status(slot_id, OCCUPIED)` | Service marks the parking slot as OCCUPIED, making it unavailable to other customers. |
+| 21 | API → UI | `200 OK (Payment Confirmed)` | Controller returns the final success response. |
+| 22 | UI → Customer | Display Active Parking Session | Customer is shown the active booking details: slot, floor, lot, duration, and payment receipt. |
 
 ---
 
 # Chapter 3 — Project Implementation
 
 ## 3.1 Architecture Overview
+
 
 The system follows a **layered architecture** on the backend, separating concerns cleanly across four layers:
 
