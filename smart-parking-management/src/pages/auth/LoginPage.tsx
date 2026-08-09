@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { Loader2, ParkingSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/password-input"
 import { FormField } from "@/components/common/FormField"
 import { authApi } from "@/api/auth"
 import { getErrorMessage } from "@/api/client"
@@ -93,7 +94,7 @@ export function LoginPage() {
         </FormField>
 
         <FormField label="Password" htmlFor="password" error={errors.password?.message} required>
-          <Input id="password" type="password" placeholder="••••••••" autoComplete="current-password" {...register("password")} />
+          <PasswordInput id="password" placeholder="••••••••" autoComplete="current-password" {...register("password")} />
         </FormField>
 
         <div className="flex justify-end">

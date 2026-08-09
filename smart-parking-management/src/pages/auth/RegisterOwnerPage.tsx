@@ -7,6 +7,7 @@ import { Loader2, Building2, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PasswordInput } from "@/components/ui/password-input"
 import { authApi } from "@/api/auth"
 import type { RegisterOwnerRequest as RegisterOwnerPayload } from "@/types"
 import { getErrorMessage } from "@/api/client"
@@ -117,9 +118,8 @@ export function RegisterOwnerPage() {
 
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             placeholder="••••••••"
             {...register("password")}
             disabled={submitting}
@@ -129,9 +129,8 @@ export function RegisterOwnerPage() {
 
         <div className="space-y-2">
           <Label htmlFor="confirm_password">Confirm Password</Label>
-          <Input
+          <PasswordInput
             id="confirm_password"
-            type="password"
             placeholder="••••••••"
             {...register("confirm_password")}
             disabled={submitting}
