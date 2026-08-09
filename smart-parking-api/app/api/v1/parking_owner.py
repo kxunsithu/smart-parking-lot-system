@@ -1,5 +1,5 @@
 """Parking Owner management endpoints (managed by Admin)."""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.constants import RoleName
@@ -19,8 +19,15 @@ router = APIRouter(prefix="/parking-owners", tags=["Parking Owners"])
     response_model=SuccessResponse[list[ParkingOwnerOut]],
     dependencies=[Depends(require_roles(RoleName.ADMIN))],
 )
-def list_owners(params: PaginationParams = Depends(pagination_params), db: Session = Depends(get_db)):
-    items, meta = ParkingOwnerService(db).list_owners(params)
+def list_owners(
+    is_active: bool | None = Query(default=None),
+    is_verified: bool | None = Query(default=None),
+    params: PaginationParams = Depends(pagination_params),
+    db: Session = Depends(get_db),
+):
+    items, meta = ParkingOwnerService(db).list_owners(
+        params, is_active=is_active, is_verified=is_verified
+    )
     return {"success": True, "message": "Parking owners fetched successfully.", "data": items, "meta": meta}
 
 

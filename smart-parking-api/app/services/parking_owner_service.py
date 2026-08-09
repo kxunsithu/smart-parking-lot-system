@@ -9,6 +9,7 @@ from app.models.parking_owner import ParkingOwner
 from app.models.parking_session import ParkingSession
 from app.models.parking_slot import ParkingSlot
 from app.models.parking_staff import ParkingStaff
+from app.models.user import User
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.common import PaginationParams, build_meta
@@ -35,8 +36,17 @@ class ParkingOwnerService:
             raise NotFoundException("Owner profile not found for the current user.")
         return owner
 
-    def list_owners(self, params: PaginationParams):
+    def list_owners(
+        self,
+        params: PaginationParams,
+        is_active: bool | None = None,
+        is_verified: bool | None = None,
+    ):
         stmt = select(ParkingOwner).options(joinedload(ParkingOwner.user))
+        if is_active is not None:
+            stmt = stmt.where(ParkingOwner.user.has(User.is_active == is_active))
+        if is_verified is not None:
+            stmt = stmt.where(ParkingOwner.user.has(User.is_verified == is_verified))
         items, total = self.owner_repo.paginate(
             stmt,
             page=params.page,

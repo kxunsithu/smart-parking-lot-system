@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { toast } from "sonner"
-import { Trash2 } from "lucide-react"
+import { Trash2, RotateCcw } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { SearchInput } from "@/components/common/SearchInput"
 import { DataPagination } from "@/components/common/DataPagination"
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StatusBadge } from "@/components/common/StatusBadge"
 import { parkingOwnersApi } from "@/api/parkingOwners"
 import { getErrorMessage } from "@/api/client"
@@ -18,8 +19,22 @@ import { usePaginationState } from "@/hooks/usePaginationState"
 import type { ParkingOwnerOut } from "@/types"
 import type { ListResult } from "@/api/types"
 
+const STATUS_FILTER_OPTIONS: { label: string; value: string }[] = [
+  { label: "All Statuses", value: "all" },
+  { label: "Active", value: "true" },
+  { label: "Inactive", value: "false" },
+]
+
+const VERIFIED_FILTER_OPTIONS: { label: string; value: string }[] = [
+  { label: "All Email Verified", value: "all" },
+  { label: "Verified", value: "true" },
+  { label: "Not Verified", value: "false" },
+]
+
 export function OwnersPage() {
   const { setPage, search, setSearch, params } = usePaginationState()
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [verifiedFilter, setVerifiedFilter] = useState("all")
   const [deleteTarget, setDeleteTarget] = useState<ParkingOwnerOut | null>(null)
   const [data, setData] = useState<ListResult<ParkingOwnerOut> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -27,10 +42,19 @@ export function OwnersPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [togglingId, setTogglingId] = useState<number | null>(null)
 
+  const queryParams = useMemo(
+    () => ({
+      ...params,
+      is_active: statusFilter === "all" ? undefined : statusFilter,
+      is_verified: verifiedFilter === "all" ? undefined : verifiedFilter,
+    }),
+    [params, statusFilter, verifiedFilter]
+  )
+
   const fetchData = async () => {
     try {
       setIsFetching(true)
-      const result = await parkingOwnersApi.list(params)
+      const result = await parkingOwnersApi.list(queryParams)
       setData(result)
     } catch (error) {
       console.error("Failed to fetch owners:", error)
@@ -43,7 +67,7 @@ export function OwnersPage() {
 
   useEffect(() => {
     fetchData()
-  }, [params])
+  }, [queryParams])
 
   const handleDelete = async (id: number) => {
     try {
@@ -83,14 +107,59 @@ export function OwnersPage() {
 
       <Card>
         <CardContent className="space-y-4">
-          <SearchInput value={search} onChange={setSearch} placeholder="Search by company name..." className="max-w-sm" />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <SearchInput value={search} onChange={setSearch} placeholder="Search by company name..." className="max-w-sm" />
+            <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val || "all"); setPage(1) }} items={STATUS_FILTER_OPTIONS}>
+              <SelectTrigger className="h-8 w-fit min-w-36 text-sm">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_FILTER_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={verifiedFilter} onValueChange={(val) => { setVerifiedFilter(val || "all"); setPage(1) }} items={VERIFIED_FILTER_OPTIONS}>
+              <SelectTrigger className="h-8 w-fit min-w-36 text-sm">
+                <SelectValue placeholder="All Email Verified" />
+              </SelectTrigger>
+              <SelectContent>
+                {VERIFIED_FILTER_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {(statusFilter !== "all" || verifiedFilter !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setStatusFilter("all")
+                  setVerifiedFilter("all")
+                  setPage(1)
+                }}
+                className="h-8 gap-1.5 px-3 text-muted-foreground hover:text-foreground"
+              >
+                <RotateCcw className="size-3.5" />
+                Reset
+              </Button>
+            )}
+          </div>
 
           {isLoading ? (
             <TableSkeleton />
           ) : owners.length === 0 ? (
             <EmptyState
-              title="No parking owners yet"
-              description="Parking owners can register themselves through the registration page."
+              title="No parking owners found"
+              description={
+                statusFilter !== "all" || verifiedFilter !== "all"
+                  ? "No parking owners match your filter criteria."
+                  : "Parking owners can register themselves through the registration page."
+              }
             />
           ) : (
             <div className="overflow-x-auto rounded border">

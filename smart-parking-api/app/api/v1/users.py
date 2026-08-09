@@ -16,10 +16,14 @@ router = APIRouter(prefix="/users", tags=["Users"], dependencies=[Depends(requir
 @router.get("", response_model=SuccessResponse[list[UserOut]])
 def list_users(
     role_id: int | None = Query(default=None),
+    is_active: bool | None = Query(default=None),
+    is_verified: bool | None = Query(default=None),
     params: PaginationParams = Depends(pagination_params),
     db: Session = Depends(get_db),
 ):
-    items, meta = UserService(db).list_users(params, role_id=role_id)
+    items, meta = UserService(db).list_users(
+        params, role_id=role_id, is_active=is_active, is_verified=is_verified
+    )
     return {"success": True, "message": "Users fetched successfully.", "data": items, "meta": meta}
 
 

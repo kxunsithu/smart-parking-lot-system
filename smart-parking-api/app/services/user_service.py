@@ -20,10 +20,20 @@ class UserService:
             raise NotFoundException("Resource not found.")
         return user
 
-    def list_users(self, params: PaginationParams, role_id: int | None = None):
+    def list_users(
+        self,
+        params: PaginationParams,
+        role_id: int | None = None,
+        is_active: bool | None = None,
+        is_verified: bool | None = None,
+    ):
         stmt = select(User).options(joinedload(User.role))
         if role_id is not None:
             stmt = stmt.where(User.role_id == role_id)
+        if is_active is not None:
+            stmt = stmt.where(User.is_active == is_active)
+        if is_verified is not None:
+            stmt = stmt.where(User.is_verified == is_verified)
 
         items, total = self.user_repo.paginate(
             stmt,
