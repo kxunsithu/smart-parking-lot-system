@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-import { ArrowDownLeft, ArrowUpRight, ReceiptText, CreditCard } from "lucide-react"
+import { ArrowDownLeft, ArrowUpRight, ReceiptText, CreditCard, Receipt } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { DataPagination } from "@/components/common/DataPagination"
 import { EmptyState } from "@/components/common/EmptyState"
 import { TableSkeleton } from "@/components/common/LoadingBlock"
 import { SearchInput } from "@/components/common/SearchInput"
 import { StatusBadge } from "@/components/common/StatusBadge"
+import { ReceiptDialog } from "@/components/common/ReceiptDialog"
+import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { paymentsApi } from "@/api/payments"
 import { usePaginationState } from "@/hooks/usePaginationState"
@@ -19,6 +21,7 @@ export function WalletTransactionsPage() {
   const [items, setItems] = useState<PaymentListOut[]>([])
   const [meta, setMeta] = useState<ApiMeta | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [receiptTarget, setReceiptTarget] = useState<PaymentListOut | null>(null)
 
   const role = useAuthStore.getState().user?.role?.name
   const isOwner = role === "OWNER"
@@ -82,6 +85,7 @@ export function WalletTransactionsPage() {
                 <TableHead className="text-right">Fee</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead>Date</TableHead>
+                <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -124,6 +128,17 @@ export function WalletTransactionsPage() {
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                     {formatDateTime(p.created_at)}
                   </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8"
+                      title="View receipt"
+                      onClick={() => setReceiptTarget(p)}
+                    >
+                      <Receipt className="size-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -132,6 +147,12 @@ export function WalletTransactionsPage() {
       )}
 
       <DataPagination meta={meta} onPageChange={setPage} />
+
+      <ReceiptDialog
+        payment={receiptTarget}
+        onOpenChange={(open) => !open && setReceiptTarget(null)}
+        isOwner={isOwner}
+      />
     </div>
   )
 }
