@@ -32,6 +32,166 @@ function statusMeta(status: string): { label: string; tone: "success" | "warning
   }
 }
 
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;")
+}
+
+function buildReceiptHtml(payment: PaymentListOut, isOwner: boolean): string {
+  const detail = payment.kind === "subscription" ? (payment.package_name ?? "Subscription") : [payment.lot_name, payment.plate_number].filter(Boolean).join(" · ")
+  const ref = payment.wallet_transaction_number ?? payment.wallet_payment_reference ?? payment.reference
+  const date = formatDateTime(payment.paid_at ?? payment.created_at)
+  const statusLabel = statusMeta(payment.status).label
+
+  const rows = [
+    { label: "Receipt No.", value: payment.reference },
+    { label: "Date", value: date },
+    { label: "Type", value: payment.kind },
+    { label: "Detail", value: detail },
+    ...(isOwner && payment.direction ? [{ label: "Direction", value: payment.direction }] : []),
+    { label: "Transaction No.", value: ref },
+    { label: "Payer", value: payment.payer_name ?? "—" },
+    { label: "Payer Phone", value: payment.payer_phone ?? "—" },
+    { label: "Receiver Phone", value: payment.receiver_phone ?? "—" },
+  ]
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Receipt ${escapeHtml(payment.reference)}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #111827;
+    background: #ffffff;
+    padding: 40px;
+  }
+  .receipt {
+    max-width: 420px;
+    margin: 0 auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 24px;
+  }
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+  }
+  .brand { font-size: 20px; font-weight: 700; }
+  .subtitle { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .status {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid #22c55e;
+    color: #15803d;
+    background: #f0fdf4;
+  }
+  .details { margin-bottom: 16px; }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 0;
+    font-size: 13px;
+  }
+  .row .label { color: #6b7280; white-space: nowrap; }
+  .row .value { font-weight: 500; text-align: right; word-break: break-word; }
+  .totals {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 12px;
+    margin-bottom: 16px;
+  }
+  .total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 15px;
+    font-weight: 700;
+    padding-top: 8px;
+    margin-top: 8px;
+    border-top: 1px solid #e5e7eb;
+  }
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #6b7280;
+  }
+  @media print {
+    body { padding: 0; }
+    .receipt { border: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="receipt">
+    <div class="header">
+      <div>
+        <div class="brand">Smart Parking</div>
+        <div class="subtitle">Transaction Receipt</div>
+      </div>
+      <span class="status">${escapeHtml(statusLabel)}</span>
+    </div>
+
+    <div class="details">
+      ${rows.map((r) => `<div class="row"><span class="label">${escapeHtml(r.label)}</span><span class="value">${escapeHtml(r.value)}</span></div>`).join("")}
+    </div>
+
+    <div class="totals">
+      <div class="row"><span class="label">Amount</span><span class="value">${escapeHtml(formatCurrency(payment.amount))}</span></div>
+      <div class="row"><span class="label">Service Fee</span><span class="value">${escapeHtml(formatCurrency(payment.fee))}</span></div>
+      <div class="total"><span>Total</span><span>${escapeHtml(formatCurrency(payment.total))}</span></div>
+    </div>
+
+    <div class="footer">
+      <span>${escapeHtml(payment.owner_name ?? "Smart Parking")}</span>
+      <span>Thank you for your payment.</span>
+    </div>
+  </div>
+</body>
+</html>`
+}
+
+function printReceipt(payment: PaymentListOut, isOwner: boolean) {
+  const iframe = document.createElement("iframe")
+  iframe.setAttribute("aria-hidden", "true")
+  iframe.style.position = "fixed"
+  iframe.style.right = "0"
+  iframe.style.bottom = "0"
+  iframe.style.width = "0"
+  iframe.style.height = "0"
+  iframe.style.border = "0"
+  iframe.style.visibility = "hidden"
+  document.body.appendChild(iframe)
+
+  const doc = iframe.contentDocument
+  if (doc) {
+    doc.open()
+    doc.write(buildReceiptHtml(payment, isOwner))
+    doc.close()
+  }
+
+  const contentWindow = iframe.contentWindow
+  if (contentWindow) {
+    const cleanup = () => {
+      setTimeout(() => {
+        if (iframe.parentNode) iframe.parentNode.removeChild(iframe)
+      }, 100)
+    }
+    contentWindow.onafterprint = cleanup
+    contentWindow.focus()
+    contentWindow.print()
+    setTimeout(cleanup, 1000)
+  }
+}
+
 export function ReceiptDialog({ payment, onOpenChange, isOwner }: ReceiptDialogProps) {
   if (!payment) return null
 
@@ -41,8 +201,8 @@ export function ReceiptDialog({ payment, onOpenChange, isOwner }: ReceiptDialogP
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="receipt-print-area sm:max-w-lg">
-        <DialogHeader className="no-print">
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
           <DialogTitle>Transaction Receipt</DialogTitle>
         </DialogHeader>
 
@@ -117,11 +277,11 @@ export function ReceiptDialog({ payment, onOpenChange, isOwner }: ReceiptDialogP
           </div>
         </div>
 
-        <DialogFooter className="no-print">
+        <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
-          <Button onClick={() => window.print()}>
+          <Button onClick={() => printReceipt(payment, isOwner)}>
             <Printer />
             Print / Save as PDF
           </Button>

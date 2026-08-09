@@ -128,31 +128,3 @@
     @apply font-sans;
     }
 }
-
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  .receipt-print-area,
-  .receipt-print-area * {
-    visibility: visible;
-  }
-  .receipt-print-area {
-    position: fixed !important;
-    inset: 0 !important;
-    transform: none !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    max-height: none !important;
-    overflow: visible !important;
-    margin: 0 !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    background: #ffffff !important;
-    color: #0a0a0a !important;
-  }
-  .no-print {
-    display: none !important;
-  }
-}
