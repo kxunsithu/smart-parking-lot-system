@@ -1,8 +1,8 @@
 # 1. Navigate to the project
-cd ~/Desktop/smart-parking-lot-system/smart-parking-api
+cd ~/Desktop/Projects/smart-parking-lot-system/smart-parking-api
 
-# 2. Delete existing database
-rm -f smart_parking.db
+# 2. Drop all tables / recreate the schema (works for sqlite and postgres)
+./venv/bin/python -m scripts.reset_db
 
 # 3. Run migrations
 ./venv/bin/alembic upgrade head

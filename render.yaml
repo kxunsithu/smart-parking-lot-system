@@ -64,7 +64,7 @@ services:
       - key: OTP_LENGTH
         value: "6"
       - key: WALLET_API_BASE_URL
-        value: https://smart-wallet-api-vm58.onrender.com
+        value: https://digital-wallet-backend-api.up.railway.app
       - key: WALLET_REFERENCE_PREFIX
         value: PP
       - key: WALLET_REDIRECT_BASE_URL

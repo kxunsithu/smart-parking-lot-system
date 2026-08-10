@@ -158,7 +158,7 @@ Required variables (see `smart-parking-api/.env.example` for all):
 | `SMTP_USE_TLS` | `True` |
 | `OTP_EXPIRE_MINUTES` | `10` |
 | `OTP_LENGTH` | `6` |
-| `WALLET_API_BASE_URL` | `https://smart-wallet-api-vm58.onrender.com` |
+| `WALLET_API_BASE_URL` | `https://digital-wallet-backend-api.up.railway.app` |
 | `WALLET_REFERENCE_PREFIX` | `PP` |
 | `WALLET_REDIRECT_BASE_URL` | `http://localhost:8000` |
 | `CUSTOMER_APP_URL` | `http://localhost:5174` |

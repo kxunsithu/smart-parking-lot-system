@@ -29,7 +29,7 @@ services:
       DATABASE_URL: postgresql+psycopg2://smart_parking:smart_parking@db:5432/smart_parking
       # The parking API (in this container) talks to the deployed digital wallet
       # backend (Render) for external payments.
-      WALLET_API_BASE_URL: https://smart-wallet-api-vm58.onrender.com
+      WALLET_API_BASE_URL: https://digital-wallet-backend-api.up.railway.app
       # Public (browser-facing) URL of THIS API so the wallet hosted page can
       # redirect back to the parking callback after OTP/PIN is entered.
       WALLET_REDIRECT_BASE_URL: http://localhost:8000

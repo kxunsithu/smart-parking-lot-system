@@ -29,7 +29,7 @@ export const NAV_CONFIG: Record<RoleName, NavItem[]> = {
     { label: "Customers", to: "/admin/users", icon: Users },
     { label: "Packages", to: "/admin/packages", icon: Package },
     { label: "Subscriptions", to: "/admin/subscriptions", icon: Repeat2 },
-    { label: "Payments", to: "/admin/payments", icon: Wallet },
+    { label: "Wallet Account", to: "/admin/payments", icon: Wallet },
     { label: "Transactions", to: "/admin/transactions", icon: ReceiptText },
   ],
   OWNER: [
