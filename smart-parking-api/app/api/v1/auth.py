@@ -1,7 +1,7 @@
 """Authentication endpoints: register, login, refresh, logout, profile, password, OTP."""
 from datetime import timezone
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, File, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import NotFoundException
@@ -123,3 +123,22 @@ def update_me(
 ):
     user = AuthService(db).update_profile(current_user, payload)
     return {"success": True, "message": "Profile updated successfully.", "data": user}
+
+
+@router.post("/me/profile-image", response_model=SuccessResponse[UserOut])
+def upload_profile_image(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    user = AuthService(db).upload_profile_image(current_user, file)
+    return {"success": True, "message": "Profile image uploaded successfully.", "data": user}
+
+
+@router.delete("/me/profile-image", response_model=SuccessResponse[UserOut])
+def delete_profile_image(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    user = AuthService(db).delete_profile_image(current_user)
+    return {"success": True, "message": "Profile image deleted successfully.", "data": user}

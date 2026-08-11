@@ -1,139 +1,251 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { User, Mail, Phone, MapPin } from "lucide-react"
+import { Camera, Mail, Loader2, Trash2, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Navbar from "@/components/layout/Navbar"
-import { customerApi } from "@/api/customer"
 import { authApi } from "@/api/auth"
 import { useAuthStore } from "@/store/authStore"
-import type { CustomerOut, UserOut } from "@/api/types"
 import { toast } from "@/components/ui/toaster"
 
+// Derive the backend origin from the api base URL so static assets resolve correctly
+const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1")
+  .replace("/api/v1", "")
+
+function getAvatarUrl(path: string | null | undefined): string | undefined {
+  if (!path) return undefined
+  if (path.startsWith("http")) return path
+  return `${API_ORIGIN}${path}`
+}
+
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+const MAX_SIZE_MB = 5
+
 export default function Profile() {
-  const { user } = useAuthStore()
-  const [customer, setCustomer] = useState<CustomerOut | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [editing, setEditing] = useState(false)
-  const [formData, setFormData] = useState({
-    phone: "",
-    address: "",
-  })
+  const { user, setUser } = useAuthStore()
+  const [loading, setLoading] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [removingImage, setRemovingImage] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | undefined>(
+    getAvatarUrl(user?.profile_image)
+  )
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    loadProfile()
-  }, [])
+    setPreviewUrl(getAvatarUrl(user?.profile_image))
+  }, [user?.profile_image])
 
-  const loadProfile = async () => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast.error("Only JPEG, PNG, WebP, and GIF images are allowed.")
+      return
+    }
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      toast.error(`Image must be smaller than ${MAX_SIZE_MB} MB.`)
+      return
+    }
+
+    // Show local preview immediately
+    const localUrl = URL.createObjectURL(file)
+    setPreviewUrl(localUrl)
+
     try {
-      const response = await customerApi.getProfile()
-      setCustomer(response)
-      setFormData({
-        phone: response.phone || "",
-        address: response.address || "",
-      })
-    } catch (error) {
-      toast.error("Failed to load profile")
+      setUploadingImage(true)
+      const updated = await authApi.uploadProfileImage(file)
+      setUser(updated)
+      setPreviewUrl(getAvatarUrl(updated.profile_image))
+      toast.success("Profile photo updated successfully.")
+    } catch {
+      toast.error("Failed to upload profile image.")
+      setPreviewUrl(getAvatarUrl(user?.profile_image))
     } finally {
-      setLoading(false)
+      setUploadingImage(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
     }
   }
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleRemoveImage = async () => {
     try {
-      const response = await customerApi.updateProfile({
-        phone: formData.phone || undefined,
-        address: formData.address || undefined,
-      })
-      setCustomer(response)
-      setEditing(false)
-      toast.success("Profile updated successfully")
-    } catch (error) {
-      toast.error("Failed to update profile")
+      setRemovingImage(true)
+      const updated = await authApi.deleteProfileImage()
+      setUser(updated)
+      setPreviewUrl(undefined)
+      toast.success("Profile photo removed.")
+    } catch {
+      toast.error("Failed to remove profile image.")
+    } finally {
+      setRemovingImage(false)
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen">
-        <Navbar />
-        <div className="flex items-center justify-center h-64">
-          <div className="space-y-4 w-full max-w-md px-4">
-            <div className="h-8 bg-muted animate-pulse rounded" />
-            <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
-            <div className="h-32 bg-muted animate-pulse rounded" />
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const initials = (name?: string | null) =>
+    name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) ?? "U"
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Profile</h1>
-          <p className="text-muted-foreground">
-            Manage your account settings
-          </p>
+          <h1 className="text-3xl font-bold mb-1">My Profile</h1>
+          <p className="text-muted-foreground">Manage your account settings and preferences</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* User Information */}
-          <Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Avatar Card */}
+          <Card className="lg:col-span-1">
             <CardHeader>
-              <CardTitle>Account Information</CardTitle>
-              <CardDescription>Your personal details</CardDescription>
+              <CardTitle>Profile Photo</CardTitle>
+              <CardDescription>Upload a photo to personalise your account</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="bg-primary p-3 rounded-full">
-                  <User className="h-6 w-6 text-primary-foreground" />
+            <CardContent className="flex flex-col items-center gap-4">
+              {/* Avatar display */}
+              <div className="relative group">
+                <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-primary/20 bg-primary/10 flex items-center justify-center">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Profile avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-3xl font-bold text-primary">
+                      {initials(user?.name)}
+                    </span>
+                  )}
                 </div>
-                <div>
-                  <p className="font-medium">{user?.name}</p>
-                  <p className="text-sm text-muted-foreground">{user?.email}</p>
-                </div>
+
+                {/* Camera overlay */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage || removingImage}
+                  className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer disabled:cursor-not-allowed"
+                  aria-label="Change profile photo"
+                >
+                  {uploadingImage ? (
+                    <Loader2 className="h-6 w-6 text-white animate-spin" />
+                  ) : (
+                    <Camera className="h-6 w-6 text-white" />
+                  )}
+                </button>
               </div>
-              <div className="space-y-3 pt-4">
-                <div className="flex items-center text-sm">
-                  <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span className="text-muted-foreground">Email:</span>
-                  <span className="ml-2">{user?.email}</span>
-                </div>
+
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                id="profile-image-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+
+              <div className="flex flex-col gap-2 w-full">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage || removingImage}
+                >
+                  {uploadingImage ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Uploading…
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="h-4 w-4 mr-2" />
+                      {previewUrl ? "Change Photo" : "Upload Photo"}
+                    </>
+                  )}
+                </Button>
+
+                {previewUrl && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={handleRemoveImage}
+                    disabled={uploadingImage || removingImage}
+                  >
+                    {removingImage ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Removing…
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Remove Photo
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
+
+              <p className="text-xs text-center text-muted-foreground">
+                JPG, PNG, WebP or GIF · Max {MAX_SIZE_MB} MB
+              </p>
             </CardContent>
           </Card>
 
-          {/* Edit Profile */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Edit Profile</CardTitle>
-              <CardDescription>Update your contact information</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-muted-foreground">
-                Profile editing is managed through your account settings.
-              </div>
-            </CardContent>
-          </Card>
+          {/* Account Information */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Information</CardTitle>
+                <CardDescription>Your personal details</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <div className="bg-primary p-2.5 rounded-full shrink-0">
+                    <User className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">{user?.name}</p>
+                    <p className="text-xs text-muted-foreground">{user?.role?.name ?? "Customer"}</p>
+                  </div>
+                </div>
 
-          {/* Change Password */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Change Password</CardTitle>
-              <CardDescription>Update your password</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChangePasswordForm />
-            </CardContent>
-          </Card>
+                <div className="flex items-center text-sm gap-2 py-2 border-b">
+                  <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-muted-foreground">Email</span>
+                  <span className="ml-auto font-medium">{user?.email}</span>
+                </div>
+
+                <div className="flex items-center text-sm gap-2 py-2">
+                  <span className="text-muted-foreground">Account Status</span>
+                  <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full ${user?.is_active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-100 text-red-700"}`}>
+                    {user?.is_active ? "Active" : "Inactive"}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Change Password */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Change Password</CardTitle>
+                <CardDescription>Update your password to keep your account secure</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChangePasswordForm />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
@@ -172,8 +284,8 @@ function ChangePasswordForm() {
       })
       toast.success("Password changed successfully")
       reset()
-    } catch (error) {
-      toast.error("Failed to change password")
+    } catch {
+      toast.error("Failed to change password. Please check your current password.")
     } finally {
       setLoading(false)
     }
@@ -215,7 +327,14 @@ function ChangePasswordForm() {
         )}
       </div>
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "Changing..." : "Change Password"}
+        {loading ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Changing…
+          </>
+        ) : (
+          "Change Password"
+        )}
       </Button>
     </form>
   )

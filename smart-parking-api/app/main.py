@@ -1,8 +1,11 @@
 """FastAPI application entry point."""
 from contextlib import asynccontextmanager
 
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
 from app.config.settings import settings
@@ -17,6 +20,7 @@ configure_logging(debug=settings.DEBUG)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    Path("uploads/profile_images").mkdir(parents=True, exist_ok=True)
     db = SessionLocal()
     try:
         TokenBlacklistRepository(db).purge_expired()
@@ -47,6 +51,8 @@ app.add_middleware(RequestLoggingMiddleware)
 register_exception_handlers(app)
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+Path("uploads").mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 @app.get("/", tags=["Health"])

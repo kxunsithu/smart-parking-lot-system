@@ -19,9 +19,16 @@ import {
 
 export default function Navbar() {
   const navigate = useNavigate()
-  const { logout } = useAuthStore()
+  const { logout, user } = useAuthStore()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
+
+  const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1").replace("/api/v1", "")
+  const avatarUrl = user?.profile_image
+    ? user.profile_image.startsWith("http")
+      ? user.profile_image
+      : `${API_ORIGIN}${user.profile_image}`
+    : undefined
 
   const handleLogout = async () => {
     try {
@@ -65,15 +72,35 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-2">
             <ThemeToggle />
             {navItems.map((item) => (
-              <Button
-                key={item.path}
-                variant="ghost"
-                onClick={() => navigate(item.path)}
-                className="flex items-center space-x-2"
-              >
-                <item.icon className="h-4 w-4" />
-                <span>{item.label}</span>
-              </Button>
+              item.path === "/profile" ? (
+                <Button
+                  key={item.path}
+                  variant="ghost"
+                  onClick={() => navigate(item.path)}
+                  className="flex items-center space-x-2"
+                >
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Profile"
+                      className="h-5 w-5 rounded-full object-cover ring-1 ring-primary/30"
+                    />
+                  ) : (
+                    <item.icon className="h-4 w-4" />
+                  )}
+                  <span>{item.label}</span>
+                </Button>
+              ) : (
+                <Button
+                  key={item.path}
+                  variant="ghost"
+                  onClick={() => navigate(item.path)}
+                  className="flex items-center space-x-2"
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </Button>
+              )
             ))}
             <Button variant="ghost" onClick={() => setLogoutDialogOpen(true)}>
               <LogOut className="h-4 w-4 mr-2" />
@@ -109,7 +136,15 @@ export default function Navbar() {
               }}
               className="w-full justify-start"
             >
-              <item.icon className="h-4 w-4 mr-2" />
+              {item.path === "/profile" && avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Profile"
+                  className="h-4 w-4 mr-2 rounded-full object-cover ring-1 ring-primary/30"
+                />
+              ) : (
+                <item.icon className="h-4 w-4 mr-2" />
+              )}
               {item.label}
             </Button>
           ))}

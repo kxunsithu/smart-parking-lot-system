@@ -53,4 +53,18 @@ export const authApi = {
     const res = await apiClient.post<ApiSuccess<UserOut>>("/auth/register-owner", payload)
     return res.data.data
   },
+
+  async uploadProfileImage(file: File): Promise<UserOut> {
+    const formData = new FormData()
+    formData.append("file", file)
+    const res = await apiClient.post<ApiSuccess<UserOut>>("/auth/me/profile-image", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    return res.data.data
+  },
+
+  async deleteProfileImage(): Promise<UserOut> {
+    const res = await apiClient.delete<ApiSuccess<UserOut>>("/auth/me/profile-image")
+    return res.data.data
+  },
 }

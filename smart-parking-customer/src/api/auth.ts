@@ -48,4 +48,18 @@ export const authApi = {
     }>>("/auth/otp-status", { params: { email } })
     return response.data.data
   },
+
+  uploadProfileImage: async (file: File): Promise<UserOut> => {
+    const formData = new FormData()
+    formData.append("file", file)
+    const response = await apiClient.post<ApiSuccess<UserOut>>("/auth/me/profile-image", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    return response.data.data
+  },
+
+  deleteProfileImage: async (): Promise<UserOut> => {
+    const response = await apiClient.delete<ApiSuccess<UserOut>>("/auth/me/profile-image")
+    return response.data.data
+  },
 }

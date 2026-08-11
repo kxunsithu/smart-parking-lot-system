@@ -3,8 +3,9 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useNavigate } from "react-router-dom"
-import { Loader2, Mail, CheckCircle, ArrowLeft, Clock } from "lucide-react"
+import { Loader2, Mail, CheckCircle, ArrowLeft, Clock, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { OTPInput } from "@/components/common/OTPInput"
 import { authApi } from "@/api/auth"
 import { useAuthStore } from "@/store/authStore"
@@ -28,7 +29,7 @@ export default function VerifyEmail() {
   const [isUsed, setIsUsed] = useState<boolean | null>(null)
   const { user, setUser } = useAuthStore()
 
-  // Fetch user data if not available
+  // Fetch user profile if not populated
   useEffect(() => {
     if (!user) {
       authApi.getMe().then(setUser).catch(console.error)
@@ -156,81 +157,97 @@ export default function VerifyEmail() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white dark:bg-gray-800 rounded shadow-lg p-8 space-y-6">
-          <div className="space-y-1 text-center">
-            <h2 className="text-2xl font-bold">Verify your email</h2>
-            <p className="text-sm text-muted-foreground">
-              Please verify your email address to continue
-            </p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-accent/20 to-background p-4 sm:p-6">
+      <Card className="w-full max-w-md border-border/60 shadow-xl backdrop-blur-sm bg-card/95">
+        <CardHeader className="space-y-2 text-center pb-2">
+          <div className="flex justify-center mb-2">
+            <div className="bg-primary/10 border border-primary/20 p-3.5 rounded text-primary shadow-inner">
+              <Mail className="h-8 w-8" />
+            </div>
           </div>
+          <CardTitle className="text-2xl font-extrabold tracking-tight">Verify Your Email</CardTitle>
+          <CardDescription>
+            Enter the 6-digit verification code sent to
+          </CardDescription>
+          <p className="font-semibold text-foreground text-sm truncate px-2">{user?.email}</p>
+        </CardHeader>
 
-          <form onSubmit={handleSubmit(onOTPSubmit)} className="space-y-4">
-            <div className="flex flex-col items-center space-y-4 py-4">
-              <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
-                <Mail className="size-8 text-primary" />
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">
-                  We've sent a 6-digit code to
-                </p>
-                <p className="font-medium">{user?.email}</p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Enter OTP code</label>
+        <CardContent className="space-y-6 pt-2">
+          <form onSubmit={handleSubmit(onOTPSubmit)} className="space-y-5">
+            <div className="space-y-3">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block text-center">
+                Enter OTP Code
+              </label>
               <OTPInput value={otpValue} onChange={handleOtpChange} disabled={submitting} />
-              {errors.otp && <p className="text-sm text-destructive">{errors.otp.message}</p>}
-            </div>
-
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Clock className="size-4" />
-              {isUsed === true ? (
-                <span className="text-destructive">OTP has already been used</span>
-              ) : timeLeft <= 0 ? (
-                <span className="text-destructive">OTP has expired</span>
-              ) : (
-                <span>Expires in: {formatTime(timeLeft)}</span>
+              {errors.otp && (
+                <p className="text-xs text-destructive text-center mt-1">{errors.otp.message}</p>
               )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={submitting || otpValue.length !== 6 || timeLeft <= 0 || isUsed === true}>
-              {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
-              Verify Email
-              {!submitting && <CheckCircle className="ml-2 size-4" />}
+            <div className="flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground py-1">
+              <Clock className="h-3.5 w-3.5" />
+              {isUsed === true ? (
+                <span className="text-destructive font-semibold">OTP has already been used</span>
+              ) : timeLeft <= 0 ? (
+                <span className="text-destructive font-semibold">OTP has expired</span>
+              ) : (
+                <span>Expires in <strong className="text-foreground font-mono">{formatTime(timeLeft)}</strong></span>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full font-semibold"
+              disabled={submitting || otpValue.length !== 6 || timeLeft <= 0 || isUsed === true}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" /> Verifying...
+                </>
+              ) : (
+                <>
+                  Verify Email
+                  <CheckCircle className="ml-2 h-4 w-4" />
+                </>
+              )}
             </Button>
 
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-sm pt-1">
               <Button
                 type="button"
                 variant="ghost"
+                size="sm"
                 onClick={handleBack}
                 disabled={submitting}
-                className="text-muted-foreground hover:text-primary"
+                className="text-muted-foreground hover:text-foreground"
               >
-                <ArrowLeft className="mr-2 size-4" />
+                <ArrowLeft className="mr-1.5 h-4 w-4" />
                 Back to Login
               </Button>
+
               <button
                 type="button"
                 onClick={handleResendOTP}
-                className="text-primary hover:underline disabled:opacity-50"
+                className="text-primary hover:underline text-xs font-semibold disabled:opacity-50 inline-flex items-center gap-1"
                 disabled={resendingOTP || submitting}
               >
-                {resendingOTP ? <Loader2 className="inline size-3 animate-spin" /> : null}
+                {resendingOTP && <Loader2 className="h-3 w-3 animate-spin" />}
                 Resend OTP
               </button>
             </div>
           </form>
 
-          <div className="rounded bg-muted p-4 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground mb-1">Why verify your email?</p>
-            <p>Email verification helps protect your account and ensures you receive important notifications about your parking sessions.</p>
+          <div className="rounded-lg border border-border/60 bg-muted/40 p-3.5 text-xs text-muted-foreground space-y-1">
+            <div className="flex items-center gap-1.5 font-semibold text-foreground">
+              <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+              Why verify your email?
+            </div>
+            <p className="leading-relaxed">
+              Email verification secures your customer account and allows real-time notifications for your parking sessions and payments.
+            </p>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

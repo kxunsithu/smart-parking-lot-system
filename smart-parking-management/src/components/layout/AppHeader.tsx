@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ThemeToggle } from "@/components/theme/ThemeToggle"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { useAuth } from "@/hooks/useAuth"
@@ -21,11 +21,18 @@ import { initials } from "@/utils/formatters"
 import { ROLE_LABELS } from "@/utils/navConfig"
 import type { RoleName } from "@/types"
 import { useState } from "react"
+import { API_ORIGIN } from "@/api/client"
 
 export function AppHeader({ role }: { role: RoleName }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const avatarUrl = user?.profile_image
+    ? user.profile_image.startsWith("http")
+      ? user.profile_image
+      : `${API_ORIGIN}${user.profile_image}`
+    : undefined
 
   async function handleLogout() {
     const refreshToken = useAuthStore.getState().refreshToken
@@ -65,6 +72,7 @@ export function AppHeader({ role }: { role: RoleName }) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="gap-2 px-2">
               <Avatar className="size-8">
+                <AvatarImage src={avatarUrl} alt={user?.name ?? "Avatar"} className="object-cover" />
                 <AvatarFallback className="bg-primary/15 text-primary">
                   {initials(user?.name)}
                 </AvatarFallback>
