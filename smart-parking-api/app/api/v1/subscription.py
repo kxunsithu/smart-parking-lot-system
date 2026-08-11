@@ -10,12 +10,13 @@ from app.models.user import User
 from app.schemas.common import PaginationParams, SuccessResponse
 from app.core.exceptions import ForbiddenException
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
-from app.schemas.owner_subscription import SubscriptionOut, SubscriptionPurchase
+from app.schemas.owner_subscription import SubscriptionOut
 from app.schemas.payment import (
     PaymentConfirmRequest,
-    PaymentInitiateRequest,
     PaymentOut,
     PendingPaymentOut,
+    SubscriptionPaymentConfirmRequest,
+    SubscriptionPaymentInitiateRequest,
 )
 from app.services.payment_service import PaymentService
 from app.services.subscription_service import SubscriptionService
@@ -24,94 +25,58 @@ from app.services.wallet_payment_client import WalletPaymentClient, get_wallet_c
 router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
 
 
-@router.post(
-    "/purchase",
-    response_model=SuccessResponse[SubscriptionOut],
-    status_code=status.HTTP_201_CREATED,
-)
-def purchase_subscription(
-    payload: SubscriptionPurchase,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(RoleName.OWNER, RoleName.ADMIN)),
-):
-    sub = SubscriptionService(db).purchase(payload, current_user)
-    return {
-        "success": True,
-        "message": "Subscription request created. Please complete the wallet payment to activate it.",
-        "data": sub,
-    }
-
+# ─── Wallet payment flow (subscription created as ACTIVE only after payment) ──
 
 @router.post(
-    "/renew",
-    response_model=SuccessResponse[SubscriptionOut],
-    status_code=status.HTTP_201_CREATED,
-)
-def renew_subscription(
-    payload: SubscriptionPurchase,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(RoleName.OWNER, RoleName.ADMIN)),
-):
-    sub = SubscriptionService(db).renew(payload, current_user)
-    return {
-        "success": True,
-        "message": "Renewal request created. Please complete the wallet payment to activate it.",
-        "data": sub,
-    }
-
-
-# ─── Wallet payment flow (subscription becomes ACTIVE only after payment) ───────
-
-@router.post(
-    "/{subscription_id}/pay/initiate",
+    "/pay/initiate",
     response_model=SuccessResponse[PendingPaymentOut],
     status_code=status.HTTP_201_CREATED,
-    summary="Owner: request a wallet payment for a PENDING subscription (returns OTP)",
+    summary="Owner: initiate wallet payment for package purchase or renewal (returns OTP/redirect)",
 )
-def initiate_subscription_payment(
-    subscription_id: int,
-    payload: PaymentInitiateRequest = Body(default=PaymentInitiateRequest()),
+def initiate_subscription_payment_v2(
+    payload: SubscriptionPaymentInitiateRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(RoleName.OWNER)),
     wallet_client: WalletPaymentClient = Depends(get_wallet_client),
 ):
-    service = SubscriptionService(db)
-    sub = service.get_subscription(subscription_id)
-    payment = PaymentService(db, wallet_client).initiate_subscription_payment(
-        sub, current_user, wallet_phone=payload.wallet_phone
+    payment = PaymentService(db, wallet_client).initiate_subscription_payment_v2(
+        package_id=payload.package_id,
+        current_user=current_user,
+        is_renewal=payload.is_renewal,
+        wallet_phone=payload.wallet_phone,
     )
     return {
         "success": True,
-        "message": "Wallet payment initiated. Enter the OTP and your PIN to confirm.",
+        "message": "Wallet payment initiated. Enter OTP + PIN or complete on wallet hosted page.",
         "data": payment,
     }
 
 
 @router.post(
-    "/{subscription_id}/pay/confirm",
+    "/pay/confirm",
     response_model=SuccessResponse[dict],
-    summary="Owner: confirm the wallet payment (OTP + PIN) to activate the subscription",
+    summary="Owner: confirm subscription wallet payment with OTP + PIN (creates ACTIVE subscription)",
 )
-def confirm_subscription_payment(
-    subscription_id: int,
-    payload: PaymentConfirmRequest,
+def confirm_subscription_payment_v2(
+    payload: SubscriptionPaymentConfirmRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(RoleName.OWNER)),
     wallet_client: WalletPaymentClient = Depends(get_wallet_client),
 ):
-    service = SubscriptionService(db)
-    sub = service.get_subscription(subscription_id)
-    payment, sub = PaymentService(db, wallet_client).confirm_subscription_payment(
-        sub, payload, current_user
+    payment, sub = PaymentService(db, wallet_client).confirm_subscription_payment_v2(
+        reference=payload.reference,
+        payload=PaymentConfirmRequest(otp_code=payload.otp_code, pin=payload.pin),
+        current_user=current_user,
     )
     return {
         "success": True,
         "message": "Payment successful. Your subscription is now active.",
         "data": {
             "payment": PaymentOut.model_validate(payment).model_dump(mode="json"),
-            "subscription": SubscriptionOut.model_validate(sub).model_dump(mode="json"),
+            "subscription": SubscriptionOut.model_validate(sub).model_dump(mode="json") if sub else None,
         },
     }
+
 
 
 @router.get("/me", response_model=SuccessResponse[list[SubscriptionOut]])

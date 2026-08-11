@@ -74,28 +74,22 @@ def test_owner_can_purchase_subscription(client, admin_user):
     )
     owner_headers = auth_headers(client, "owner@test.com", "Owner@12345")
 
-    # Purchase returns a PENDING subscription (not yet active)
-    resp = client.post(
-        "/api/v1/subscriptions/purchase",
+    # Direct initiate payment (no PENDING subscription row created up-front)
+    set_phone(client, owner_headers)
+    init = client.post(
+        "/api/v1/subscriptions/pay/initiate",
         json={"package_id": pkg_id},
         headers=owner_headers,
     )
-    assert resp.status_code == 201
-    data = resp.json()["data"]
-    assert data["status"] == "PENDING"
-    assert data["amount"] == 9900.0
-    assert "payment_method" not in data
-    assert "transaction_ref" not in data
-
-    # Complete the wallet payment to activate
-    sub_id = data["id"]
-    set_phone(client, owner_headers)
-    init = client.post(f"/api/v1/subscriptions/{sub_id}/pay/initiate", headers=owner_headers)
     assert init.status_code == 201
+    pending = init.json()["data"]
+    assert pending["amount"] == 9900.0
+    ref = pending["reference"]
 
+    # Confirm payment to create ACTIVE subscription
     conf = client.post(
-        f"/api/v1/subscriptions/{sub_id}/pay/confirm",
-        json={"otp_code": "123456", "pin": "1234"},
+        "/api/v1/subscriptions/pay/confirm",
+        json={"reference": ref, "otp_code": "123456", "pin": "1234"},
         headers=owner_headers,
     )
     assert conf.status_code == 200
@@ -223,15 +217,17 @@ def test_owner_can_renew_subscription(client, admin_user):
 
     # Renew + pay
     set_phone(client, owner_headers)
-    renew_resp = client.post(
-        "/api/v1/subscriptions/renew", json={"package_id": pkg_id}, headers=owner_headers
+    init = client.post(
+        "/api/v1/subscriptions/pay/initiate",
+        json={"package_id": pkg_id, "is_renewal": True},
+        headers=owner_headers,
     )
-    assert renew_resp.status_code == 201
-    sub_id = renew_resp.json()["data"]["id"]
-    init = client.post(f"/api/v1/subscriptions/{sub_id}/pay/initiate", headers=owner_headers)
+    assert init.status_code == 201
+    ref = init.json()["data"]["reference"]
+
     conf = client.post(
-        f"/api/v1/subscriptions/{sub_id}/pay/confirm",
-        json={"otp_code": "123456", "pin": "1234"},
+        "/api/v1/subscriptions/pay/confirm",
+        json={"reference": ref, "otp_code": "123456", "pin": "1234"},
         headers=owner_headers,
     )
     assert conf.status_code == 200
@@ -302,28 +298,20 @@ def test_owner_can_pay_with_wallet_phone_in_initiate(client, admin_user):
     )
     owner_headers = auth_headers(client, "wphone@test.com", "Owner@12345")
 
-    # Purchase without setting profile phone
-    resp = client.post(
-        "/api/v1/subscriptions/purchase",
-        json={"package_id": pkg_id},
-        headers=owner_headers,
-    )
-    assert resp.status_code == 201
-    sub_id = resp.json()["data"]["id"]
-
     # Initiate with wallet_phone in the body (no profile phone set)
     init = client.post(
-        f"/api/v1/subscriptions/{sub_id}/pay/initiate",
-        json={"wallet_phone": "+959000000099"},
+        "/api/v1/subscriptions/pay/initiate",
+        json={"package_id": pkg_id, "wallet_phone": "+959000000099"},
         headers=owner_headers,
     )
     assert init.status_code == 201
-    assert init.json()["data"]["status"] == "PENDING"
+    pending = init.json()["data"]
+    ref = pending["reference"]
 
     # Confirm payment
     conf = client.post(
-        f"/api/v1/subscriptions/{sub_id}/pay/confirm",
-        json={"otp_code": "123456", "pin": "1234"},
+        "/api/v1/subscriptions/pay/confirm",
+        json={"reference": ref, "otp_code": "123456", "pin": "1234"},
         headers=owner_headers,
     )
     assert conf.status_code == 200

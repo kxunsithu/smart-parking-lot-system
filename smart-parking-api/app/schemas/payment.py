@@ -16,10 +16,28 @@ class PaymentInitiateRequest(BaseModel):
     )
 
 
+class SubscriptionPaymentInitiateRequest(BaseModel):
+    """Request to initiate a wallet payment for package purchase/renewal without creating a subscription record up-front."""
+    package_id: int
+    is_renewal: bool = False
+    wallet_phone: Optional[str] = Field(
+        default=None,
+        description="Wallet account phone number to charge. Falls back to profile phone if omitted.",
+    )
+
+
 class PaymentConfirmRequest(BaseModel):
     """OTP + PIN used to authorize a wallet payment in the digital wallet system."""
     otp_code: str = Field(..., min_length=6, max_length=6, description="One-time password received from the wallet app.")
     pin: str = Field(..., min_length=4, max_length=4, description="Wallet PIN (4 digits).")
+
+
+class SubscriptionPaymentConfirmRequest(BaseModel):
+    """Confirm subscription payment using pending payment reference."""
+    reference: str = Field(..., description="Pending payment reference.")
+    otp_code: str = Field(..., min_length=6, max_length=6, description="One-time password received from the wallet app.")
+    pin: str = Field(..., min_length=4, max_length=4, description="Wallet PIN (4 digits).")
+
 
 
 class PaymentOut(BaseModel):
@@ -77,6 +95,7 @@ class PaymentListOut(BaseModel):
     id: int
     reference: str
     kind: str
+    session_id: Optional[int] = None
     wallet_payment_reference: Optional[str] = None
     wallet_transaction_number: Optional[str] = None
     receiver_phone: Optional[str] = None

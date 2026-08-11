@@ -2,38 +2,22 @@ import { apiClient } from "@/api/client"
 import type {
   ApiSuccess,
   SubscriptionOut,
-  SubscriptionPurchase,
+  SubscriptionPaymentConfirm,
+  SubscriptionPaymentInitiate,
   SubscriptionPayResult,
-  WalletPaymentConfirm,
-  WalletPaymentInitiate,
   WalletPaymentOut,
 } from "@/types"
 
 export const subscriptionsApi = {
-  /** Owner/Admin: create a PENDING subscription; becomes ACTIVE after wallet payment */
-  async purchase(payload: SubscriptionPurchase): Promise<SubscriptionOut> {
-    const res = await apiClient.post<ApiSuccess<SubscriptionOut>>("/subscriptions/purchase", payload)
+  /** Owner: initiate wallet payment for package purchase/renewal without up-front subscription record */
+  async payInitiate(data: SubscriptionPaymentInitiate): Promise<WalletPaymentOut> {
+    const res = await apiClient.post<ApiSuccess<WalletPaymentOut>>("/subscriptions/pay/initiate", data)
     return res.data.data
   },
 
-  /** Owner/Admin: request a renewal (PENDING until wallet payment) */
-  async renew(payload: SubscriptionPurchase): Promise<SubscriptionOut> {
-    const res = await apiClient.post<ApiSuccess<SubscriptionOut>>("/subscriptions/renew", payload)
-    return res.data.data
-  },
-
-  /** Owner/Admin: request a wallet payment for a PENDING subscription (returns OTP) */
-  async payInitiate(subscriptionId: number, data?: WalletPaymentInitiate): Promise<WalletPaymentOut> {
-    const res = await apiClient.post<ApiSuccess<WalletPaymentOut>>(`/subscriptions/${subscriptionId}/pay/initiate`, data)
-    return res.data.data
-  },
-
-  /** Owner/Admin: confirm the wallet payment (OTP + PIN) to activate the subscription */
-  async payConfirm(subscriptionId: number, data: WalletPaymentConfirm): Promise<SubscriptionPayResult> {
-    const res = await apiClient.post<ApiSuccess<SubscriptionPayResult>>(
-      `/subscriptions/${subscriptionId}/pay/confirm`,
-      data
-    )
+  /** Owner: confirm the subscription wallet payment (OTP + PIN) to activate the subscription */
+  async payConfirm(data: SubscriptionPaymentConfirm): Promise<SubscriptionPayResult> {
+    const res = await apiClient.post<ApiSuccess<SubscriptionPayResult>>("/subscriptions/pay/confirm", data)
     return res.data.data
   },
 

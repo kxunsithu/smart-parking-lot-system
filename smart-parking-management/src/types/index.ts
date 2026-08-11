@@ -436,7 +436,19 @@ export interface WalletPaymentInitiate {
   wallet_phone?: string | null
 }
 
+export interface SubscriptionPaymentInitiate {
+  package_id: number
+  is_renewal?: boolean
+  wallet_phone?: string | null
+}
+
 export interface WalletPaymentConfirm {
+  otp_code: string
+  pin: string
+}
+
+export interface SubscriptionPaymentConfirm {
+  reference: string
   otp_code: string
   pin: string
 }

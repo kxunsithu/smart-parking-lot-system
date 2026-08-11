@@ -138,14 +138,16 @@ class PaymentService:
     ) -> Payment:
         """Create the transaction record once the wallet confirms completion.
 
-        Also activates the parent entity (PENDING session → ACTIVE, PENDING
-        subscription → ACTIVE) and removes the pending payment tracking row.
+        Handles three cases:
+        1. Parking session payment  → session PENDING → ACTIVE
+        2. Deferred subscription    → subscription created as ACTIVE now (pending_package_id set)
+        3. Legacy subscription path → existing PENDING subscription → ACTIVE (backward compat)
         """
         payment = Payment(
             user_id=pending.user_id,
             wallet_account_id=pending.wallet_account_id,
             session_id=pending.session_id,
-            subscription_id=pending.subscription_id,
+            subscription_id=pending.subscription_id,  # may be updated below for case 2
             reference=pending.reference,
             wallet_payment_reference=pending.wallet_payment_reference,
             wallet_payment_url=pending.wallet_payment_url,
@@ -159,16 +161,53 @@ class PaymentService:
             paid_at=datetime.now(timezone.utc),
         )
         self.db.add(payment)
+        self.db.flush()  # get payment.id before deleting pending
         self.db.delete(pending)
 
         if pending.session_id is not None:
+            # Case 1: parking session payment
             session = self.db.get(ParkingSession, pending.session_id)
             if session and session.status == SessionStatus.PENDING.value:
                 session.status = SessionStatus.ACTIVE.value
+        elif pending.pending_package_id is not None and pending.pending_owner_id is not None:
+            # Case 2: deferred subscription – create ACTIVE subscription now
+            sub = SubscriptionService(self.db).create_and_activate(
+                owner_id=pending.pending_owner_id,
+                package_id=pending.pending_package_id,
+                is_renewal=pending.is_renewal,
+                amount=pending.amount,
+            )
+            # Link the payment to the newly-created subscription
+            payment.subscription_id = sub.id
         elif pending.subscription_id is not None:
+            # Case 3: legacy path – existing PENDING subscription (backward compat)
             subscription = self.db.get(OwnerSubscription, pending.subscription_id)
             if subscription and subscription.status == SubscriptionStatus.PENDING.value:
-                SubscriptionService(self.db).activate_paid_subscription(subscription)
+                from datetime import timedelta
+                now = datetime.now(timezone.utc)
+                pkg = subscription.package
+                existing = self.db.scalar(
+                    select(OwnerSubscription)
+                    .where(
+                        OwnerSubscription.owner_id == subscription.owner_id,
+                        OwnerSubscription.status == SubscriptionStatus.ACTIVE.value,
+                        OwnerSubscription.id != subscription.id,
+                    )
+                    .limit(1)
+                )
+                if existing:
+                    start = existing.expires_at
+                    if start and start.tzinfo is None:
+                        start = start.replace(tzinfo=timezone.utc)
+                    if not start or start < now:
+                        start = now
+                    existing.status = SubscriptionStatus.EXPIRED.value
+                else:
+                    start = now
+                subscription.status = SubscriptionStatus.ACTIVE.value
+                subscription.started_at = start
+                if pkg:
+                    subscription.expires_at = start + timedelta(days=pkg.duration_days)
 
         self.db.commit()
         self.db.refresh(payment)
@@ -292,61 +331,84 @@ class PaymentService:
 
     # ─── Subscription payments ───────────────────────────────────────────────
 
-    def _assert_subscription_access(
-        self, subscription: OwnerSubscription, current_user: User
-    ) -> None:
-        if current_user.role.name == RoleName.ADMIN.value:
-            return
-        if current_user.role.name != RoleName.OWNER.value:
-            raise ForbiddenException("Only the owner or an admin can pay for this subscription.")
-        if subscription.owner.user_id != current_user.id:
-            raise ForbiddenException("You can only pay for your own subscriptions.")
+    def _owner_for_user(self, current_user: User):
+        """Return the ParkingOwner for the current user, or raise."""
+        from app.models.parking_owner import ParkingOwner
+        from sqlalchemy import select as _select
+        owner = self.owner_repo.get_by_user_id(current_user.id)
+        if not owner:
+            raise ForbiddenException("Owner profile not found.")
+        return owner
 
-    def _subscription_owner_phone(
-        self, subscription: OwnerSubscription, wallet_phone: str | None
-    ) -> str:
+    def _owner_phone(self, owner, wallet_phone: str | None) -> str:
         if wallet_phone:
             return self._require_phone(wallet_phone)
-        owner = subscription.owner
         user = owner.user if owner else None
         return self._require_phone(user.phone if user else None)
 
-    def initiate_subscription_payment(
+    def initiate_subscription_payment_v2(
         self,
-        subscription: OwnerSubscription,
+        package_id: int,
         current_user: User,
+        is_renewal: bool = False,
         wallet_phone: str | None = None,
     ) -> PendingWalletPayment:
-        self._assert_subscription_access(subscription, current_user)
-        if subscription.status != SubscriptionStatus.PENDING.value:
-            raise BadRequestException("Only PENDING subscriptions can be paid.")
+        """Initiate a wallet payment for a package WITHOUT creating a subscription record.
 
-        existing = self._pending_payment(subscription_id=subscription.id)
-        if existing:
-            return existing
+        The subscription is created as ACTIVE only once the payment is confirmed
+        (in _complete_payment). This eliminates the PENDING subscription status.
+        """
+        from app.repositories.package_repository import PackageRepository
+        pkg_repo = PackageRepository(self.db)
+        pkg = pkg_repo.get(package_id)
+        if not pkg or not pkg.is_active:
+            raise BadRequestException("Package not found or is no longer available.")
+
+        if current_user.role.name == RoleName.ADMIN.value:
+            raise BadRequestException(
+                "Admins cannot initiate subscription payments on behalf of owners via this endpoint."
+            )
+        owner = self._owner_for_user(current_user)
 
         receiver = self._require_account(
             self.account_repo.get_platform_account(), "The platform administrator"
         )
-        phone = self._subscription_owner_phone(subscription, wallet_phone)
+        phone = self._owner_phone(owner, wallet_phone)
+
+        # Check for an in-flight payment for this owner+package to avoid duplicates
+        from sqlalchemy import select as _select
+        existing_pending = self.db.scalars(
+            _select(PendingWalletPayment)
+            .where(
+                PendingWalletPayment.pending_package_id == package_id,
+                PendingWalletPayment.pending_owner_id == owner.id,
+            )
+            .order_by(PendingWalletPayment.id.desc())
+            .limit(1)
+        ).first()
+        if existing_pending:
+            return existing_pending
         reference = _new_reference()
+        action = "renewal" if is_renewal else "purchase"
         result = self.wallet_client.initiate(
             customer_phone=phone,
-            amount=subscription.amount,
+            amount=pkg.price,
             order_reference=reference,
-            description=f"Parking subscription #{subscription.id}",
+            description=f"Parking subscription {action}: {pkg.name}",
             redirect_url=self._wallet_callback_url("management"),
             api_key=receiver.api_key,
         )
 
-        amount = float(result.get("amount", subscription.amount))
+        amount = float(result.get("amount", pkg.price))
         fee = float(result.get("fee", 0.0))
         total = float(result.get("total", round(amount + fee, 2)))
 
         pending = PendingWalletPayment(
             user_id=current_user.id,
             wallet_account_id=receiver.id,
-            subscription_id=subscription.id,
+            pending_package_id=package_id,
+            pending_owner_id=owner.id,
+            is_renewal=is_renewal,
             wallet_payment_reference=result.get("payment_reference"),
             wallet_payment_url=result.get("payment_url"),
             amount=amount,
@@ -357,23 +419,31 @@ class PaymentService:
         )
         return self.pending_repo.create(pending)
 
-    def confirm_subscription_payment(
+    def confirm_subscription_payment_v2(
         self,
-        subscription: OwnerSubscription,
+        reference: str,
         payload: PaymentConfirmRequest,
         current_user: User,
     ) -> tuple[Payment, OwnerSubscription]:
-        self._assert_subscription_access(subscription, current_user)
-        if subscription.status != SubscriptionStatus.PENDING.value:
-            raise BadRequestException("Only PENDING subscriptions can be paid.")
-
-        pending = self._pending_payment(subscription_id=subscription.id)
+        """Confirm payment using the pending reference; returns (Payment, OwnerSubscription)."""
+        pending = self.pending_repo.get_by_reference(reference)
         if not pending or not pending.wallet_payment_reference:
-            raise BadRequestException("Please initiate the payment first.")
+            raise BadRequestException("Pending payment not found. Please initiate the payment first.")
+        if pending.pending_package_id is None:
+            raise BadRequestException("This endpoint is for subscription payments only.")
+        # Verify ownership
+        owner = self._owner_for_user(current_user)
+        if pending.pending_owner_id != owner.id:
+            raise ForbiddenException("You can only confirm your own subscription payments.")
 
         payment = self._confirm(pending, payload)
-        self.db.refresh(subscription)
-        return payment, subscription
+        # Retrieve the subscription that was just created in _complete_payment
+        from sqlalchemy import select as _select
+        sub = self.db.scalars(
+            _select(OwnerSubscription)
+            .where(OwnerSubscription.id == payment.subscription_id)
+        ).first()
+        return payment, sub
 
     # ─── Hosted payment callback ─────────────────────────────────────────────
 
@@ -441,6 +511,7 @@ class PaymentService:
 
         Admin sees every payment; an owner sees only the parking fees received
         into their wallet accounts plus their own subscription payments.
+        A customer sees only their own parking-fee payments (session payments).
         """
         stmt = (
             select(Payment)
@@ -480,6 +551,22 @@ class PaymentService:
                     ),
                 )
             )
+        elif current_user.role.name == RoleName.CUSTOMER.value:
+            # Customers see only their own session payments (no subscription payments)
+            customer = self.db.scalar(
+                select(Customer).where(Customer.user_id == current_user.id)
+            )
+            if not customer:
+                raise ForbiddenException("Customer profile not found.")
+            stmt = stmt.where(
+                Payment.session_id.in_(
+                    select(ParkingSession.id).where(
+                        ParkingSession.car_id.in_(
+                            select(Car.id).where(Car.customer_id == customer.id)
+                        )
+                    )
+                )
+            )
         elif current_user.role.name != RoleName.ADMIN.value:
             raise ForbiddenException("You do not have permission to view wallet payments.")
 
@@ -514,6 +601,7 @@ class PaymentService:
             id=payment.id,
             reference=payment.reference,
             kind="subscription" if payment.subscription_id is not None else "session",
+            session_id=payment.session_id,
             wallet_payment_reference=payment.wallet_payment_reference,
             wallet_transaction_number=payment.wallet_transaction_number,
             receiver_phone=payment.receiver_phone,

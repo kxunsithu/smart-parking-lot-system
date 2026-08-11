@@ -14,8 +14,12 @@ def _initiate_session_payment(client, customer_headers, session_id):
     return init.json()["data"]
 
 
-def _initiate_subscription_payment(client, owner_headers, sub_id):
-    init = client.post(f"/api/v1/subscriptions/{sub_id}/pay/initiate", headers=owner_headers)
+def _initiate_subscription_payment(client, owner_headers, pkg_id):
+    init = client.post(
+        "/api/v1/subscriptions/pay/initiate",
+        json={"package_id": pkg_id},
+        headers=owner_headers,
+    )
     assert init.status_code == 201, init.text
     return init.json()["data"]
 
@@ -46,11 +50,8 @@ def test_initiate_returns_hosted_payment_url_for_subscription(client, admin_user
     )
     pkg_id = pkg.json()["data"]["id"]
     set_phone(client, owner_headers)
-    sub_id = client.post(
-        "/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers
-    ).json()["data"]["id"]
 
-    data = _initiate_subscription_payment(client, owner_headers, sub_id)
+    data = _initiate_subscription_payment(client, owner_headers, pkg_id)
     assert data["wallet_payment_reference"].startswith("PAY-TEST-")
     assert data["wallet_payment_url"].startswith("http://wallet.local/external-payments/pay/")
     assert data["status"] == "PENDING"
@@ -165,11 +166,8 @@ def test_callback_finalizes_subscription_payment(client, admin_user):
     )
     pkg_id = pkg.json()["data"]["id"]
     set_phone(client, owner_headers)
-    sub_id = client.post(
-        "/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers
-    ).json()["data"]["id"]
 
-    data = _initiate_subscription_payment(client, owner_headers, sub_id)
+    data = _initiate_subscription_payment(client, owner_headers, pkg_id)
     client._fake_wallet.mark_completed(data["wallet_payment_reference"])
 
     resp = client.get(
@@ -187,4 +185,4 @@ def test_callback_finalizes_subscription_payment(client, admin_user):
     assert "status=completed" in resp.headers["location"]
 
     subs = client.get("/api/v1/subscriptions/me", headers=owner_headers).json()["data"]
-    assert any(s["id"] == sub_id and s["status"] == "ACTIVE" for s in subs)
+    assert any(s["package_id"] == pkg_id and s["status"] == "ACTIVE" for s in subs)

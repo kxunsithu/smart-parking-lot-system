@@ -15,8 +15,12 @@ import WalletPaymentResult from "@/pages/WalletPaymentResult"
 import { useAuthStore } from "@/store/authStore"
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated())
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />
+  const accessToken = useAuthStore((state) => state.accessToken)
+  const user = useAuthStore((state) => state.user)
+  const isVerifying = useAuthStore((state) => state.isVerifying)
+  // Require a token, a fully-verified user, and that we're not in verification flow
+  const isFullyAuthenticated = accessToken && user && user.is_verified && !isVerifying
+  return isFullyAuthenticated ? <>{children}</> : <Navigate to="/login" />
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {

@@ -50,6 +50,15 @@ export default function Register() {
       setTokens(tokens.access_token, tokens.refresh_token)
 
       const user = await authApi.getMe()
+
+      // Guard: ensure the registered account has the customer role
+      if (!user.role || user.role.name.toLowerCase() !== "customer") {
+        toast.error("Access denied. This is a customer-only portal.")
+        const { logout } = useAuthStore.getState()
+        logout()
+        return
+      }
+
       setUser(user)
 
       try {

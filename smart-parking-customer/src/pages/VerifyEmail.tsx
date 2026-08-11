@@ -108,11 +108,20 @@ export default function VerifyEmail() {
     setSubmitting(true)
     try {
       const tokens = await authApi.verifyOTP({ email: user!.email, code: otpValue })
-      const { setTokens, setUser, setVerifying } = useAuthStore.getState()
+      const { setTokens, setUser, setVerifying, logout } = useAuthStore.getState()
 
       setTokens(tokens.access_token, tokens.refresh_token)
 
       const updatedUser = await authApi.getMe()
+
+      // Guard: ensure verified user is a customer
+      if (!updatedUser.role || updatedUser.role.name.toLowerCase() !== "customer") {
+        toast.error("Access denied. This is a customer-only portal.")
+        logout()
+        navigate("/login", { replace: true })
+        return
+      }
+
       setUser(updatedUser)
       setVerifying(false)
 

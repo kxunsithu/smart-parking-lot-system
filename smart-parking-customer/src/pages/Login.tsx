@@ -49,11 +49,12 @@ export default function Login() {
         return
       }
 
-      // Check if user has customer role
+      // Check if user has customer role — guard against null role
       if (!user.role || user.role.name.toLowerCase() !== "customer") {
         toast.error("Access denied. This is a customer-only portal.")
         const { logout } = useAuthStore.getState()
         logout()
+        setIsLoading(false)
         return
       }
 

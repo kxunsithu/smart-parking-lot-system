@@ -19,7 +19,7 @@ router = APIRouter(prefix="/payments", tags=["Payments"])
 def list_wallet_payments(
     params: PaginationParams = Depends(pagination_params),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(RoleName.ADMIN, RoleName.OWNER)),
+    current_user: User = Depends(require_roles(RoleName.ADMIN, RoleName.OWNER, RoleName.CUSTOMER)),
     wallet_client: WalletPaymentClient = Depends(get_wallet_client),
 ):
     """List external wallet transaction records.

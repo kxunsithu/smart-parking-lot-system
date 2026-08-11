@@ -1,10 +1,10 @@
-"""Business logic for Owner Subscriptions: purchase, renew, and access gate."""
+"""Business logic for Owner Subscriptions: create-on-payment-complete and access gate."""
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.constants import RoleName, SubscriptionStatus
-from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
+from app.core.exceptions import ForbiddenException, NotFoundException
 from app.models.owner_subscription import OwnerSubscription
 from app.models.parking_lot import ParkingLot
 from app.models.user import User
@@ -12,7 +12,6 @@ from app.repositories.owner_subscription_repository import OwnerSubscriptionRepo
 from app.repositories.package_repository import PackageRepository
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.schemas.common import PaginationParams, build_meta
-from app.schemas.owner_subscription import SubscriptionPurchase
 
 
 class SubscriptionService:
@@ -34,72 +33,48 @@ class SubscriptionService:
             raise ForbiddenException("Owner profile not found.")
         return owner.id
 
-    def purchase(self, payload: SubscriptionPurchase, current_user: User) -> OwnerSubscription:
-        owner_id = self._resolve_owner_id(current_user, payload.owner_id)
+    def create_and_activate(
+        self,
+        owner_id: int,
+        package_id: int,
+        is_renewal: bool,
+        amount: float,
+    ) -> "OwnerSubscription":
+        """Create an ACTIVE subscription immediately (called after payment is confirmed).
 
-        pkg = self.pkg_repo.get(payload.package_id)
+        If ``is_renewal`` is True and the owner already has an active subscription,
+        the new period extends from the current expiry date and the old subscription
+        is marked EXPIRED. Otherwise the new subscription starts from now.
+        """
+        pkg = self.pkg_repo.get(package_id)
         if not pkg or not pkg.is_active:
             raise NotFoundException("Package not found or is no longer available.")
-
-        # A subscription starts as PENDING until the wallet payment is completed.
-        sub = OwnerSubscription(
-            owner_id=owner_id,
-            package_id=pkg.id,
-            started_at=None,
-            expires_at=None,
-            status=SubscriptionStatus.PENDING.value,
-            amount=pkg.price,
-        )
-        return self.sub_repo.create(sub)
-
-    def renew(self, payload: SubscriptionPurchase, current_user: User) -> OwnerSubscription:
-        """Create a PENDING renewal that extends from the current expiry once paid."""
-        owner_id = self._resolve_owner_id(current_user, payload.owner_id)
-
-        pkg = self.pkg_repo.get(payload.package_id)
-        if not pkg or not pkg.is_active:
-            raise NotFoundException("Package not found or is no longer available.")
-
-        sub = OwnerSubscription(
-            owner_id=owner_id,
-            package_id=pkg.id,
-            started_at=None,
-            expires_at=None,
-            status=SubscriptionStatus.PENDING.value,
-            amount=pkg.price,
-        )
-        return self.sub_repo.create(sub)
-
-    def activate_paid_subscription(self, sub: OwnerSubscription) -> OwnerSubscription:
-        """
-        Mark a PENDING subscription ACTIVE and compute its period once payment succeeds.
-        If the owner already has another ACTIVE subscription, this is a renewal and
-        extends from the previous expiry date; the previous one is then EXPIRED.
-        """
-        if sub.status != SubscriptionStatus.PENDING.value:
-            raise BadRequestException("Only PENDING subscriptions can be activated.")
 
         now = datetime.now(timezone.utc)
-        existing = self.sub_repo.get_active_by_owner_id(sub.owner_id)
+        existing = self.sub_repo.get_active_by_owner_id(owner_id)
 
-        if existing and existing.id != sub.id:
+        if is_renewal and existing and existing.id:
             start = existing.expires_at
-            if start.tzinfo is None:
-                start = start.replace(tzinfo=timezone.utc)
-            if start < now:
+            if start is not None:
+                if start.tzinfo is None:
+                    start = start.replace(tzinfo=timezone.utc)
+                if start < now:
+                    start = now
+            else:
                 start = now
             self.sub_repo.update(existing, {"status": SubscriptionStatus.EXPIRED.value})
         else:
             start = now
 
-        return self.sub_repo.update(
-            sub,
-            {
-                "status": SubscriptionStatus.ACTIVE.value,
-                "started_at": start,
-                "expires_at": start + timedelta(days=sub.package.duration_days),
-            },
+        sub = OwnerSubscription(
+            owner_id=owner_id,
+            package_id=pkg.id,
+            started_at=start,
+            expires_at=start + timedelta(days=pkg.duration_days),
+            status=SubscriptionStatus.ACTIVE.value,
+            amount=amount,
         )
+        return self.sub_repo.create(sub)
 
 
     def get_active_subscription(self, owner_id: int) -> OwnerSubscription | None:
@@ -169,16 +144,14 @@ class SubscriptionService:
         sub = self.sub_repo.get(subscription_id)
         if not sub:
             raise NotFoundException("Subscription not found.")
-        
-        # Toggle between ACTIVE/PENDING and CANCELLED
+
+        # Toggle between ACTIVE and CANCELLED only (PENDING subscriptions no longer created)
         if sub.status == SubscriptionStatus.ACTIVE.value:
-            new_status = SubscriptionStatus.CANCELLED.value
-        elif sub.status == SubscriptionStatus.PENDING.value:
             new_status = SubscriptionStatus.CANCELLED.value
         elif sub.status == SubscriptionStatus.CANCELLED.value:
             new_status = SubscriptionStatus.ACTIVE.value
         else:
             # EXPIRED subscriptions cannot be toggled
-            raise ForbiddenException("Cannot toggle expired subscriptions.")
-        
+            raise ForbiddenException("Cannot toggle expired or pending subscriptions.")
+
         return self.sub_repo.update(sub, {"status": new_status})

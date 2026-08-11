@@ -196,19 +196,20 @@ def set_phone(client: TestClient, headers: dict, phone: str = "+959000000001") -
     assert response.status_code == 200
 
 
-def purchase_and_activate(client: TestClient, owner_headers: dict, pkg_id: int) -> dict:
-    """Purchase a subscription and complete wallet payment via the fake wallet."""
+def purchase_and_activate(client: TestClient, owner_headers: dict, pkg_id: int, is_renewal: bool = False) -> dict:
+    """Initiate wallet payment for package and confirm payment via the fake wallet."""
     set_phone(client, owner_headers)
-    resp = client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers)
-    assert resp.status_code == 201
-    sub_id = resp.json()["data"]["id"]
-
-    init = client.post(f"/api/v1/subscriptions/{sub_id}/pay/initiate", headers=owner_headers)
+    init = client.post(
+        "/api/v1/subscriptions/pay/initiate",
+        json={"package_id": pkg_id, "is_renewal": is_renewal},
+        headers=owner_headers,
+    )
     assert init.status_code == 201, init.text
+    reference = init.json()["data"]["reference"]
 
     conf = client.post(
-        f"/api/v1/subscriptions/{sub_id}/pay/confirm",
-        json={"otp_code": "123456", "pin": "1234"},
+        "/api/v1/subscriptions/pay/confirm",
+        json={"reference": reference, "otp_code": "123456", "pin": "1234"},
         headers=owner_headers,
     )
     assert conf.status_code == 200, conf.text

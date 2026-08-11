@@ -107,6 +107,30 @@ export interface WalletPaymentOut {
   created_at: string
 }
 
+/** A completed wallet transaction row returned by GET /payments */
+export interface PaymentListOut {
+  id: number
+  reference: string
+  kind: string
+  session_id?: number | null
+  wallet_payment_reference?: string | null
+  wallet_transaction_number?: string | null
+  receiver_phone?: string | null
+  payer_name?: string | null
+  payer_phone?: string | null
+  amount: number
+  fee: number
+  total: number
+  status: string
+  paid_at?: string | null
+  created_at: string
+  lot_name?: string | null
+  plate_number?: string | null
+  package_name?: string | null
+  owner_name?: string | null
+  direction?: string | null
+}
+
 export interface WalletPaymentConfirm {
   otp_code: string
   pin: string

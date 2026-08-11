@@ -33,7 +33,8 @@ export const useAuthStore = create<AuthState>()(
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         user: state.user,
-        isVerifying: state.isVerifying,
+        // isVerifying is intentionally NOT persisted — a crash or reload during
+        // email verification should reset to false so the user isn't stuck.
       }),
     }
   )

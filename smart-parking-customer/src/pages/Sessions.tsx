@@ -14,6 +14,8 @@ import {
   AlertCircle,
   Filter,
   Hourglass,
+  Loader2,
+  FileText,
 } from "lucide-react"
 import Navbar from "@/components/layout/Navbar"
 import { LocationTrackBar } from "@/components/parking/LocationTrackBar"
@@ -31,6 +33,9 @@ import {
   type ParkingTrackTarget,
   type SlotTrackContext,
 } from "@/lib/parkingTrack"
+import { paymentsApi } from "@/api/payments"
+import { ReceiptModal } from "@/components/common/ReceiptModal"
+import type { PaymentListOut } from "@/api/types"
 
 type FilterTab = "all" | "active" | "finished"
 
@@ -143,6 +148,9 @@ export default function Sessions() {
   const [endLoading, setEndLoading] = useState(false)
   const [activeNavigation, setActiveNavigation] = useState<ParkingTrackTarget | null>(null)
   const [activeSessionLocation, setActiveSessionLocation] = useState<SlotTrackContext | null>(null)
+  const [receiptPayment, setReceiptPayment] = useState<PaymentListOut | null>(null)
+  const [showReceipt, setShowReceipt] = useState(false)
+  const [loadingReceipt, setLoadingReceipt] = useState<number | null>(null)
 
   const handleTrack = useCallback((context: SlotTrackContext) => {
     trackParkingSlot(
@@ -202,6 +210,24 @@ export default function Sessions() {
       toast.error("Failed to end parking session")
     } finally {
       setEndLoading(false)
+    }
+  }
+
+  const handleViewReceipt = async (sessionId: number) => {
+    setLoadingReceipt(sessionId)
+    try {
+      const { items } = await paymentsApi.list({ limit: 50 })
+      const match = items.find((p) => p.kind === "session" && p.session_id === sessionId)
+      if (match) {
+        setReceiptPayment(match)
+        setShowReceipt(true)
+      } else {
+        toast.error("No payment receipt found for this session.")
+      }
+    } catch {
+      toast.error("Failed to load receipt.")
+    } finally {
+      setLoadingReceipt(null)
     }
   }
 
@@ -372,6 +398,8 @@ export default function Sessions() {
                   carPlate={getCarPlate(session.car_id)}
                   onEnd={() => setEndingSession(session)}
                   onTrack={handleTrack}
+                  onViewReceipt={handleViewReceipt}
+                  loadingReceipt={loadingReceipt}
                 />
               ))}
           </div>
@@ -387,6 +415,10 @@ export default function Sessions() {
           destLongitude={activeNavigation.longitude}
           onClose={() => setActiveNavigation(null)}
         />
+      )}
+
+      {showReceipt && receiptPayment && (
+        <ReceiptModal payment={receiptPayment} onClose={() => setShowReceipt(false)} />
       )}
     </div>
   )
@@ -430,11 +462,15 @@ function SessionCard({
   carPlate,
   onEnd,
   onTrack,
+  onViewReceipt,
+  loadingReceipt,
 }: {
   session: ParkingSessionOut
   carPlate: string
   onEnd: () => void
   onTrack: (context: SlotTrackContext) => void
+  onViewReceipt: (sessionId: number) => void
+  loadingReceipt: number | null
 }) {
   const isActive = session.status === "ACTIVE"
   const isPending = session.status === "PENDING"
@@ -581,10 +617,24 @@ function SessionCard({
               End Session
             </button>
           ) : (
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-              Completed
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                Completed
+              </span>
+              <button
+                onClick={() => onViewReceipt(session.id)}
+                disabled={loadingReceipt === session.id}
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded bg-muted hover:bg-muted/80 transition-colors border border-border disabled:opacity-60"
+              >
+                {loadingReceipt === session.id ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <FileText className="w-3.5 h-3.5" />
+                )}
+                Receipt
+              </button>
+            </div>
           )}
         </div>
       </div>

@@ -94,7 +94,8 @@ def _paid_session(client, admin_headers, owner_headers, customer_email, plate):
 # ─── Access control ───────────────────────────────────────────────────────────
 
 
-def test_customer_cannot_list_payments(client, admin_user):
+def test_customer_can_list_own_payments(client, admin_user):
+    """Customers can list their own session payments (not 403 any more)."""
     admin_headers = auth_headers(client, "admin@test.com", "Admin@12345")
     owner_headers = _register_owner(client, "owner.acl@test.com")
     create_owner_wallet(client, owner_headers)
@@ -115,11 +116,29 @@ def test_customer_cannot_list_payments(client, admin_user):
             "end_time": (base + timedelta(hours=1)).isoformat(),
         },
     ).json()["data"]["id"]
-    assert client.post(f"/api/v1/parking-sessions/{session_id}/pay/initiate", headers=customer_headers).status_code == 201
+    init = client.post(f"/api/v1/parking-sessions/{session_id}/pay/initiate", headers=customer_headers)
+    assert init.status_code == 201
+    conf = client.post(
+        f"/api/v1/parking-sessions/{session_id}/pay/confirm",
+        json={"otp_code": "123456", "pin": "1234"},
+        headers=customer_headers,
+    )
+    assert conf.status_code == 200, conf.text
 
-    denied = client.get("/api/v1/payments", headers=customer_headers)
-    assert denied.status_code == 403
+    # Customer can now access their own payments (200).
+    resp = client.get("/api/v1/payments", headers=customer_headers)
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["meta"]["total"] == 1
+    row = data["data"][0]
+    assert row["kind"] == "session"
+    assert row["plate_number"] == "ACL-001"
+    assert row["payer_name"] == "Wallet Customer"
+    assert row["payer_phone"] == "+959111222333"
+    assert row["session_id"] == session_id
+    assert row["status"] == "COMPLETED"
 
+    # Unauthenticated still gets 401.
     unauth = client.get("/api/v1/payments")
     assert unauth.status_code == 401
 

@@ -79,11 +79,9 @@ export function OwnerSubscriptionPage() {
   // Payment Modal State
   const [selectedPkg, setSelectedPkg] = useState<PackageOut | null>(null)
   const [paymentActionType, setPaymentActionType] = useState<"purchase" | "renew">("purchase")
-  const [pendingSub, setPendingSub] = useState<SubscriptionOut | null>(null)
   const [paymentInfo, setPaymentInfo] = useState<WalletPaymentOut | null>(null)
   const [otp, setOtp] = useState("")
   const [pin, setPin] = useState("")
-  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false)
   const [isInitiating, setIsInitiating] = useState(false)
   const [isPaying, setIsPaying] = useState(false)
   const [paymentChecking, setPaymentChecking] = useState(false)
@@ -116,7 +114,6 @@ export function OwnerSubscriptionPage() {
   const openPaymentModal = (pkg: PackageOut, actionType: "purchase" | "renew") => {
     setSelectedPkg(pkg)
     setPaymentActionType(actionType)
-    setPendingSub(null)
     setPaymentInfo(null)
     setOtp("")
     setPin("")
@@ -128,7 +125,6 @@ export function OwnerSubscriptionPage() {
 
   const closeModal = () => {
     setSelectedPkg(null)
-    setPendingSub(null)
     setPaymentInfo(null)
     setOtp("")
     setPin("")
@@ -138,32 +134,17 @@ export function OwnerSubscriptionPage() {
     setPaymentChecking(false)
   }
 
-  const handleConfirmPayment = async () => {
+  const handleInitiatePayment = async () => {
     if (!selectedPkg) return
-    try {
-      setIsSubmittingPayment(true)
-      const payload = { package_id: selectedPkg.id }
-
-      const sub = paymentActionType === "renew"
-        ? await subscriptionsApi.renew(payload)
-        : await subscriptionsApi.purchase(payload)
-
-      setPendingSub(sub)
-      setPayInitiateError(null)
-      setPaymentInfo(null)
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-    } finally {
-      setIsSubmittingPayment(false)
-    }
-  }
-
-  const handleInitiatePayment = async (subscriptionId: number, phone?: string) => {
     setIsInitiating(true)
     setPayInitiateError(null)
     setPayError(null)
     try {
-      const info = await subscriptionsApi.payInitiate(subscriptionId, phone ? { wallet_phone: phone } : undefined)
+      const info = await subscriptionsApi.payInitiate({
+        package_id: selectedPkg.id,
+        is_renewal: paymentActionType === "renew",
+        wallet_phone: walletPhone.trim() || undefined,
+      })
       setPaymentInfo(info)
       if (info.wallet_payment_url) {
         window.open(info.wallet_payment_url, "_blank", "noopener,noreferrer")
@@ -179,12 +160,10 @@ export function OwnerSubscriptionPage() {
   }
 
   const handleCheckPaymentStatus = async () => {
-    if (!pendingSub) return
     setPaymentChecking(true)
     try {
-      const subs = await subscriptionsApi.getMySubscriptions()
-      const updated = subs.find((s) => s.id === pendingSub.id)
-      if (updated && updated.status === "ACTIVE") {
+      const active = await subscriptionsApi.getActive()
+      if (active && active.package_id === selectedPkg?.id && active.status === "ACTIVE") {
         toast.success("Payment successful! Your subscription is now active.")
         closeModal()
         fetchAll()
@@ -198,20 +177,18 @@ export function OwnerSubscriptionPage() {
     }
   }
 
-  // While the customer is completing the payment on the wallet hosted page,
-  // poll the subscription until it becomes ACTIVE, then close and refresh.
+  // Poll for subscription status if wallet hosted page URL was opened
   useEffect(() => {
-    if (!pendingSub || !paymentInfo?.wallet_payment_url) return
+    if (!paymentInfo?.wallet_payment_url) return
     let cancelled = false
     let attempts = 0
     const check = async () => {
       if (cancelled) return
       setPaymentChecking(true)
       try {
-        const subs = await subscriptionsApi.getMySubscriptions()
+        const active = await subscriptionsApi.getActive()
         if (cancelled) return
-        const updated = subs.find((s) => s.id === pendingSub.id)
-        if (updated && updated.status === "ACTIVE") {
+        if (active && active.package_id === selectedPkg?.id && active.status === "ACTIVE") {
           setPaymentChecking(false)
           toast.success("Payment successful! Your subscription is now active.")
           closeModal()
@@ -235,16 +212,20 @@ export function OwnerSubscriptionPage() {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingSub, paymentInfo?.wallet_payment_url])
+  }, [paymentInfo?.wallet_payment_url])
 
   const handlePayNow = async () => {
-    if (!pendingSub) return
+    if (!paymentInfo) return
     if (!/^\d{6}$/.test(otp.trim())) { toast.error("Please enter the 6-digit OTP"); return }
     if (!/^\d{4}$/.test(pin.trim())) { toast.error("Please enter your 4-digit wallet PIN"); return }
     setIsPaying(true)
     setPayError(null)
     try {
-      await subscriptionsApi.payConfirm(pendingSub.id, { otp_code: otp.trim(), pin: pin.trim() })
+      await subscriptionsApi.payConfirm({
+        reference: paymentInfo.reference,
+        otp_code: otp.trim(),
+        pin: pin.trim(),
+      })
       toast.success("Payment successful! Your subscription is now active.")
       closeModal()
       fetchAll()
@@ -471,7 +452,7 @@ export function OwnerSubscriptionPage() {
             </DialogDescription>
           </DialogHeader>
 
-          {selectedPkg && !pendingSub && (
+          {selectedPkg && !paymentInfo && (
             <div className="space-y-5 py-2">
               {/* Order Summary Box */}
               <div className="bg-slate-900 text-white rounded p-4 space-y-2">
@@ -489,26 +470,7 @@ export function OwnerSubscriptionPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <ShieldCheck className="size-4 text-emerald-500" />
-                <span>Payment is processed via the digital wallet app using OTP + PIN.</span>
-              </div>
-
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button type="button" variant="outline" onClick={closeModal}>
-                  Cancel
-                </Button>
-                <Button type="button" disabled={isSubmittingPayment} onClick={handleConfirmPayment}>
-                  {isSubmittingPayment && <Loader2 className="size-4 animate-spin mr-2" />}
-                  Confirm & Proceed to Payment
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
-
-          {pendingSub && !paymentInfo && (
-            <div className="space-y-4 py-2">
-              <FormField label="Wallet Phone Number" htmlFor="wallet-phone" hint="Enter the phone number of the customer or agent wallet account used to pay." error={undefined}>
+              <FormField label="Wallet Phone Number" htmlFor="wallet-phone" hint="Phone number of the wallet account used to pay (optional if profile phone matches)." error={undefined}>
                 <Input
                   id="wallet-phone"
                   type="tel"
@@ -517,32 +479,39 @@ export function OwnerSubscriptionPage() {
                   onChange={(e) => setWalletPhone(e.target.value)}
                 />
               </FormField>
+
               {payInitiateError && (
                 <p className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded p-3">
                   {payInitiateError}
                 </p>
               )}
-              <Button
-                className="w-full"
-                type="button"
-                disabled={isInitiating || !walletPhone.trim()}
-                onClick={() => handleInitiatePayment(pendingSub.id, walletPhone.trim() || undefined)}
-              >
-                {isInitiating ? (
-                  <><Loader2 className="size-4 animate-spin mr-2" /> Requesting payment...</>
-                ) : (
-                  <>Pay with Wallet</>
-                )}
-              </Button>
+
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <ShieldCheck className="size-4 text-emerald-500" />
+                <span>Payment is processed via digital wallet. Your subscription activates automatically once paid.</span>
+              </div>
+
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button type="button" variant="outline" onClick={closeModal} disabled={isInitiating}>
+                  Cancel
+                </Button>
+                <Button type="button" disabled={isInitiating} onClick={handleInitiatePayment}>
+                  {isInitiating ? (
+                    <><Loader2 className="size-4 animate-spin mr-2" /> Requesting payment...</>
+                  ) : (
+                    <>Pay with Wallet</>
+                  )}
+                </Button>
+              </DialogFooter>
             </div>
           )}
 
-          {pendingSub && paymentInfo && (
+          {selectedPkg && paymentInfo && (
             <div className="space-y-4 py-2">
               <div className="bg-slate-900 text-white rounded p-4 space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-sm opacity-80">Package</span>
-                  <span className="text-sm font-semibold">{selectedPkg?.name ?? `#${pendingSub.package_id}`}</span>
+                  <span className="text-sm font-semibold">{selectedPkg.name}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm opacity-80">Subscription Fee</span>
@@ -598,7 +567,7 @@ export function OwnerSubscriptionPage() {
                   <p className="text-center">
                     <button
                       type="button"
-                      onClick={() => handleInitiatePayment(pendingSub.id, walletPhone.trim() || undefined)}
+                      onClick={handleInitiatePayment}
                       disabled={isInitiating || paymentChecking}
                       className="text-xs text-primary hover:underline disabled:opacity-50"
                     >
@@ -650,7 +619,7 @@ export function OwnerSubscriptionPage() {
                   <p className="text-center">
                     <button
                       type="button"
-                      onClick={() => handleInitiatePayment(pendingSub.id, walletPhone.trim() || undefined)}
+                      onClick={handleInitiatePayment}
                       disabled={isInitiating || isPaying}
                       className="text-xs text-primary hover:underline disabled:opacity-50"
                     >

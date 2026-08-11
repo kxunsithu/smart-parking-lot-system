@@ -337,15 +337,16 @@ def test_subscription_payment_requires_platform_account(client, admin_user):
     )
     pkg_id = pkg.json()["data"]["id"]
     owner_headers = _register_owner(client, "owner.noplat@test.com")
+    set_phone(client, owner_headers)
 
     # Remove the platform account (pre-seeded by fixture).
     assert client.delete("/api/v1/wallet-accounts/platform", headers=admin_headers).status_code == 204
 
-    sub_resp = client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers)
-    assert sub_resp.status_code == 201
-    sub_id = sub_resp.json()["data"]["id"]
-
-    init = client.post(f"/api/v1/subscriptions/{sub_id}/pay/initiate", headers=owner_headers)
+    init = client.post(
+        "/api/v1/subscriptions/pay/initiate",
+        json={"package_id": pkg_id},
+        headers=owner_headers,
+    )
     assert init.status_code == 400
     assert "platform administrator" in init.json()["message"].lower()
 
@@ -362,23 +363,19 @@ def test_owner_can_pay_subscription_with_wallet_phone(client, admin_user):
     pkg_id = pkg_resp.json()["data"]["id"]
     owner_headers = _register_owner(client, "owner.wphone@test.com", name="Wallet Phone Owner")
 
-    # Purchase without setting profile phone.
-    resp = client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers)
-    assert resp.status_code == 201
-    sub_id = resp.json()["data"]["id"]
-
     # Initiate with wallet_phone in the body.
     init = client.post(
-        f"/api/v1/subscriptions/{sub_id}/pay/initiate",
-        json={"wallet_phone": "+959000000099"},
+        "/api/v1/subscriptions/pay/initiate",
+        json={"package_id": pkg_id, "wallet_phone": "+959000000099"},
         headers=owner_headers,
     )
     assert init.status_code == 201
-    assert init.json()["data"]["status"] == "PENDING"
+    pending = init.json()["data"]
+    ref = pending["reference"]
 
     conf = client.post(
-        f"/api/v1/subscriptions/{sub_id}/pay/confirm",
-        json={"otp_code": "123456", "pin": "1234"},
+        "/api/v1/subscriptions/pay/confirm",
+        json={"reference": ref, "otp_code": "123456", "pin": "1234"},
         headers=owner_headers,
     )
     assert conf.status_code == 200
@@ -396,22 +393,23 @@ def test_unpaid_subscription_blocks_lot_creation(client, admin_user):
     pkg_id = pkg.json()["data"]["id"]
     owner_headers = _register_owner(client, "owner.pending@test.com", name="Pending Owner")
 
-    resp = client.post("/api/v1/subscriptions/purchase", json={"package_id": pkg_id}, headers=owner_headers)
-    assert resp.status_code == 201
-    assert resp.json()["data"]["status"] == "PENDING"
-
     # Cannot create a lot while the subscription is unpaid.
     lot = client.post("/api/v1/parking-lots", json={"name": "Lot Before Pay"}, headers=owner_headers)
     assert lot.status_code == 403
 
     # After paying, creation is allowed.
-    sub_id = resp.json()["data"]["id"]
     set_phone(client, owner_headers)
-    init = client.post(f"/api/v1/subscriptions/{sub_id}/pay/initiate", headers=owner_headers)
+    init = client.post(
+        "/api/v1/subscriptions/pay/initiate",
+        json={"package_id": pkg_id},
+        headers=owner_headers,
+    )
     assert init.status_code == 201, init.text
+    ref = init.json()["data"]["reference"]
+
     conf = client.post(
-        f"/api/v1/subscriptions/{sub_id}/pay/confirm",
-        json={"otp_code": "123456", "pin": "1234"},
+        "/api/v1/subscriptions/pay/confirm",
+        json={"reference": ref, "otp_code": "123456", "pin": "1234"},
         headers=owner_headers,
     )
     assert conf.status_code == 200

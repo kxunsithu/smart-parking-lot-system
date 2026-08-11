@@ -19,7 +19,9 @@ import { parkingSessionsApi } from "@/api/parkingSessions"
 import { parkingFloorsApi } from "@/api/parkingFloors"
 import { parkingSlotsApi } from "@/api/parkingSlots"
 import { useCarStore } from "@/store/carStore"
-import type { ParkingLotOut, ParkingSlotOut, ParkingSessionOut, WalletPaymentOut } from "@/api/types"
+import { paymentsApi } from "@/api/payments"
+import { ReceiptModal } from "@/components/common/ReceiptModal"
+import type { ParkingLotOut, ParkingSlotOut, ParkingSessionOut, WalletPaymentOut, PaymentListOut } from "@/api/types"
 import type { ParkingFloorOut } from "@/api/parkingFloors"
 import { toast } from "@/components/ui/toaster"
 import { format, addHours } from "date-fns"
@@ -108,6 +110,8 @@ export default function ParkingDetail() {
   const [paymentChecking, setPaymentChecking] = useState(false)
   const [payInitiateError, setPayInitiateError] = useState<string | null>(null)
   const [payError, setPayError] = useState<string | null>(null)
+  const [receiptPayment, setReceiptPayment] = useState<PaymentListOut | null>(null)
+  const [showReceipt, setShowReceipt] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -386,6 +390,13 @@ export default function ParkingDetail() {
       })
       setBookedSession(result.session)
       toast.success("Payment successful! Your parking session is now ACTIVE.")
+      // Fetch the completed payment receipt
+      try {
+        const { items } = await paymentsApi.list({ limit: 1 })
+        if (items.length > 0) setReceiptPayment(items[0])
+      } catch {
+        // receipt fetch is best-effort; don't block success
+      }
       setStep("success")
     } catch (err: any) {
       setPayError(err.response?.data?.message || "Payment failed. Please check your OTP and PIN and try again.")
@@ -896,9 +907,16 @@ export default function ParkingDetail() {
                       </span>
                     </div>
                   </div>
-                  <Button className="w-full" onClick={() => navigate("/sessions")}>
-                    View My Sessions
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button className="w-full" onClick={() => navigate("/sessions")}>
+                      View My Sessions
+                    </Button>
+                    {receiptPayment && (
+                      <Button variant="outline" className="w-full" onClick={() => setShowReceipt(true)}>
+                        View Receipt
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -1027,6 +1045,10 @@ export default function ParkingDetail() {
           destLongitude={activeNavigation.longitude}
           onClose={() => setActiveNavigation(null)}
         />
+      )}
+
+      {showReceipt && receiptPayment && (
+        <ReceiptModal payment={receiptPayment} onClose={() => setShowReceipt(false)} />
       )}
     </div>
   )
