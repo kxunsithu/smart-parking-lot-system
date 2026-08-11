@@ -68,7 +68,7 @@ services:
       - key: WALLET_REFERENCE_PREFIX
         value: PP
       - key: WALLET_REDIRECT_BASE_URL
-        value: https://smart-parking-api.onrender.com
+        value: https://smart-parking-backend-api.up.railway.app
       - key: CUSTOMER_APP_URL
         value: https://smart-parking-customer.onrender.com
       - key: MANAGEMENT_APP_URL
@@ -85,7 +85,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://smart-parking-api.onrender.com/api/v1
+        value: https://smart-parking-backend-api.up.railway.app/api/v1
 
   - type: web
     name: smart-parking-management
@@ -98,7 +98,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://smart-parking-api.onrender.com/api/v1
+        value: https://smart-parking-backend-api.up.railway.app/api/v1
 
 databases:
   - name: smart-parking-db

@@ -180,16 +180,19 @@ export function StaffNavbar() {
               </div>
             </div>
 
-            {/* Close Button inside panel */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded hover:bg-muted shrink-0"
-              onClick={() => setMobileOpen(false)}
-              aria-label="Close navigation menu"
-            >
-              <X className="size-4" />
-            </Button>
+            {/* Panel Top Bar Actions: ThemeToggle + Close Button */}
+            <div className="flex items-center gap-1 shrink-0">
+              <ThemeToggle />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded hover:bg-muted shrink-0"
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close navigation menu"
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
           </div>
 
           {/* Nav Links */}

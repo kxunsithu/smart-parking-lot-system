@@ -3,6 +3,7 @@ import { ParkingSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { NAV_CONFIG, ROLE_LABELS } from "@/utils/navConfig"
 import type { RoleName } from "@/types"
+import { ThemeToggle } from "@/components/theme/ThemeToggle"
 
 interface AppSidebarProps {
   role: RoleName
@@ -14,14 +15,17 @@ export function AppSidebar({ role, onNavigate }: AppSidebarProps) {
 
   return (
     <div className="flex h-full w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
-      <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
-        <div className="flex size-8 items-center justify-center rounded bg-primary text-primary-foreground">
-          <ParkingSquare className="size-5" />
+      <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
+        <div className="flex items-center gap-2">
+          <div className="flex size-8 items-center justify-center rounded bg-primary text-primary-foreground">
+            <ParkingSquare className="size-5" />
+          </div>
+          <div className="leading-tight">
+            <p className="text-sm font-semibold">Smart Parking</p>
+            <p className="text-xs text-muted-foreground">{ROLE_LABELS[role]}</p>
+          </div>
         </div>
-        <div className="leading-tight">
-          <p className="text-sm font-semibold">Smart Parking</p>
-          <p className="text-xs text-muted-foreground">{ROLE_LABELS[role]}</p>
-        </div>
+        <ThemeToggle />
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
