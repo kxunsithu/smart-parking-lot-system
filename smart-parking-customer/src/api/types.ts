@@ -77,7 +77,21 @@ export interface ParkingSlotOut {
   status: SlotStatus
 }
 
-export type SessionStatus = "PENDING" | "ACTIVE" | "FINISHED"
+export type SessionStatus = "ACTIVE" | "FINISHED"
+
+export interface SessionPaymentInitiateRequest {
+  car_id: number
+  slot_id: number
+  start_time: string  // ISO datetime string
+  end_time: string    // ISO datetime string
+  wallet_phone?: string | null
+}
+
+export interface SessionPaymentConfirmRequest {
+  reference: string
+  otp_code: string
+  pin: string
+}
 
 export interface ParkingSessionOut {
   id: number

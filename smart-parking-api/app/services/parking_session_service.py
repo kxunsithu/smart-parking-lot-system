@@ -201,7 +201,7 @@ class ParkingSessionService:
         car_sessions = self.db.scalars(
             select(ParkingSession).where(
                 ParkingSession.car_id == payload.car_id,
-                ParkingSession.status.in_([SessionStatus.ACTIVE.value, SessionStatus.PENDING.value]),
+                ParkingSession.status == SessionStatus.ACTIVE.value,
             )
         ).all()
 
@@ -216,11 +216,11 @@ class ParkingSessionService:
             ),
         )
 
-        # Query existing active/pending sessions for this slot to check buffer conflicts
+        # Query existing active sessions for this slot to check buffer conflicts
         slot_sessions = self.db.scalars(
             select(ParkingSession).where(
                 ParkingSession.slot_id == payload.slot_id,
-                ParkingSession.status.in_([SessionStatus.ACTIVE.value, SessionStatus.PENDING.value])
+                ParkingSession.status == SessionStatus.ACTIVE.value,
             )
         ).all()
 

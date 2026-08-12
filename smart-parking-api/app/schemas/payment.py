@@ -5,6 +5,33 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class SessionPaymentInitiateRequest(BaseModel):
+    """Initiate a wallet payment for a parking session booking.
+
+    Validates booking parameters, calculates the fee, and initiates the wallet
+    payment without creating a ParkingSession record. The session is created as
+    ACTIVE only after payment confirmation.
+    """
+    car_id: int
+    slot_id: int
+    start_time: datetime = Field(..., description="Planned parking start time (UTC)")
+    end_time: datetime = Field(..., description="Planned parking end time (UTC)")
+    wallet_phone: Optional[str] = Field(
+        default=None,
+        description="Wallet account phone number to charge. Falls back to profile phone if omitted.",
+    )
+
+
+class SessionPaymentConfirmRequest(BaseModel):
+    """Confirm a pending session wallet payment by reference (OTP + PIN).
+
+    The ParkingSession is created as ACTIVE upon successful confirmation.
+    """
+    reference: str = Field(..., description="Pending payment reference (e.g. PP-XXXXXX).")
+    otp_code: str = Field(..., min_length=6, max_length=6, description="One-time password received from the wallet app.")
+    pin: str = Field(..., min_length=4, max_length=4, description="Wallet PIN (4 digits).")
+
+
 class PaymentInitiateRequest(BaseModel):
     """Optional wallet phone number to use for the wallet payment.
 

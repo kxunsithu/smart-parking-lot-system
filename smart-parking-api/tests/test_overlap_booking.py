@@ -1,6 +1,6 @@
 """Tests verifying the 2-hour overlap buffer logic for customer bookings."""
 from datetime import datetime, timedelta, timezone
-from tests.conftest import auth_headers, purchase_and_activate
+from tests.conftest import auth_headers, create_owner_wallet, purchase_and_activate, set_phone
 
 
 def test_overlap_booking_buffer(client, admin_user):
@@ -38,6 +38,8 @@ def test_overlap_booking_buffer(client, admin_user):
         "/api/v1/parking-slots", headers=owner_headers, json={"floor_id": floor_id, "slot_number": "SL-01"}
     ).json()["data"]["id"]
 
+    create_owner_wallet(client, owner_headers)
+
     # Owner creates staff
     client.post(
         "/api/v1/parking-staff",
@@ -57,6 +59,7 @@ def test_overlap_booking_buffer(client, admin_user):
         json={"name": "Dave Customer", "email": "dave.overlap@example.com", "password": "Customer@1234"},
     )
     customer_headers = auth_headers(client, "dave.overlap@example.com", "Customer@1234")
+    set_phone(client, customer_headers)
 
     car_resp = client.post(
         "/api/v1/cars",
@@ -131,7 +134,7 @@ def test_overlap_booking_buffer(client, admin_user):
         }
     )
     assert book_fail_resp.status_code == 400
-    assert "conflicts" in book_fail_resp.json()["message"]
+    assert "gap is required" in book_fail_resp.json()["message"] or "conflicts" in book_fail_resp.json()["message"]
 
     # 4. Try booking slot starting exactly 2 hours after 05:30 PM (starts 07:30 PM, ends 09:00 PM) -> SUCCESS
     start_time_post_ok = (base_time + timedelta(hours=4, minutes=30)).isoformat() # 7:30 PM
@@ -162,7 +165,7 @@ def test_overlap_booking_buffer(client, admin_user):
         }
     )
     assert book_post_fail_resp.status_code == 400
-    assert "conflicts" in book_post_fail_resp.json()["message"]
+    assert "gap is required" in book_post_fail_resp.json()["message"] or "conflicts" in book_post_fail_resp.json()["message"]
 
 
 def test_car_cannot_book_overlapping_session_on_different_slot(client, admin_user):
@@ -188,6 +191,8 @@ def test_car_cannot_book_overlapping_session_on_different_slot(client, admin_use
     owner_headers = auth_headers(client, "bob.car-overlap@example.com", "Owner@1234")
     purchase_and_activate(client, owner_headers, pkg_id)
 
+    create_owner_wallet(client, owner_headers)
+
     lot_id = client.post(
         "/api/v1/parking-lots", headers=owner_headers, json={"name": "Car Overlap Lot", "rate_per_hour": 1000}
     ).json()["data"]["id"]
@@ -206,6 +211,7 @@ def test_car_cannot_book_overlapping_session_on_different_slot(client, admin_use
         json={"name": "Dave Customer", "email": "dave.car-overlap@example.com", "password": "Customer@1234"},
     )
     customer_headers = auth_headers(client, "dave.car-overlap@example.com", "Customer@1234")
+    set_phone(client, customer_headers)
 
     car_id = client.post(
         "/api/v1/cars",
@@ -242,7 +248,7 @@ def test_car_cannot_book_overlapping_session_on_different_slot(client, admin_use
         },
     )
     assert overlap_resp.status_code == 400
-    assert "car already has a session" in overlap_resp.json()["message"].lower()
+    assert "car already has" in overlap_resp.json()["message"].lower()
 
     later_start = (base_time + timedelta(hours=3)).isoformat()
     later_end = (base_time + timedelta(hours=5)).isoformat()

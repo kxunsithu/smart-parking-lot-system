@@ -69,7 +69,7 @@ def _paid_session(client, admin_headers, owner_headers, customer_email, plate):
     )
     tomorrow = datetime.now(timezone.utc).date() + timedelta(days=1)
     base = datetime(tomorrow.year, tomorrow.month, tomorrow.day, 10, 0, tzinfo=timezone.utc)
-    session = client.post(
+    init = client.post(
         "/api/v1/parking-sessions/book",
         headers=customer_headers,
         json={
@@ -78,13 +78,12 @@ def _paid_session(client, admin_headers, owner_headers, customer_email, plate):
             "start_time": base.isoformat(),
             "end_time": (base + timedelta(hours=2)).isoformat(),
         },
-    ).json()["data"]
-    session_id = session["id"]
-    init = client.post(f"/api/v1/parking-sessions/{session_id}/pay/initiate", headers=customer_headers)
+    )
     assert init.status_code == 201, init.text
+    reference = init.json()["data"]["reference"]
     conf = client.post(
-        f"/api/v1/parking-sessions/{session_id}/pay/confirm",
-        json={"otp_code": "123456", "pin": "1234"},
+        "/api/v1/parking-sessions/pay/confirm",
+        json={"reference": reference, "otp_code": "123456", "pin": "1234"},
         headers=customer_headers,
     )
     assert conf.status_code == 200, conf.text
@@ -106,7 +105,7 @@ def test_customer_can_list_own_payments(client, admin_user):
     )
     tomorrow = datetime.now(timezone.utc).date() + timedelta(days=1)
     base = datetime(tomorrow.year, tomorrow.month, tomorrow.day, 9, 0, tzinfo=timezone.utc)
-    session_id = client.post(
+    init = client.post(
         "/api/v1/parking-sessions/book",
         headers=customer_headers,
         json={
@@ -115,15 +114,16 @@ def test_customer_can_list_own_payments(client, admin_user):
             "start_time": base.isoformat(),
             "end_time": (base + timedelta(hours=1)).isoformat(),
         },
-    ).json()["data"]["id"]
-    init = client.post(f"/api/v1/parking-sessions/{session_id}/pay/initiate", headers=customer_headers)
-    assert init.status_code == 201
+    )
+    assert init.status_code == 201, init.text
+    reference = init.json()["data"]["reference"]
     conf = client.post(
-        f"/api/v1/parking-sessions/{session_id}/pay/confirm",
-        json={"otp_code": "123456", "pin": "1234"},
+        "/api/v1/parking-sessions/pay/confirm",
+        json={"reference": reference, "otp_code": "123456", "pin": "1234"},
         headers=customer_headers,
     )
     assert conf.status_code == 200, conf.text
+    session_id = conf.json()["data"]["session"]["id"]
 
     # Customer can now access their own payments (200).
     resp = client.get("/api/v1/payments", headers=customer_headers)
@@ -271,7 +271,7 @@ def test_payments_list_pagination_and_search(client, admin_user):
         )
         tomorrow = datetime.now(timezone.utc).date() + timedelta(days=1)
         base = datetime(tomorrow.year, tomorrow.month, tomorrow.day, 10 + i, 0, tzinfo=timezone.utc)
-        session = client.post(
+        init = client.post(
             "/api/v1/parking-sessions/book",
             headers=customer_headers,
             json={
@@ -280,13 +280,12 @@ def test_payments_list_pagination_and_search(client, admin_user):
                 "start_time": base.isoformat(),
                 "end_time": (base + timedelta(hours=2)).isoformat(),
             },
-        ).json()["data"]
-        session_id = session["id"]
-        init = client.post(f"/api/v1/parking-sessions/{session_id}/pay/initiate", headers=customer_headers)
+        )
         assert init.status_code == 201, init.text
+        reference = init.json()["data"]["reference"]
         conf = client.post(
-            f"/api/v1/parking-sessions/{session_id}/pay/confirm",
-            json={"otp_code": "123456", "pin": "1234"},
+            "/api/v1/parking-sessions/pay/confirm",
+            json={"reference": reference, "otp_code": "123456", "pin": "1234"},
             headers=customer_headers,
         )
         assert conf.status_code == 200, conf.text

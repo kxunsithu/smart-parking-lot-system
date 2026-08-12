@@ -253,6 +253,7 @@ export default function ParkingDetail() {
   }
 
   // Step 2 → Book: validate times, check overlap, then create ACTIVE session
+  // Step 2 → Book: validate times, check overlap, then initiate booking payment
   const handleProceedToBook = async () => {
     if (!lot || !selectedCar || !selectedSlot) return
 
@@ -275,22 +276,27 @@ export default function ParkingDetail() {
 
     setBooking(true)
     try {
-      const booked = await parkingSessionsApi.book({
+      const pendingPayment = await parkingSessionsApi.book({
         car_id: selectedCar,
         slot_id: selectedSlot,
         start_time: toISOUTC(startTime),
         end_time: toISOUTC(endTime),
+        wallet_phone: walletPhone.trim() || null,
       })
-      setBookedSession(booked)
-      setPaymentInfo(null)
+      setPaymentInfo(pendingPayment)
+      setBookedSession(null)
       setOtpCode("")
       setPin("")
-      setWalletPhone("")
       setPayError(null)
       setPayInitiateError(null)
       setPaymentChecking(false)
-      toast.success("Session booked. Please complete the wallet payment to activate it.")
-      setStep("pay")
+
+      if (pendingPayment.wallet_payment_url) {
+        window.location.href = pendingPayment.wallet_payment_url
+      } else {
+        toast.success("Booking initiated. Enter your OTP and PIN to confirm payment.")
+        setStep("pay")
+      }
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to book parking session")
     } finally {
@@ -299,17 +305,21 @@ export default function ParkingDetail() {
   }
 
   const handleInitiatePayment = async () => {
-    if (!bookedSession) return
+    if (!selectedCar || !selectedSlot) return
     setInitiating(true)
     setPayInitiateError(null)
     setPayError(null)
     try {
-      const info = await parkingSessionsApi.payInitiate(bookedSession.id, {
+      const pendingPayment = await parkingSessionsApi.book({
+        car_id: selectedCar,
+        slot_id: selectedSlot,
+        start_time: toISOUTC(startTime),
+        end_time: toISOUTC(endTime),
         wallet_phone: walletPhone.trim() || null,
       })
-      setPaymentInfo(info)
-      if (info.wallet_payment_url) {
-        window.location.href = info.wallet_payment_url
+      setPaymentInfo(pendingPayment)
+      if (pendingPayment.wallet_payment_url) {
+        window.location.href = pendingPayment.wallet_payment_url
       } else {
         toast.success("Payment initiated. Enter the OTP and your PIN to confirm.")
       }
@@ -320,71 +330,15 @@ export default function ParkingDetail() {
     }
   }
 
-  // While the customer is completing the payment on the wallet hosted page,
-  // poll the parking session until it becomes ACTIVE, then auto-advance.
-  useEffect(() => {
-    if (step !== "pay" || !bookedSession || !paymentInfo?.wallet_payment_url) return
-    let cancelled = false
-    let attempts = 0
-    const check = async () => {
-      if (cancelled) return
-      setPaymentChecking(true)
-      try {
-        const session = await parkingSessionsApi.get(bookedSession.id)
-        if (cancelled) return
-        if (session.status === "ACTIVE") {
-          setBookedSession(session)
-          setPaymentChecking(false)
-          toast.success("Payment successful! Your parking session is now ACTIVE.")
-          setStep("success")
-          return
-        }
-      } catch {
-        // transient error — keep polling
-      }
-      if (cancelled) return
-      attempts += 1
-      if (attempts < 100) {
-        setPaymentChecking(false)
-        setTimeout(check, 3000)
-      } else {
-        setPaymentChecking(false)
-      }
-    }
-    check()
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, bookedSession, paymentInfo?.wallet_payment_url])
-
-  const handleCheckPaymentStatus = async () => {
-    if (!bookedSession) return
-    setPaymentChecking(true)
-    try {
-      const session = await parkingSessionsApi.get(bookedSession.id)
-      if (session.status === "ACTIVE") {
-        setBookedSession(session)
-        toast.success("Payment successful! Your parking session is now ACTIVE.")
-        setStep("success")
-      } else {
-        toast.error("Payment is not completed yet. Complete it in the wallet tab and try again.")
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to check payment status.")
-    } finally {
-      setPaymentChecking(false)
-    }
-  }
-
   const handleConfirmPayment = async () => {
-    if (!bookedSession || !paymentInfo) return
+    if (!paymentInfo) return
     if (!/^\d{6}$/.test(otpCode.trim())) { toast.error("Please enter the 6-digit OTP"); return }
     if (!/^\d{4}$/.test(pin.trim())) { toast.error("Please enter your 4-digit wallet PIN"); return }
     setPaying(true)
     setPayError(null)
     try {
-      const result = await parkingSessionsApi.payConfirm(bookedSession.id, {
+      const result = await parkingSessionsApi.payConfirmByRef({
+        reference: paymentInfo.reference,
         otp_code: otpCode.trim(),
         pin: pin.trim(),
       })

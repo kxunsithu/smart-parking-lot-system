@@ -6,6 +6,8 @@ import type {
   ParkingSessionStart,
   ParkingSessionFinish,
   ParkingSessionPayResult,
+  SessionPaymentInitiateRequest,
+  SessionPaymentConfirmRequest,
   WalletPaymentConfirm,
   WalletPaymentOut,
 } from "./types"
@@ -26,19 +28,25 @@ export const parkingSessionsApi = {
     return response.data.data
   },
 
-  /** Customer booking: creates a PENDING session; becomes ACTIVE after wallet payment */
-  book: async (data: ParkingSessionBook): Promise<ParkingSessionOut> => {
-    const response = await apiClient.post<ApiSuccess<ParkingSessionOut>>("/parking-sessions/book", data)
+  /** Customer booking: validates booking & initiates wallet payment (no session recorded until payment is confirmed) */
+  book: async (data: SessionPaymentInitiateRequest): Promise<WalletPaymentOut> => {
+    const response = await apiClient.post<ApiSuccess<WalletPaymentOut>>("/parking-sessions/book", data)
     return response.data.data
   },
 
-  /** Customer: request a wallet payment for a PENDING session (returns OTP) */
+  /** Customer: confirm wallet payment by reference (OTP + PIN) -> creates ACTIVE session */
+  payConfirmByRef: async (data: SessionPaymentConfirmRequest): Promise<ParkingSessionPayResult> => {
+    const response = await apiClient.post<ApiSuccess<ParkingSessionPayResult>>("/parking-sessions/pay/confirm", data)
+    return response.data.data
+  },
+
+  /** [Legacy] Request a wallet payment for a PENDING session */
   payInitiate: async (id: number, data?: { wallet_phone?: string | null }): Promise<WalletPaymentOut> => {
     const response = await apiClient.post<ApiSuccess<WalletPaymentOut>>(`/parking-sessions/${id}/pay/initiate`, data)
     return response.data.data
   },
 
-  /** Customer: confirm the wallet payment (OTP + PIN) to activate the session */
+  /** [Legacy] Confirm the wallet payment (OTP + PIN) for a session_id */
   payConfirm: async (id: number, data: WalletPaymentConfirm): Promise<ParkingSessionPayResult> => {
     const response = await apiClient.post<ApiSuccess<ParkingSessionPayResult>>(`/parking-sessions/${id}/pay/confirm`, data)
     return response.data.data

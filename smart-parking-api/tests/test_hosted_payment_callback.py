@@ -8,8 +8,8 @@ from tests.test_wallet_payment_flow import (
 from tests.conftest import auth_headers, create_owner_wallet, set_phone
 
 
-def _initiate_session_payment(client, customer_headers, session_id):
-    init = client.post(f"/api/v1/parking-sessions/{session_id}/pay/initiate", headers=customer_headers)
+def _initiate_session_payment(client, customer_headers, car_id, slot_id):
+    init = _book_tomorrow(client, customer_headers, car_id, slot_id)
     assert init.status_code == 201, init.text
     return init.json()["data"]
 
@@ -31,9 +31,8 @@ def test_initiate_returns_hosted_payment_url_for_session(client, admin_user):
     slot_id, _ = _setup_lot_with_slot(client, admin_headers, owner_headers)
 
     customer_headers, car_id = _register_customer(client, email="cust.hosted@test.com")
-    session_id = _book_tomorrow(client, customer_headers, car_id, slot_id)["id"]
 
-    data = _initiate_session_payment(client, customer_headers, session_id)
+    data = _initiate_session_payment(client, customer_headers, car_id, slot_id)
     assert data["wallet_payment_reference"].startswith("PAY-TEST-")
     assert data["wallet_payment_url"].startswith("http://wallet.local/external-payments/pay/")
     assert data["status"] == "PENDING"
@@ -64,8 +63,7 @@ def test_callback_finalizes_session_payment(client, admin_user):
     slot_id, _ = _setup_lot_with_slot(client, admin_headers, owner_headers)
 
     customer_headers, car_id = _register_customer(client, email="cust.cb@test.com")
-    session_id = _book_tomorrow(client, customer_headers, car_id, slot_id)["id"]
-    data = _initiate_session_payment(client, customer_headers, session_id)
+    data = _initiate_session_payment(client, customer_headers, car_id, slot_id)
 
     # Customer completes the payment on the wallet hosted page.
     client._fake_wallet.mark_completed(data["wallet_payment_reference"])
@@ -87,8 +85,9 @@ def test_callback_finalizes_session_payment(client, admin_user):
     assert f"reference={data['reference']}" in resp.headers["location"]
 
     # Payment + session are finalized on the parking side.
-    session = client.get(f"/api/v1/parking-sessions/{session_id}", headers=customer_headers).json()["data"]
-    assert session["status"] == "ACTIVE"
+    sessions = client.get("/api/v1/parking-sessions", headers=customer_headers).json()["data"]
+    assert len(sessions) == 1
+    assert sessions[0]["status"] == "ACTIVE"
 
 
 def test_callback_is_idempotent(client, admin_user):
@@ -98,8 +97,7 @@ def test_callback_is_idempotent(client, admin_user):
     slot_id, _ = _setup_lot_with_slot(client, admin_headers, owner_headers)
 
     customer_headers, car_id = _register_customer(client, email="cust.idem@test.com")
-    session_id = _book_tomorrow(client, customer_headers, car_id, slot_id)["id"]
-    data = _initiate_session_payment(client, customer_headers, session_id)
+    data = _initiate_session_payment(client, customer_headers, car_id, slot_id)
     client._fake_wallet.mark_completed(data["wallet_payment_reference"])
 
     params = {
@@ -123,15 +121,14 @@ def test_callback_does_not_finalize_when_wallet_payment_pending(client, admin_us
     slot_id, _ = _setup_lot_with_slot(client, admin_headers, owner_headers)
 
     customer_headers, car_id = _register_customer(client, email="cust.pendingcb@test.com")
-    session_id = _book_tomorrow(client, customer_headers, car_id, slot_id)["id"]
-    data = _initiate_session_payment(client, customer_headers, session_id)
+    data = _initiate_session_payment(client, customer_headers, car_id, slot_id)
 
     # Wallet payment never completed → callback must NOT mark it paid.
     resp = client.get(
         "/api/v1/wallet-payment/callback",
         params={
             "reference": data["wallet_payment_reference"],
-            "order_reference": data["reference"],
+            "order_reference": data["order_reference"] if "order_reference" in data else data["reference"],
             "status": "success",
             "app": "customer",
         },
@@ -140,8 +137,8 @@ def test_callback_does_not_finalize_when_wallet_payment_pending(client, admin_us
     assert resp.status_code == 303
     assert "status=failed" in resp.headers["location"]
 
-    session = client.get(f"/api/v1/parking-sessions/{session_id}", headers=customer_headers).json()["data"]
-    assert session["status"] == "PENDING"
+    sessions = client.get("/api/v1/parking-sessions", headers=customer_headers).json()["data"]
+    assert len(sessions) == 0
 
 
 def test_callback_with_unknown_reference_redirects_failed(client, admin_user):

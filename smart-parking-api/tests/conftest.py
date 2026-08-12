@@ -243,21 +243,18 @@ def book_and_pay_session(
 ) -> dict:
     """Book a session and complete wallet payment, returning the activated session dict."""
     create_owner_wallet(client, owner_headers)
+    set_phone(client, customer_headers)
     book = client.post(
         "/api/v1/parking-sessions/book",
         headers=customer_headers,
         json={"car_id": car_id, "slot_id": slot_id, "start_time": start_time, "end_time": end_time},
     )
     assert book.status_code == 201, book.text
-    session_id = book.json()["data"]["id"]
-
-    set_phone(client, customer_headers)
-    init = client.post(f"/api/v1/parking-sessions/{session_id}/pay/initiate", headers=customer_headers)
-    assert init.status_code == 201, init.text
+    reference = book.json()["data"]["reference"]
 
     conf = client.post(
-        f"/api/v1/parking-sessions/{session_id}/pay/confirm",
-        json={"otp_code": "123456", "pin": "1234"},
+        "/api/v1/parking-sessions/pay/confirm",
+        json={"reference": reference, "otp_code": "123456", "pin": "1234"},
         headers=customer_headers,
     )
     assert conf.status_code == 200, conf.text

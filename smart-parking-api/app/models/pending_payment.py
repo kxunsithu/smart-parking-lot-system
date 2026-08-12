@@ -39,6 +39,21 @@ class PendingWalletPayment(Base):
     subscription_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("owner_subscriptions.id", ondelete="SET NULL"), nullable=True
     )
+    # ── Deferred-session fields ───────────────────────────────────────────────
+    # Stored here so we can create the session record only after payment
+    # is confirmed, avoiding PENDING session rows.
+    pending_car_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("cars.id", ondelete="SET NULL"), nullable=True
+    )
+    pending_slot_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("parking_slots.id", ondelete="SET NULL"), nullable=True
+    )
+    pending_start_time: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    pending_end_time: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     # ── Deferred-subscription fields ──────────────────────────────────────────
     # Stored here so we can create the subscription record only after payment
     # is confirmed, avoiding PENDING subscription rows.

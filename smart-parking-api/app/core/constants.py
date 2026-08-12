@@ -15,7 +15,6 @@ class SlotStatus(str, Enum):
 
 
 class SessionStatus(str, Enum):
-    PENDING = "PENDING"
     ACTIVE = "ACTIVE"
     FINISHED = "FINISHED"
 

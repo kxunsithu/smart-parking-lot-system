@@ -473,7 +473,6 @@ function SessionCard({
   loadingReceipt: number | null
 }) {
   const isActive = session.status === "ACTIVE"
-  const isPending = session.status === "PENDING"
   const startDate = new Date(session.start_time)
 
   const [location, setLocation] = useState<SlotTrackContext | null>(null)
@@ -492,29 +491,26 @@ function SessionCard({
 
   return (
     <div
-      className={`rounded border bg-card overflow-hidden transition-shadow hover:shadow-md ${isActive ? "border-primary/30" : isPending ? "border-amber-400/40 bg-amber-500/5" : "border-border"
-        }`}
+      className={`rounded border bg-card overflow-hidden transition-shadow hover:shadow-md ${
+        isActive ? "border-primary/30" : "border-border"
+      }`}
     >
       {/* Top accent bar */}
       {isActive && <div className="h-0.5 bg-gradient-to-r from-primary via-primary/60 to-transparent" />}
-      {isPending && <div className="h-0.5 bg-gradient-to-r from-amber-500 via-amber-400 to-transparent" />}
 
       <div className="p-4 sm:p-5">
         {/* Row 1: ID + status + badge */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
             <div
-              className={`w-10 h-10 rounded flex items-center justify-center shrink-0 ${isActive
-                ? "bg-primary/15 border border-primary/25"
-                : isPending
-                  ? "bg-amber-500/15 border border-amber-400/25 text-amber-500"
+              className={`w-10 h-10 rounded flex items-center justify-center shrink-0 ${
+                isActive
+                  ? "bg-primary/15 border border-primary/25"
                   : "bg-muted border border-border"
-                }`}
+              }`}
             >
               {isActive ? (
                 <Zap className="w-5 h-5 text-primary" />
-              ) : isPending ? (
-                <Hourglass className="w-5 h-5 text-amber-500 animate-pulse" />
               ) : (
                 <CheckCircle2 className="w-5 h-5 text-muted-foreground" />
               )}
@@ -528,16 +524,14 @@ function SessionCard({
           </div>
 
           <span
-            className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${isActive
-              ? "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20"
-              : isPending
-                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-400/20"
+            className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${
+              isActive
+                ? "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20"
                 : "bg-muted text-muted-foreground border border-border"
-              }`}
+            }`}
           >
             {isActive && <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
-            {isPending && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />}
-            {isActive ? "Active" : isPending ? "Pending" : "Completed"}
+            {isActive ? "Active" : "Completed"}
           </span>
         </div>
 

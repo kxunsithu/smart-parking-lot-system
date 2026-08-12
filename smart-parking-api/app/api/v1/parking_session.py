@@ -18,6 +18,8 @@ from app.schemas.payment import (
     PaymentInitiateRequest,
     PaymentOut,
     PendingPaymentOut,
+    SessionPaymentConfirmRequest,
+    SessionPaymentInitiateRequest,
 )
 from app.services.parking_session_service import ParkingSessionService, serialize_session
 from app.services.payment_service import PaymentService
@@ -30,33 +32,81 @@ router = APIRouter(prefix="/parking-sessions", tags=["Parking Sessions"])
 
 @router.post(
     "/book",
-    response_model=SuccessResponse[ParkingSessionOut],
+    response_model=SuccessResponse[PendingPaymentOut],
     status_code=status.HTTP_201_CREATED,
-    summary="Customer: book a session (creates PENDING session; becomes ACTIVE after wallet payment)",
+    summary="Customer: validate booking and initiate wallet payment (session created ACTIVE after payment)",
 )
 def book_session(
-    payload: ParkingSessionBook,
+    payload: SessionPaymentInitiateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    wallet_client: WalletPaymentClient = Depends(get_wallet_client),
 ):
-    session = ParkingSessionService(db).book_session(payload, current_user)
+    """Book a parking slot and initiate wallet payment in one atomic step.
+
+    No ParkingSession record is created. The session is created as ACTIVE only
+    after the wallet confirms payment (via /pay/confirm or the hosted-page callback).
+    """
+    pending = PaymentService(db, wallet_client).initiate_session_payment_v2(
+        car_id=payload.car_id,
+        slot_id=payload.slot_id,
+        start_time=payload.start_time,
+        end_time=payload.end_time,
+        current_user=current_user,
+        wallet_phone=payload.wallet_phone,
+    )
     return {
         "success": True,
         "message": (
-            f"Session booked. Estimated fee: {session.fee:.2f} MMK. "
-            "Please complete the wallet payment to activate the session."
+            f"Booking initiated. Estimated fee: {pending.amount:.2f} MMK. "
+            "Enter the OTP and your PIN to confirm payment, or complete it on the wallet page."
         ),
-        "data": serialize_session(session),
+        "data": pending,
     }
 
 
-# ─── Wallet payment flow (session becomes ACTIVE only after payment) ──────────
+# ─── Wallet payment confirmation (new reference-based flow) ───────────────────
+
+@router.post(
+    "/pay/confirm",
+    response_model=SuccessResponse[dict],
+    summary="Customer: confirm the wallet payment by reference (OTP + PIN) — creates ACTIVE session",
+)
+def confirm_session_payment_by_reference(
+    payload: SessionPaymentConfirmRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    wallet_client: WalletPaymentClient = Depends(get_wallet_client),
+):
+    """Confirm a pending session payment by reference.
+
+    On success, the ParkingSession is created with status ACTIVE.
+    """
+    from app.schemas.payment import PaymentConfirmRequest as _Confirm
+    confirm_payload = _Confirm(otp_code=payload.otp_code, pin=payload.pin)
+    payment, session = PaymentService(db, wallet_client).confirm_session_payment_by_reference(
+        reference=payload.reference,
+        payload=confirm_payload,
+        current_user=current_user,
+    )
+    return {
+        "success": True,
+        "message": "Payment successful. Your parking session is now active.",
+        "data": {
+            "payment": PaymentOut.model_validate(payment).model_dump(mode="json"),
+            "session": serialize_session(session),
+        },
+    }
+
+
+# ─── Legacy session-id-based payment flow (backward compat) ──────────────────
 
 @router.post(
     "/{session_id}/pay/initiate",
     response_model=SuccessResponse[PendingPaymentOut],
     status_code=status.HTTP_201_CREATED,
-    summary="Customer: request a wallet payment for a PENDING session (returns OTP)",
+    summary="[Legacy] Initiate wallet payment for an existing PENDING session",
+    deprecated=True,
 )
 def initiate_session_payment(
     session_id: int,
@@ -80,7 +130,8 @@ def initiate_session_payment(
 @router.post(
     "/{session_id}/pay/confirm",
     response_model=SuccessResponse[dict],
-    summary="Customer: confirm the wallet payment (OTP + PIN) to activate the session",
+    summary="[Legacy] Confirm wallet payment for an existing PENDING session",
+    deprecated=True,
 )
 def confirm_session_payment(
     session_id: int,

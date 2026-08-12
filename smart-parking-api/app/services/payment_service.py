@@ -14,15 +14,16 @@ payments are tracked in PendingWalletPayment instead, so no transaction record
 exists until everything is complete. The receiver's phone number is resolved
 from the receiving account's API key via the wallet's system-info endpoint.
 """
+import math
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.config.settings import settings
 from app.core.constants import PaymentStatus, RoleName, SessionStatus, SubscriptionStatus
-from app.core.exceptions import BadRequestException, ForbiddenException
+from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
 from app.models.car import Car
 from app.models.customer import Customer
 from app.models.owner_subscription import OwnerSubscription
@@ -38,7 +39,10 @@ from app.models.user import User
 from app.models.wallet_account import WalletAccount
 from app.repositories.car_repository import CarRepository
 from app.repositories.customer_repository import CustomerRepository
+from app.repositories.parking_floor_repository import ParkingFloorRepository
+from app.repositories.parking_lot_repository import ParkingLotRepository
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
+from app.repositories.parking_slot_repository import ParkingSlotRepository
 from app.repositories.payment_repository import PaymentRepository
 from app.repositories.pending_payment_repository import PendingWalletPaymentRepository
 from app.repositories.wallet_account_repository import WalletAccountRepository
@@ -51,6 +55,43 @@ from app.services.wallet_payment_client import WalletPaymentClient
 def _new_reference() -> str:
     prefix = settings.WALLET_REFERENCE_PREFIX or "PP"
     return f"{prefix}-{uuid.uuid4().hex[:10].upper()}"
+
+
+def _normalize_utc_dt(dt: datetime) -> datetime:
+    """Return dt as a UTC-aware datetime."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def _assert_no_pending_conflict(
+    start: datetime,
+    end: datetime,
+    pending_payments: list,
+    *,
+    buffer: timedelta | None = None,
+    conflict_message: str,
+) -> None:
+    """Raise BadRequestException if [start, end) overlaps any pending payment's booking window."""
+    for pmt in pending_payments:
+        s_start = pmt.pending_start_time
+        s_end = pmt.pending_end_time
+        if not s_start or not s_end:
+            continue
+        s_start = _normalize_utc_dt(s_start)
+        s_end = _normalize_utc_dt(s_end)
+        if buffer is not None:
+            has_gap = end <= s_start - buffer or start >= s_end + buffer
+        else:
+            has_gap = end <= s_start or start >= s_end
+        if has_gap:
+            continue
+        raise BadRequestException(
+            conflict_message.format(
+                start=s_start.strftime("%Y-%m-%d %I:%M %p"),
+                end=s_end.strftime("%Y-%m-%d %I:%M %p"),
+            )
+        )
 
 
 class PaymentService:
@@ -138,16 +179,17 @@ class PaymentService:
     ) -> Payment:
         """Create the transaction record once the wallet confirms completion.
 
-        Handles three cases:
-        1. Parking session payment  → session PENDING → ACTIVE
-        2. Deferred subscription    → subscription created as ACTIVE now (pending_package_id set)
-        3. Legacy subscription path → existing PENDING subscription → ACTIVE (backward compat)
+        Handles four cases:
+        1. Deferred session (new)  → ParkingSession created as ACTIVE now (pending_car_id set)
+        2. Legacy session path     → existing PENDING session → ACTIVE (backward compat)
+        3. Deferred subscription   → subscription created as ACTIVE now (pending_package_id set)
+        4. Legacy subscription     → existing PENDING subscription → ACTIVE (backward compat)
         """
         payment = Payment(
             user_id=pending.user_id,
             wallet_account_id=pending.wallet_account_id,
             session_id=pending.session_id,
-            subscription_id=pending.subscription_id,  # may be updated below for case 2
+            subscription_id=pending.subscription_id,  # may be updated below
             reference=pending.reference,
             wallet_payment_reference=pending.wallet_payment_reference,
             wallet_payment_url=pending.wallet_payment_url,
@@ -164,26 +206,50 @@ class PaymentService:
         self.db.flush()  # get payment.id before deleting pending
         self.db.delete(pending)
 
-        if pending.session_id is not None:
-            # Case 1: parking session payment
+        if pending.pending_car_id is not None and pending.pending_slot_id is not None:
+            # Case 1 (new): deferred session — create ACTIVE ParkingSession now
+            s_start = (
+                _normalize_utc_dt(pending.pending_start_time)
+                if pending.pending_start_time else None
+            )
+            s_end = (
+                _normalize_utc_dt(pending.pending_end_time)
+                if pending.pending_end_time else None
+            )
+            duration = (
+                max(1, math.ceil((s_end - s_start).total_seconds() / 60))
+                if s_start and s_end else None
+            )
+            new_session = ParkingSession(
+                car_id=pending.pending_car_id,
+                slot_id=pending.pending_slot_id,
+                start_time=pending.pending_start_time,
+                end_time=pending.pending_end_time,
+                duration=duration,
+                fee=pending.amount,
+                status=SessionStatus.ACTIVE.value,
+            )
+            self.db.add(new_session)
+            self.db.flush()
+            payment.session_id = new_session.id
+        elif pending.session_id is not None:
+            # Case 2 (legacy): existing PENDING session → ACTIVE (backward compat)
             session = self.db.get(ParkingSession, pending.session_id)
-            if session and session.status == SessionStatus.PENDING.value:
+            if session and session.status == "PENDING":
                 session.status = SessionStatus.ACTIVE.value
         elif pending.pending_package_id is not None and pending.pending_owner_id is not None:
-            # Case 2: deferred subscription – create ACTIVE subscription now
+            # Case 3: deferred subscription – create ACTIVE subscription now
             sub = SubscriptionService(self.db).create_and_activate(
                 owner_id=pending.pending_owner_id,
                 package_id=pending.pending_package_id,
                 is_renewal=pending.is_renewal,
                 amount=pending.amount,
             )
-            # Link the payment to the newly-created subscription
             payment.subscription_id = sub.id
         elif pending.subscription_id is not None:
-            # Case 3: legacy path – existing PENDING subscription (backward compat)
+            # Case 4 (legacy): existing PENDING subscription → ACTIVE (backward compat)
             subscription = self.db.get(OwnerSubscription, pending.subscription_id)
             if subscription and subscription.status == SubscriptionStatus.PENDING.value:
-                from datetime import timedelta
                 now = datetime.now(timezone.utc)
                 pkg = subscription.package
                 existing = self.db.scalar(
@@ -272,7 +338,7 @@ class PaymentService:
         wallet_phone: str | None = None,
     ) -> PendingWalletPayment:
         self._assert_session_access(session, current_user)
-        if session.status != SessionStatus.PENDING.value:
+        if session.status != "PENDING":
             raise BadRequestException("Only PENDING sessions can be paid.")
         if session.fee is None or session.fee <= 0:
             raise BadRequestException("This session has no fee to pay.")
@@ -318,7 +384,7 @@ class PaymentService:
         current_user: User,
     ) -> tuple[Payment, ParkingSession]:
         self._assert_session_access(session, current_user)
-        if session.status != SessionStatus.PENDING.value:
+        if session.status != "PENDING":
             raise BadRequestException("Only PENDING sessions can be paid.")
 
         pending = self._pending_payment(session_id=session.id)
@@ -327,6 +393,240 @@ class PaymentService:
 
         payment = self._confirm(pending, payload)
         self.db.refresh(session)
+        return payment, session
+
+    # ─── Deferred session payments (new flow) ──────────────────────────────
+
+    def _get_lot_rate_for_slot(self, slot_id: int) -> float:
+        """Resolve the effective hourly rate for a slot (lot rate → system default)."""
+        slot_repo = ParkingSlotRepository(self.db)
+        slot = slot_repo.get(slot_id)
+        if not slot:
+            return settings.DEFAULT_HOURLY_RATE
+        floor_repo = ParkingFloorRepository(self.db)
+        floor = floor_repo.get(slot.floor_id)
+        if not floor:
+            return settings.DEFAULT_HOURLY_RATE
+        lot_repo = ParkingLotRepository(self.db)
+        lot = lot_repo.get(floor.parking_lot_id)
+        if lot and lot.rate_per_hour:
+            return lot.rate_per_hour
+        return settings.DEFAULT_HOURLY_RATE
+
+    def _session_receiver_account_for_slot(self, slot_id: int) -> WalletAccount:
+        """Return the lot owner's receiving WalletAccount for a given slot."""
+        slot_repo = ParkingSlotRepository(self.db)
+        slot = slot_repo.get(slot_id)
+        if not slot:
+            raise NotFoundException("Parking slot not found.")
+        floor_repo = ParkingFloorRepository(self.db)
+        floor = floor_repo.get(slot.floor_id)
+        lot_repo = ParkingLotRepository(self.db)
+        lot = lot_repo.get(floor.parking_lot_id) if floor else None
+        owner_id = lot.owner_id if lot else None
+        if not owner_id:
+            raise BadRequestException("This slot has no parking owner to receive the payment.")
+        return self._require_account(
+            self.account_repo.get_by_owner_id(owner_id), "The parking owner"
+        )
+
+    def initiate_session_payment_v2(
+        self,
+        car_id: int,
+        slot_id: int,
+        start_time: datetime,
+        end_time: datetime,
+        current_user: User,
+        wallet_phone: str | None = None,
+    ) -> PendingWalletPayment:
+        """Validate booking params and atomically initiate the wallet payment.
+
+        No ParkingSession is created here. The session is created as ACTIVE only
+        after the wallet confirms payment completion in _complete_payment.
+        """
+        if current_user.role.name != RoleName.CUSTOMER.value:
+            raise ForbiddenException("Only customers can book parking sessions.")
+
+        customer = self.customer_repo.get_by_user_id(current_user.id)
+        if not customer:
+            raise ForbiddenException("Customer profile not found.")
+
+        # ── Validate car ownership ──────────────────────────────────────────
+        car = self.car_repo.get(car_id)
+        if not car:
+            raise NotFoundException("Car not found.")
+        if car.customer_id != customer.id:
+            raise ForbiddenException("You can only book sessions for your own cars.")
+
+        # ── Validate slot ───────────────────────────────────────────────────
+        slot_repo = ParkingSlotRepository(self.db)
+        slot = slot_repo.get(slot_id)
+        if not slot:
+            raise NotFoundException("Parking slot not found.")
+
+        # ── Validate times ──────────────────────────────────────────────────
+        now = datetime.now(timezone.utc)
+        if start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=timezone.utc)
+        if end_time.tzinfo is None:
+            end_time = end_time.replace(tzinfo=timezone.utc)
+        if start_time < now:
+            raise BadRequestException("Start time must be in the future.")
+        if end_time <= start_time:
+            raise BadRequestException("End time must be after start time.")
+
+        # ── Idempotency: return existing pending for same car/slot/user ─────
+        existing = self.db.scalars(
+            select(PendingWalletPayment)
+            .where(
+                PendingWalletPayment.pending_car_id == car_id,
+                PendingWalletPayment.pending_slot_id == slot_id,
+                PendingWalletPayment.user_id == current_user.id,
+            )
+            .order_by(PendingWalletPayment.id.desc())
+            .limit(1)
+        ).first()
+        if existing:
+            return existing
+
+        # ── Conflict: active sessions for this car ──────────────────────────
+        car_active = self.db.scalars(
+            select(ParkingSession).where(
+                ParkingSession.car_id == car_id,
+                ParkingSession.status == SessionStatus.ACTIVE.value,
+            )
+        ).all()
+        for sess in car_active:
+            s_start = _normalize_utc_dt(sess.start_time) if sess.start_time else None
+            s_end = _normalize_utc_dt(sess.end_time) if sess.end_time else None
+            if s_start and s_end:
+                if not (end_time <= s_start or start_time >= s_end):
+                    raise BadRequestException(
+                        f"This car already has an active session from "
+                        f"{s_start.strftime('%Y-%m-%d %I:%M %p')} to "
+                        f"{s_end.strftime('%Y-%m-%d %I:%M %p')}. "
+                        "You cannot book another overlapping session."
+                    )
+
+        # ── Conflict: in-flight pending payments for this car ───────────────
+        car_pending = self.db.scalars(
+            select(PendingWalletPayment).where(
+                PendingWalletPayment.pending_car_id == car_id,
+                PendingWalletPayment.pending_start_time.isnot(None),
+            )
+        ).all()
+        _assert_no_pending_conflict(
+            start_time, end_time, car_pending,
+            conflict_message=(
+                "This car already has a pending booking from {start} to {end}. "
+                "Please complete or cancel it first."
+            ),
+        )
+
+        # ── Conflict: active sessions for this slot (2-hour buffer) ─────────
+        slot_buffer = timedelta(hours=2)
+        slot_active = self.db.scalars(
+            select(ParkingSession).where(
+                ParkingSession.slot_id == slot_id,
+                ParkingSession.status == SessionStatus.ACTIVE.value,
+            )
+        ).all()
+        for sess in slot_active:
+            s_start = _normalize_utc_dt(sess.start_time) if sess.start_time else None
+            s_end = _normalize_utc_dt(sess.end_time) if sess.end_time else None
+            if s_start and s_end:
+                if not (end_time <= s_start - slot_buffer or start_time >= s_end + slot_buffer):
+                    raise BadRequestException(
+                        f"Slot is occupied by a session from "
+                        f"{s_start.strftime('%Y-%m-%d %I:%M %p')} to "
+                        f"{s_end.strftime('%Y-%m-%d %I:%M %p')} "
+                        "(a 2-hour gap is required before and after each booking)."
+                    )
+
+        # ── Conflict: in-flight pending payments for this slot ──────────────
+        slot_pending = self.db.scalars(
+            select(PendingWalletPayment).where(
+                PendingWalletPayment.pending_slot_id == slot_id,
+                PendingWalletPayment.pending_start_time.isnot(None),
+            )
+        ).all()
+        _assert_no_pending_conflict(
+            start_time, end_time, slot_pending,
+            buffer=slot_buffer,
+            conflict_message=(
+                "Slot already has a pending booking from {start} to {end} "
+                "(a 2-hour gap is required before and after each booking)."
+            ),
+        )
+
+        # ── Calculate fee ───────────────────────────────────────────────────
+        rate_per_hour = self._get_lot_rate_for_slot(slot_id)
+        duration_minutes = max(1, math.ceil((end_time - start_time).total_seconds() / 60))
+        fee_amount = round((duration_minutes / 60) * rate_per_hour, 2)
+
+        # ── Resolve receiver account and customer phone ─────────────────────
+        receiver = self._session_receiver_account_for_slot(slot_id)
+        user_phone = car.customer.user.phone if (car.customer and car.customer.user) else None
+        customer_phone = self._require_phone(wallet_phone if wallet_phone else user_phone)
+
+        # ── Initiate wallet payment ─────────────────────────────────────────
+        reference = _new_reference()
+        result = self.wallet_client.initiate(
+            customer_phone=customer_phone,
+            amount=fee_amount,
+            order_reference=reference,
+            description=f"Parking slot #{slot_id} ({duration_minutes} min)",
+            redirect_url=self._wallet_callback_url("customer"),
+            api_key=receiver.api_key,
+        )
+
+        amount = float(result.get("amount", fee_amount))
+        wallet_fee = float(result.get("fee", 0.0))
+        total = float(result.get("total", round(amount + wallet_fee, 2)))
+
+        pending = PendingWalletPayment(
+            user_id=current_user.id,
+            wallet_account_id=receiver.id,
+            pending_car_id=car_id,
+            pending_slot_id=slot_id,
+            pending_start_time=start_time,
+            pending_end_time=end_time,
+            wallet_payment_reference=result.get("payment_reference"),
+            wallet_payment_url=result.get("payment_url"),
+            amount=amount,
+            fee=wallet_fee,
+            total=total,
+            reference=reference,
+            message=result.get("message"),
+        )
+        return self.pending_repo.create(pending)
+
+    def confirm_session_payment_by_reference(
+        self,
+        reference: str,
+        payload: "PaymentConfirmRequest",
+        current_user: User,
+    ) -> tuple[Payment, ParkingSession]:
+        """Confirm a pending session wallet payment by its PP-reference.
+
+        The ParkingSession is created as ACTIVE inside _complete_payment.
+        """
+        pending = self.pending_repo.get_by_reference(reference)
+        if not pending or not pending.wallet_payment_reference:
+            raise BadRequestException(
+                "Pending payment not found. Please initiate the booking first."
+            )
+        if pending.pending_car_id is None or pending.pending_slot_id is None:
+            raise BadRequestException("This endpoint is for deferred session payments only.")
+
+        # Verify the caller owns the car associated with this pending payment
+        customer = self.customer_repo.get_by_user_id(current_user.id)
+        car = self.car_repo.get(pending.pending_car_id)
+        if not customer or not car or car.customer_id != customer.id:
+            raise ForbiddenException("You can only confirm your own parking session payments.")
+
+        payment = self._confirm(pending, payload)
+        session = self.db.get(ParkingSession, payment.session_id)
         return payment, session
 
     # ─── Subscription payments ───────────────────────────────────────────────
