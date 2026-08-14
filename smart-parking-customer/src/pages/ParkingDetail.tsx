@@ -21,6 +21,7 @@ import { parkingSlotsApi } from "@/api/parkingSlots"
 import { useCarStore } from "@/store/carStore"
 import { paymentsApi } from "@/api/payments"
 import { ReceiptModal } from "@/components/common/ReceiptModal"
+import { useAuthStore } from "@/store/authStore"
 import type { ParkingLotOut, ParkingSlotOut, ParkingSessionOut, WalletPaymentOut, PaymentListOut } from "@/api/types"
 import type { ParkingFloorOut } from "@/api/parkingFloors"
 import { toast } from "@/components/ui/toaster"
@@ -100,11 +101,13 @@ export default function ParkingDetail() {
   const [activeNavigation, setActiveNavigation] = useState<ParkingTrackTarget | null>(null)
   const [carSessions, setCarSessions] = useState<ParkingSessionOut[]>([])
 
+  const user = useAuthStore((state) => state.user)
+
   // Wallet payment state
   const [paymentInfo, setPaymentInfo] = useState<WalletPaymentOut | null>(null)
   const [otpCode, setOtpCode] = useState("")
   const [pin, setPin] = useState("")
-  const [walletPhone, setWalletPhone] = useState("")
+  const [walletPhone, setWalletPhone] = useState(user?.phone || "")
   const [initiating, setInitiating] = useState(false)
   const [paying, setPaying] = useState(false)
   const [paymentChecking, setPaymentChecking] = useState(false)
@@ -112,6 +115,12 @@ export default function ParkingDetail() {
   const [payError, setPayError] = useState<string | null>(null)
   const [receiptPayment, setReceiptPayment] = useState<PaymentListOut | null>(null)
   const [showReceipt, setShowReceipt] = useState(false)
+
+  useEffect(() => {
+    if (user?.phone && !walletPhone) {
+      setWalletPhone(user.phone)
+    }
+  }, [user])
 
   useEffect(() => {
     if (id) {
@@ -603,6 +612,24 @@ export default function ParkingDetail() {
                       onChange={(e) => setEndTime(e.target.value)}
                       min={startTime}
                     />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="schedule-wallet-phone" className="flex items-center gap-1.5">
+                      <Wallet className="h-4 w-4 text-primary" />
+                      Sender Wallet Phone Number
+                    </Label>
+                    <Input
+                      id="schedule-wallet-phone"
+                      inputMode="tel"
+                      placeholder="e.g. 09123456789"
+                      value={walletPhone}
+                      onChange={(e) => setWalletPhone(e.target.value)}
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Digital wallet account phone number to charge for this booking.
+                    </p>
                   </div>
 
                   {durationMins > 0 && (
