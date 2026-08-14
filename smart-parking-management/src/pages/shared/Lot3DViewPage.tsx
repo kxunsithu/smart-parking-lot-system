@@ -578,10 +578,11 @@ export function Lot3DViewPage() {
         ])
         setLot(lotData)
         setFloors(floorsData.items)
-        // Build set of slot IDs with active/pending sessions (reserved but car not arrived yet)
+        // Build set of slot IDs with active sessions (reserved — session confirmed, car not arrived yet)
+        // PENDING session status is eliminated in the new booking flow.
         const activeIds = new Set<number>(
           (sessionsData.items || []).filter(
-            (s) => s.status === "ACTIVE" || s.status === "PENDING"
+            (s) => s.status === "ACTIVE"
           ).map((s) => s.slot_id)
         )
         setReservedSlotIds(activeIds)

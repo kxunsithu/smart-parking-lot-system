@@ -590,7 +590,7 @@ export default function Lot3DView() {
         const safeSessions = Array.isArray(sessionsData) ? sessionsData : []
         const activeIds = new Set<number>(
           safeSessions
-            .filter((s) => s.status === "ACTIVE" || s.status === "PENDING")
+            .filter((s) => s.status === "ACTIVE")
             .map((s) => s.slot_id)
         )
         setReservedSlotIds(activeIds)

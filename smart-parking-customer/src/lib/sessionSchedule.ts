@@ -1,6 +1,6 @@
 import type { ParkingSessionOut } from "@/api/types"
 
-const ACTIVE_STATUSES = new Set(["ACTIVE", "PENDING"])
+const ACTIVE_STATUSES = new Set(["ACTIVE"])
 
 export function findCarSessionOverlap(
   start: Date,

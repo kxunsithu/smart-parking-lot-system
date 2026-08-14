@@ -161,104 +161,21 @@ class ParkingSessionService:
 
     def book_session(self, payload: ParkingSessionBook, current_user: User) -> ParkingSession:
         """
-        Customer books a session with start/end time.
-        Creates a PENDING session with a calculated fee. The session becomes
-        ACTIVE only after the wallet payment is completed.
-        Slot status does NOT change here.
+        [DEPRECATED] This legacy path is no longer used.
+
+        The new booking flow (v2) works as follows:
+        1. POST /parking-sessions/book  → validates booking & initiates wallet payment
+           (no ParkingSession is created here, only a PendingWalletPayment record)
+        2. POST /parking-sessions/pay/confirm → confirms the wallet payment
+           (ParkingSession is created as ACTIVE only after payment is confirmed)
+
+        PENDING session status is intentionally eliminated from the system.
         """
-        # Validate customer
-        if current_user.role.name != RoleName.CUSTOMER.value:
-            raise ForbiddenException("Only customers can book sessions.")
-        customer = self._get_customer(current_user)
-        if not customer:
-            raise ForbiddenException("Customer profile not found.")
-
-        # Validate car ownership
-        car = self.car_repo.get(payload.car_id)
-        if not car:
-            raise NotFoundException("Car not found.")
-        if car.customer_id != customer.id:
-            raise ForbiddenException("You can only book sessions for your own cars.")
-
-        # Validate slot availability (existence check)
-        slot = self.slot_repo.get(payload.slot_id)
-        if not slot:
-            raise NotFoundException("Parking slot not found.")
-
-        # Validate times (must be in the future, end > start)
-        now = datetime.now(timezone.utc)
-        start = payload.start_time
-        end = payload.end_time
-        if start.tzinfo is None:
-            start = start.replace(tzinfo=timezone.utc)
-        if end.tzinfo is None:
-            end = end.replace(tzinfo=timezone.utc)
-        if start < now:
-            raise BadRequestException("Start time must be in the future.")
-        if end <= start:
-            raise BadRequestException("End time must be after start time.")
-
-        car_sessions = self.db.scalars(
-            select(ParkingSession).where(
-                ParkingSession.car_id == payload.car_id,
-                ParkingSession.status == SessionStatus.ACTIVE.value,
-            )
-        ).all()
-
-        _assert_no_schedule_conflict(
-            start,
-            end,
-            car_sessions,
-            now,
-            conflict_message=(
-                "This car already has a session from {start} to {end}. "
-                "You cannot book another session during the same time period."
-            ),
+        raise BadRequestException(
+            "Direct booking without payment is not supported. "
+            "Use POST /parking-sessions/book to initiate payment, "
+            "then POST /parking-sessions/pay/confirm to activate your session."
         )
-
-        # Query existing active sessions for this slot to check buffer conflicts
-        slot_sessions = self.db.scalars(
-            select(ParkingSession).where(
-                ParkingSession.slot_id == payload.slot_id,
-                ParkingSession.status == SessionStatus.ACTIVE.value,
-            )
-        ).all()
-
-        _assert_no_schedule_conflict(
-            start,
-            end,
-            slot_sessions,
-            now,
-            buffer=timedelta(hours=2),
-            conflict_message=(
-                "Slot conflicts with an existing session ({start} to {end}). "
-                "A 2-hour buffer gap is required before and after bookings."
-            ),
-        )
-
-        # Calculate fee using lot rate
-        rate_per_hour = self._get_lot_rate(payload.slot_id)
-        duration_minutes, fee = _calculate_fee(start, end, rate_per_hour)
-
-        # Create session in PENDING state (payment required before it becomes ACTIVE)
-        session = ParkingSession(
-            car_id=payload.car_id,
-            slot_id=payload.slot_id,
-            start_time=start,
-            end_time=end,
-            duration=duration_minutes,
-            fee=fee,
-            status=SessionStatus.PENDING.value,
-        )
-        session = self.session_repo.create(session)
-
-        self.db.commit()
-        self.db.refresh(session)
-
-        # Reload with relationships populated so the API returns full car/customer details
-        session = self.get_by_id(session.id)
-
-        return session
 
     # ─── Staff / Direct Start Flow ────────────────────────────────────────────
 

@@ -558,10 +558,12 @@ export function SlotDetailPage() {
   if (!slot) return <EmptyState title="Slot not found" description="This slot may have been removed." />
 
   const isAvailable = slot.status === "AVAILABLE"
-  const activeSessions = sessions.filter(s => s.status === "ACTIVE" || s.status === "PENDING")
+  // PENDING session status is eliminated in the new booking flow;
+  // sessions are only created as ACTIVE after payment is confirmed.
+  const activeSessions = sessions.filter(s => s.status === "ACTIVE")
   const sortedSessions = [...sessions].sort((a, b) => {
-    const aActive = a.status === "ACTIVE" || a.status === "PENDING" ? 0 : 1
-    const bActive = b.status === "ACTIVE" || b.status === "PENDING" ? 0 : 1
+    const aActive = a.status === "ACTIVE" ? 0 : 1
+    const bActive = b.status === "ACTIVE" ? 0 : 1
     if (aActive !== bActive) return aActive - bActive
     return new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
   })

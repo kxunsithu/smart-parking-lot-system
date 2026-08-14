@@ -4,7 +4,7 @@ These fields allow the system to create a parking session record only after
 the wallet payment is confirmed, eliminating the PENDING session status.
 
 Revision ID: f9a2b3c4d5e6
-Revises: e9f3b2c4d5a1
+Revises: f8b9c0d1e2f3
 Create Date: 2026-08-13 01:25:00.000000
 
 """
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'f9a2b3c4d5e6'
-down_revision: Union[str, None] = 'e9f3b2c4d5a1'
+down_revision: Union[str, None] = 'f8b9c0d1e2f3'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

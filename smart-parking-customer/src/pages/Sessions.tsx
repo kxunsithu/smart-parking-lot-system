@@ -235,6 +235,9 @@ export default function Sessions() {
     cars.find((c) => c.id === carId)?.plate_number ?? ""
 
   const filteredSessions = sessions.filter((s) => {
+    // PENDING sessions are no longer created in the new payment flow;
+    // only ACTIVE and FINISHED sessions are shown.
+    if (s.status === "PENDING") return false
     if (filterTab === "active") return s.status === "ACTIVE"
     if (filterTab === "finished") return s.status === "FINISHED"
     return true
