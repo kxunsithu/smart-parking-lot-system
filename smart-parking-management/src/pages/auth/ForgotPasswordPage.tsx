@@ -30,13 +30,11 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h2 className="text-2xl font-semibold tracking-tight">Forgot your password?</h2>
-        <p className="text-sm text-muted-foreground">
-          Enter your account email and we&apos;ll send you a password reset OTP.
-        </p>
-      </div>
+    <div>
+      <h1 className="text-xl font-bold text-foreground mb-2">Forgot your password?</h1>
+      <p className="text-sm text-muted-foreground mb-8">
+        Enter your account email and we&apos;ll send you a password reset OTP.
+      </p>
 
       {submitted ? (
         <Alert>
@@ -48,8 +46,8 @@ export function ForgotPasswordPage() {
           </AlertDescription>
         </Alert>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <FormField label="Email" htmlFor="email" required>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <FormField label="Email" htmlFor="email" required labelClassName="font-bold">
             <Input
               id="email"
               type="email"
@@ -59,14 +57,14 @@ export function ForgotPasswordPage() {
               onChange={(e) => setEmail(e.target.value)}
             />
           </FormField>
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full h-11" disabled={isLoading}>
             {isLoading ? <Loader2 className="size-4 animate-spin" /> : null}
             Send reset instructions
           </Button>
         </form>
       )}
 
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="text-center text-sm text-muted-foreground mt-6">
         Remembered your password?{" "}
         <Link to="/login" className="font-medium text-primary hover:underline">
           Back to sign in

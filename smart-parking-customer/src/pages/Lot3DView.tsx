@@ -631,7 +631,7 @@ export default function Lot3DView() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-5">
+      <div className="p-6 space-y-5">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -639,7 +639,7 @@ export default function Lot3DView() {
               <Button variant="ghost" size="icon" className="size-8 -ml-2" onClick={() => navigate(`/parking/${lotId}`)}>
                 <ArrowLeft className="size-4" />
               </Button>
-              <h1 className="text-xl font-bold">{lot.name}</h1>
+              <h1 className="text-lg font-semibold">{lot.name}</h1>
               <Badge variant="outline" className="text-xs">3D View</Badge>
             </div>
             <p className="text-sm text-muted-foreground pl-8">

@@ -75,37 +75,37 @@ export function RegisterOwnerPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h2 className="text-2xl font-semibold tracking-tight">Register as Parking Owner</h2>
+        <h1 className="text-xl font-bold text-foreground">Register as Parking Owner</h1>
         <p className="text-sm text-muted-foreground">
           Create your account to manage parking lots
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Owner Full Name</Label>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="name" className="text-sm text-foreground font-bold">Owner Full Name</Label>
           <Input
             id="name"
             placeholder="John Doe"
             {...register("name")}
             disabled={submitting}
           />
-          {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+          {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="company_name">Company Name</Label>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="company_name" className="text-sm text-foreground font-bold">Company Name</Label>
           <Input
             id="company_name"
             placeholder="ABC Parking Solutions"
             {...register("company_name")}
             disabled={submitting}
           />
-          {errors.company_name && <p className="text-sm text-destructive">{errors.company_name.message}</p>}
+          {errors.company_name && <p className="text-xs text-destructive">{errors.company_name.message}</p>}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="email" className="text-sm text-foreground font-bold">Email</Label>
           <Input
             id="email"
             type="email"
@@ -113,33 +113,33 @@ export function RegisterOwnerPage() {
             {...register("email")}
             disabled={submitting}
           />
-          {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+          {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="password" className="text-sm text-foreground font-bold">Password</Label>
           <PasswordInput
             id="password"
             placeholder="••••••••"
             {...register("password")}
             disabled={submitting}
           />
-          {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+          {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="confirm_password">Confirm Password</Label>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="confirm_password" className="text-sm text-foreground font-bold">Confirm Password</Label>
           <PasswordInput
             id="confirm_password"
             placeholder="••••••••"
             {...register("confirm_password")}
             disabled={submitting}
           />
-          {errors.confirm_password && <p className="text-sm text-destructive">{errors.confirm_password.message}</p>}
+          {errors.confirm_password && <p className="text-xs text-destructive">{errors.confirm_password.message}</p>}
         </div>
 
 
-        <Button type="submit" className="w-full" disabled={submitting}>
+        <Button type="submit" className="w-full h-11" disabled={submitting}>
           {submitting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Building2 className="mr-2 size-4" />}
           {submitting ? "Creating Account..." : "Register as Owner"}
           {!submitting && <ArrowRight className="ml-2 size-4" />}

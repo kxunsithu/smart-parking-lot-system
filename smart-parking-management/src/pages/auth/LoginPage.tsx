@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Link, useNavigate } from "react-router-dom"
-import { Loader2, ParkingSquare } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/ui/password-input"
@@ -77,23 +77,19 @@ export function LoginPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2 lg:hidden">
-        <div className="flex size-10 items-center justify-center rounded bg-primary text-primary-foreground">
-          <ParkingSquare className="size-5" />
-        </div>
-      </div>
-
       <div className="space-y-1">
-        <h2 className="text-2xl font-semibold tracking-tight">Sign in to your account</h2>
-        <p className="text-sm text-muted-foreground">Enter your credentials to access your dashboard.</p>
+        <h1 className="text-xl font-bold text-foreground">Sign in to your account</h1>
+        <p className="text-sm text-muted-foreground">
+          Enter your credentials to access your dashboard.
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <FormField label="Email" htmlFor="email" error={errors.email?.message} required>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+        <FormField label="Email" htmlFor="email" error={errors.email?.message} required labelClassName="font-bold">
           <Input id="email" type="email" placeholder="you@example.com" autoComplete="email" {...register("email")} />
         </FormField>
 
-        <FormField label="Password" htmlFor="password" error={errors.password?.message} required>
+        <FormField label="Password" htmlFor="password" error={errors.password?.message} required labelClassName="font-bold">
           <PasswordInput id="password" placeholder="••••••••" autoComplete="current-password" {...register("password")} />
         </FormField>
 
@@ -103,7 +99,7 @@ export function LoginPage() {
           </Link>
         </div>
 
-        <Button type="submit" className="w-full" disabled={submitting}>
+        <Button type="submit" className="w-full h-11" disabled={submitting}>
           {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
           Sign in
         </Button>

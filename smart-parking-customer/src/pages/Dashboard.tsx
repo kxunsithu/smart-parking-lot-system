@@ -104,7 +104,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="p-6 space-y-6">
         {activeSession && (
           <Card className="mb-6 border-primary bg-primary/5">
             <CardHeader>
@@ -138,26 +138,24 @@ export default function Dashboard() {
           </Card>
         )}
 
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Find Parking</h1>
-          <p className="text-muted-foreground">
+        <div>
+          <h1 className="text-lg font-semibold text-foreground">Find Parking</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Search and book parking spots near you
           </p>
         </div>
 
-        <div className="mb-8">
-          <form onSubmit={(e) => e.preventDefault()}>
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name or location..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </form>
-        </div>
+        <form onSubmit={(e) => e.preventDefault()}>
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name or location..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </form>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredLots.map((lot) => (

@@ -73,11 +73,11 @@ export default function Cars() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
+      <div className="p-6 space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">My Cars</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-lg font-semibold text-foreground">My Cars</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Manage your registered cars
             </p>
           </div>

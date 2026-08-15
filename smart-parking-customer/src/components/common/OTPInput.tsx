@@ -47,8 +47,8 @@ export function OTPInput({ value, onChange, disabled = false, length = 6 }: OTPI
           onKeyDown={(e) => handleKeyDown(index, e)}
           disabled={disabled}
           className={cn(
-            "w-12 h-12 text-center text-xl font-semibold",
-            "focus:ring-2 focus:ring-primary"
+            "w-12 h-14 text-center text-xl font-bold rounded-lg border bg-background",
+            "focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
           )}
         />
       ))}

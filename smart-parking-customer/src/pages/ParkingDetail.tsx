@@ -399,8 +399,8 @@ export default function ParkingDetail() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Button variant="ghost" onClick={() => navigate("/dashboard")} className="mb-6">
+      <div className="p-6 space-y-6">
+        <Button variant="ghost" onClick={() => navigate("/dashboard")} className="w-fit">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Parking Lots
         </Button>

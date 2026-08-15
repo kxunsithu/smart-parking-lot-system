@@ -73,7 +73,7 @@ export function WalletTransactionsPage() {
           icon={ReceiptText}
         />
       ) : (
-        <div className="overflow-x-auto rounded border">
+        <div className="rounded-lg border border-border bg-card overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

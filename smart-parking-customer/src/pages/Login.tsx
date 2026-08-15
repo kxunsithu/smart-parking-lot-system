@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Car, Lock, Mail, Eye, EyeOff, Loader2 } from "lucide-react"
+import { Lock, Mail, Eye, EyeOff, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { AuthLayout } from "@/components/layout/AuthLayout"
 import { authApi } from "@/api/auth"
 import { useAuthStore } from "@/store/authStore"
 import { toast } from "@/components/ui/toaster"
@@ -91,84 +91,73 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-background p-4 sm:p-6">
-      <Card className="w-full max-w-md border-border/60 shadow-xl backdrop-blur-sm bg-card/95">
-        <CardHeader className="space-y-2 text-center pb-4">
-          <div className="flex justify-center mb-2">
-            <div className="bg-primary/10 border border-primary/20 p-3.5 rounded text-primary shadow-inner">
-              <Car className="h-8 w-8" />
-            </div>
+    <AuthLayout>
+      <h1 className="text-xl font-bold text-foreground mb-2">Sign in to your account</h1>
+      <p className="text-sm text-muted-foreground mb-8">
+        Enter your credentials to continue to Smart Parking.
+      </p>
+
+      <form onSubmit={handleFormSubmit} className="flex flex-col gap-5">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="email" className="text-sm text-foreground font-bold">Email Address</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              className="pl-10"
+              {...register("email")}
+            />
           </div>
-          <CardTitle className="text-2xl font-extrabold tracking-tight">Smart Parking</CardTitle>
-          <CardDescription>Sign in to your customer account to continue</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleFormSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="pl-10"
-                  {...register("email")}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
-              )}
-            </div>
+          {errors.email && (
+            <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
+          )}
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="pl-10 pr-10"
-                  {...register("password")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-xs text-destructive mt-1">{errors.password.message}</p>
-              )}
-            </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="password" className="text-sm text-foreground font-bold">Password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              className="pl-10 pr-10"
+              {...register("password")}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {errors.password && (
+            <p className="text-xs text-destructive mt-1">{errors.password.message}</p>
+          )}
+        </div>
 
-            <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" /> Signing in...
-                </>
-              ) : (
-                "Sign In"
-              )}
-            </Button>
+        <Button type="submit" className="w-full h-11" disabled={isLoading}>
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" /> 
+          ) : null}
+          {isLoading ? "Signing in..." : "Sign In"}
+        </Button>
 
-            <div className="text-center text-sm pt-2">
-              <span className="text-muted-foreground">Don't have an account? </span>
-              <button
-                type="button"
-                onClick={() => navigate("/register")}
-                className="text-primary hover:underline font-semibold"
-              >
-                Sign up
-              </button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+        <div className="text-center text-sm">
+          <span className="text-muted-foreground">Don&apos;t have an account? </span>
+          <button
+            type="button"
+            onClick={() => navigate("/register")}
+            className="text-primary hover:underline font-medium"
+          >
+            Sign up
+          </button>
+        </div>
+      </form>
+    </AuthLayout>
   )
 }
 

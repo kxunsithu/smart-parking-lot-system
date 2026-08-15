@@ -55,9 +55,9 @@ export function AppHeader({ role }: { role: RoleName }) {
               <Menu className="size-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0">
+          <SheetContent side="left" className="w-72 p-0">
             <SheetTitle className="sr-only">Navigation</SheetTitle>
-            <AppSidebar role={role} onNavigate={() => setMobileOpen(false)} />
+            <AppSidebar role={role} onNavigate={() => setMobileOpen(false)} collapsible={false} />
           </SheetContent>
         </Sheet>
         <div className="hidden sm:block">

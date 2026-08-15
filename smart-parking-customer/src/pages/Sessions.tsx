@@ -285,13 +285,13 @@ export default function Sessions() {
         />
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <div className="p-6 space-y-6">
 
         {/* Page header */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Parking Sessions</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
+            <h1 className="text-lg font-semibold text-foreground">Parking Sessions</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               {sessions.length} total session{sessions.length !== 1 ? "s" : ""}
             </p>
           </div>

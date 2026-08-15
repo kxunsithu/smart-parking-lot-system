@@ -6,16 +6,17 @@ interface FormFieldProps {
   htmlFor?: string
   error?: string
   className?: string
+  labelClassName?: string
   children: React.ReactNode
   hint?: string
   required?: boolean
 }
 
-export function FormField({ label, htmlFor, error, className, children, hint, required }: FormFieldProps) {
+export function FormField({ label, htmlFor, error, className, labelClassName, children, hint, required }: FormFieldProps) {
   return (
     <div className={cn("space-y-1.5", className)}>
       {label ? (
-        <Label htmlFor={htmlFor}>
+        <Label htmlFor={htmlFor} className={labelClassName}>
           {label}
           {required ? <span className="text-destructive"> *</span> : null}
         </Label>

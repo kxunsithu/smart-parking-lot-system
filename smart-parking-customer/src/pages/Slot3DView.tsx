@@ -599,14 +599,14 @@ export default function Slot3DView() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-5">
+      <div className="p-6 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Button variant="ghost" size="icon" className="size-8 -ml-2" onClick={() => navigate(-1)}>
                 <ArrowLeft className="size-4" />
               </Button>
-              <h1 className="text-xl font-bold">Slot {slot.slot_number}</h1>
+              <h1 className="text-lg font-semibold">Slot {slot.slot_number}</h1>
               <Badge variant={isAvailable ? "default" : "secondary"} className="text-xs">
                 {slot.status}
               </Badge>

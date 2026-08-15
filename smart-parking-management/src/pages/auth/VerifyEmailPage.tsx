@@ -3,9 +3,10 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useNavigate } from "react-router-dom"
-import { Loader2, Mail, CheckCircle, ArrowLeft, Clock } from "lucide-react"
+import { Loader2, CheckCircle, ArrowLeft, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { OTPInput } from "@/components/common/OTPInput"
+import { cn } from "@/lib/utils"
 import { authApi } from "@/api/auth"
 import { getErrorMessage } from "@/api/client"
 import { useAuthStore } from "@/stores/authStore"
@@ -153,49 +154,48 @@ export function VerifyEmailPage() {
     navigate("/login", { replace: true })
   }
 
+  const timeLeftExpired = timeLeft <= 0
+
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h2 className="text-2xl font-semibold tracking-tight">Verify your email</h2>
-        <p className="text-sm text-muted-foreground">
-          Please verify your email address to continue
-        </p>
+    <div>
+      <h1 className="text-xl font-bold text-foreground mb-2">Verify your email</h1>
+      <p className="text-sm text-muted-foreground mb-6">
+        We&apos;ve sent a 6-digit code to{" "}
+        <span className="font-medium text-foreground">{user?.email}</span>.
+        Enter the code below to verify your account.
+      </p>
+
+      <div
+        className={cn(
+          "flex items-center gap-2 mb-6 px-4 py-3 rounded-lg",
+          isUsed === true || timeLeftExpired
+            ? "bg-red-50 border border-red-200"
+            : "bg-muted/40 border border-border"
+        )}
+      >
+        <Clock className={cn("size-4 shrink-0", isUsed === true || timeLeftExpired ? "text-red-500" : "text-primary")} />
+        {isUsed === true ? (
+          <p className="text-sm text-red-500 font-medium">OTP has already been used</p>
+        ) : timeLeftExpired ? (
+          <p className="text-sm text-red-500 font-medium">OTP has expired. Request a new code.</p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Code expires in —{" "}
+            <span className="font-mono font-bold text-base text-primary">{formatTime(timeLeft)}</span>
+          </p>
+        )}
       </div>
 
-      <form onSubmit={handleSubmit(onOTPSubmit)} className="space-y-4">
-        <div className="flex flex-col items-center space-y-4 py-4">
-          <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
-            <Mail className="size-8 text-primary" />
-          </div>
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground">
-              We've sent a 6-digit code to
-            </p>
-            <p className="font-medium">{user?.email}</p>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Enter OTP code</label>
+      <form onSubmit={handleSubmit(onOTPSubmit)} className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm text-foreground font-bold">Enter OTP code</label>
           <OTPInput value={otpValue} onChange={handleOtpChange} disabled={submitting} />
-          {errors.otp && <p className="text-sm text-destructive">{errors.otp.message}</p>}
+          {errors.otp && <p className="text-xs text-destructive">{errors.otp.message}</p>}
         </div>
 
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <Clock className="size-4" />
-          {isUsed === true ? (
-            <span className="text-destructive">OTP has already been used</span>
-          ) : timeLeft <= 0 ? (
-            <span className="text-destructive">OTP has expired</span>
-          ) : (
-            <span>Expires in: {formatTime(timeLeft)}</span>
-          )}
-        </div>
-
-        <Button type="submit" className="w-full" disabled={submitting || otpValue.length !== 6 || timeLeft <= 0 || isUsed === true}>
-          {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
-          Verify Email
-          {!submitting && <CheckCircle className="ml-2 size-4" />}
+        <Button type="submit" className="w-full h-11" disabled={submitting || otpValue.length !== 6 || timeLeft <= 0 || isUsed === true}>
+          {submitting ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle className="size-4" />}
+          {submitting ? "Verifying..." : "Verify Email"}
         </Button>
 
         <div className="flex items-center justify-between text-sm">
@@ -221,7 +221,7 @@ export function VerifyEmailPage() {
         </div>
       </form>
 
-      <div className="rounded bg-muted p-4 text-sm text-muted-foreground">
+      <div className="rounded bg-muted p-4 text-sm text-muted-foreground mt-6">
         <p className="font-medium text-foreground mb-1">Why verify your email?</p>
         <p>Email verification helps protect your account and ensures you receive important notifications about your parking sessions.</p>
       </div>
