@@ -10,6 +10,8 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
+from sqlalchemy.exc import IntegrityError
+
 from app.config.settings import settings
 from app.core.constants import LotType, RoleName, SlotStatus, SubscriptionStatus
 from app.core.security import hash_password
@@ -999,10 +1001,18 @@ CUSTOMER_CARS = {
 def _get_or_create_role(db, name: str, description: str) -> Role:
     role = db.query(Role).filter(Role.name == name).first()
     if not role:
-        role = Role(name=name, description=description)
-        db.add(role)
-        db.flush()
-        print(f"  [+] Role created: {name}")
+        try:
+            role = Role(name=name, description=description)
+            db.add(role)
+            db.flush()
+            print(f"  [+] Role created: {name}")
+        except IntegrityError:
+            db.rollback()
+            role = db.query(Role).filter(Role.name == name).first()
+            if role:
+                print(f"  [=] Role exists:  {name}")
+            else:
+                raise
     else:
         print(f"  [=] Role exists:  {name}")
     return role
@@ -1011,18 +1021,26 @@ def _get_or_create_role(db, name: str, description: str) -> Role:
 def _get_or_create_user(db, name: str, email: str, role_id: int, phone: str, is_verified: bool) -> User:
     user = db.query(User).filter(User.email == email).first()
     if not user:
-        user = User(
-            name=name,
-            email=email,
-            password=hash_password(PASSWORD),
-            role_id=role_id,
-            phone=phone,
-            is_active=True,
-            is_verified=is_verified,
-        )
-        db.add(user)
-        db.flush()
-        print(f"  [+] User created:  {email}  ({name})")
+        try:
+            user = User(
+                name=name,
+                email=email,
+                password=hash_password(PASSWORD),
+                role_id=role_id,
+                phone=phone,
+                is_active=True,
+                is_verified=is_verified,
+            )
+            db.add(user)
+            db.flush()
+            print(f"  [+] User created:  {email}  ({name})")
+        except IntegrityError:
+            db.rollback()
+            user = db.query(User).filter(User.email == email).first()
+            if user:
+                print(f"  [=] User exists:   {email}")
+            else:
+                raise
     else:
         print(f"  [=] User exists:   {email}")
     return user
@@ -1031,10 +1049,18 @@ def _get_or_create_user(db, name: str, email: str, role_id: int, phone: str, is_
 def _get_or_create_package(db, pkg_data: dict) -> Package:
     pkg = db.query(Package).filter(Package.name == pkg_data["name"]).first()
     if not pkg:
-        pkg = Package(**pkg_data)
-        db.add(pkg)
-        db.flush()
-        print(f"  [+] Package created: {pkg_data['name']}")
+        try:
+            pkg = Package(**pkg_data)
+            db.add(pkg)
+            db.flush()
+            print(f"  [+] Package created: {pkg_data['name']}")
+        except IntegrityError:
+            db.rollback()
+            pkg = db.query(Package).filter(Package.name == pkg_data["name"]).first()
+            if pkg:
+                print(f"  [=] Package exists:  {pkg_data['name']}")
+            else:
+                raise
     else:
         print(f"  [=] Package exists:  {pkg_data['name']}")
     return pkg

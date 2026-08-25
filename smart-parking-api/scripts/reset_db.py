@@ -27,6 +27,7 @@ def reset_db() -> None:
         conn.execute(text("DROP SCHEMA IF EXISTS public CASCADE"))
         conn.execute(text("CREATE SCHEMA public"))
         conn.commit()
+    engine.dispose()
     print("Public schema dropped and recreated.")
 
 
