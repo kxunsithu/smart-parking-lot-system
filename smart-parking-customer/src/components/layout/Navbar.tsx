@@ -2,6 +2,8 @@ import { useNavigate } from "react-router-dom"
 import { Car, History, LogOut, Menu, ParkingCircle, User, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme/ThemeToggle"
+import { LanguageToggle } from "@/components/theme/LanguageToggle"
+import { useLanguage } from "@/lib/i18n"
 import { useAuthStore } from "@/store/authStore"
 import { authApi } from "@/api/auth"
 import { toast } from "@/components/ui/toaster"
@@ -20,6 +22,7 @@ import {
 export default function Navbar() {
   const navigate = useNavigate()
   const { logout, user } = useAuthStore()
+  const { t } = useLanguage()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
 
@@ -46,10 +49,10 @@ export default function Navbar() {
   }
 
   const navItems = [
-    { icon: ParkingCircle, label: "Parking", path: "/dashboard" },
-    { icon: Car, label: "My Cars", path: "/cars" },
-    { icon: History, label: "Sessions", path: "/sessions" },
-    { icon: User, label: "Profile", path: "/profile" },
+    { icon: ParkingCircle, label: t("nav.parking", "Parking"), path: "/dashboard" },
+    { icon: Car, label: t("nav.cars", "My Cars"), path: "/cars" },
+    { icon: History, label: t("nav.sessions", "Sessions"), path: "/sessions" },
+    { icon: User, label: t("nav.profile", "Profile"), path: "/profile" },
   ]
 
   return (
@@ -59,7 +62,7 @@ export default function Navbar() {
           <div className="flex items-center">
             <button
               onClick={() => navigate("/dashboard")}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 cursor-pointer"
             >
               <div className="bg-primary p-2 rounded">
                 <Car className="h-6 w-6 text-primary-foreground" />
@@ -70,6 +73,7 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-2">
+            <LanguageToggle />
             <ThemeToggle />
             {navItems.map((item) => (
               item.path === "/profile" ? (
@@ -104,12 +108,13 @@ export default function Navbar() {
             ))}
             <Button variant="ghost" onClick={() => setLogoutDialogOpen(true)}>
               <LogOut className="h-4 w-4 mr-2" />
-              Logout
+              {t("nav.logout", "Logout")}
             </Button>
           </div>
 
           {/* Mobile actions container */}
           <div className="md:hidden flex items-center space-x-2">
+            <LanguageToggle />
             <ThemeToggle />
             <Button
               variant="ghost"

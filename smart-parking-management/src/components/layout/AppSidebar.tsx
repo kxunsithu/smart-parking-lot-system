@@ -7,6 +7,7 @@ import type { RoleName } from "@/types"
 import { useAuth } from "@/hooks/useAuth"
 import { authApi } from "@/api/auth"
 import { useAuthStore } from "@/stores/authStore"
+import { useLanguage } from "@/lib/i18n"
 
 interface AppSidebarProps {
   role: RoleName
@@ -14,10 +15,27 @@ interface AppSidebarProps {
   collapsible?: boolean
 }
 
+const labelKeyMap: Record<string, string> = {
+  "Dashboard": "nav.dashboard",
+  "Users": "nav.users",
+  "User Management": "nav.users",
+  "Packages": "nav.packages",
+  "Subscription Packages": "nav.packages",
+  "Subscriptions": "nav.subscriptions",
+  "Parking Lots": "nav.lots",
+  "Floors & Slots": "nav.floors",
+  "Staff Management": "nav.staff",
+  "Staff": "nav.staff",
+  "Wallet Setup": "nav.wallet",
+  "Profile & Settings": "nav.profile",
+  "Profile": "nav.profile",
+}
+
 export function AppSidebar({ role, onNavigate, collapsible = true }: AppSidebarProps) {
   const [isOpen, setIsOpen] = useState(true)
   const { logout } = useAuth()
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const items = NAV_CONFIG[role]
 
   const expanded = collapsible ? isOpen : true
@@ -95,13 +113,15 @@ export function AppSidebar({ role, onNavigate, collapsible = true }: AppSidebarP
         <ul className="flex flex-col gap-4">
           {items.map((item) => {
             const Icon = item.icon
+            const key = labelKeyMap[item.label] || item.label
+            const translatedLabel = t(key, item.label)
             return (
               <li key={item.to}>
                 <NavLink
                   to={item.to}
                   end={item.end}
                   onClick={onNavigate}
-                  title={!expanded ? item.label : undefined}
+                  title={!expanded ? translatedLabel : undefined}
                   className={({ isActive }) =>
                     cn(
                       "flex items-center gap-3 py-2.5 text-[13px] font-medium transition-colors duration-150",
@@ -114,7 +134,7 @@ export function AppSidebar({ role, onNavigate, collapsible = true }: AppSidebarP
                 >
                   <Icon className="size-4 shrink-0" />
                   {expanded && (
-                    <span className="leading-tight text-nowrap">{item.label}</span>
+                    <span className="leading-tight text-nowrap">{translatedLabel}</span>
                   )}
                 </NavLink>
               </li>
@@ -127,14 +147,14 @@ export function AppSidebar({ role, onNavigate, collapsible = true }: AppSidebarP
       <div className="border-t border-sidebar-border p-2">
         <button
           onClick={handleLogout}
-          title={!expanded ? "Log out" : undefined}
+          title={!expanded ? t("nav.logout", "Log out") : undefined}
           className={cn(
             "flex items-center gap-2.5 w-full py-2.5 text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-md transition-colors duration-150",
             expanded ? "px-4" : "justify-center px-0",
           )}
         >
           <LogOut className="size-4 shrink-0" />
-          {expanded && <span>Log out</span>}
+          {expanded && <span>{t("nav.logout", "Log out")}</span>}
         </button>
       </div>
     </aside>

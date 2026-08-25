@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme/ThemeProvider"
+import Home from "@/pages/Home"
 import Login from "@/pages/Login"
 import Register from "@/pages/Register"
 import VerifyEmail from "@/pages/VerifyEmail"
@@ -47,6 +48,7 @@ function App() {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Home />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
           <Route path="/verify-email" element={<AuthOnlyRoute><VerifyEmail /></AuthOnlyRoute>} />
@@ -59,7 +61,6 @@ function App() {
           <Route path="/parking/:id/3d" element={<ProtectedRoute><Lot3DView /></ProtectedRoute>} />
           <Route path="/slots/:id" element={<ProtectedRoute><Slot3DView /></ProtectedRoute>} />
           <Route path="/wallet-payment/result" element={<ProtectedRoute><WalletPaymentResult /></ProtectedRoute>} />
-          <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
         <Toaster />
       </BrowserRouter>

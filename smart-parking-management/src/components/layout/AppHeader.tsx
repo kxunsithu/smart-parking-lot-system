@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ThemeToggle } from "@/components/theme/ThemeToggle"
+import { LanguageToggle } from "@/components/theme/LanguageToggle"
+import { useLanguage } from "@/lib/i18n"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { useAuth } from "@/hooks/useAuth"
 import { authApi } from "@/api/auth"
@@ -26,6 +28,7 @@ import { API_ORIGIN } from "@/api/client"
 export function AppHeader({ role }: { role: RoleName }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const avatarUrl = user?.profile_image
@@ -67,6 +70,7 @@ export function AppHeader({ role }: { role: RoleName }) {
       </div>
 
       <div className="flex items-center gap-2">
+        <LanguageToggle />
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -87,12 +91,12 @@ export function AppHeader({ role }: { role: RoleName }) {
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate("/profile")}>
               <UserIcon className="size-4" />
-              Profile & Settings
+              {t("nav.profile", "Profile & Settings")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={handleLogout}>
               <LogOut className="size-4" />
-              Log out
+              {t("nav.logout", "Log out")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
