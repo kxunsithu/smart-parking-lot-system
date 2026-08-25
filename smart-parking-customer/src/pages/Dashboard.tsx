@@ -10,6 +10,7 @@ import { ParkingTrackModal } from "@/components/parking/ParkingTrackModal"
 import { parkingLotsApi } from "@/api/parkingLots"
 import { parkingSessionsApi } from "@/api/parkingSessions"
 import { useParkingStore } from "@/store/parkingStore"
+import { useLanguage } from "@/lib/i18n"
 import type { ParkingLotOut } from "@/api/types"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@/components/ui/toaster"
@@ -22,6 +23,7 @@ import {
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const { setParkingLots, activeSession, setActiveSession } = useParkingStore()
   const [lots, setLots] = useState<ParkingLotOut[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -104,13 +106,13 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="p-6 space-y-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         {activeSession && (
           <Card className="mb-6 border-primary bg-primary/5">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Clock className="h-5 w-5 mr-2" />
-                Active Parking Session
+                {t("sessions.active_title", "Active Parking Session")}
               </CardTitle>
               <CardDescription>
                 Session #{activeSession.id} — track your slot or view session details.
@@ -128,10 +130,10 @@ export default function Dashboard() {
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" onClick={handleTrackActiveSession} className="gap-2">
                   <Navigation2 className="h-4 w-4" />
-                  Track Parking
+                  {t("common.directions", "Track Parking")}
                 </Button>
                 <Button onClick={() => navigate("/sessions")}>
-                  View Session
+                  {t("common.details", "View Session")}
                 </Button>
               </div>
             </CardContent>
@@ -139,9 +141,9 @@ export default function Dashboard() {
         )}
 
         <div>
-          <h1 className="text-lg font-semibold text-foreground">Find Parking</h1>
+          <h1 className="text-lg font-semibold text-foreground">{t("home.find_parking", "Find Parking")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Search and book parking spots near you
+            {t("home.hero_subtitle", "Search and book parking spots near you")}
           </p>
         </div>
 
@@ -149,7 +151,7 @@ export default function Dashboard() {
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name or location..."
+              placeholder={t("common.search", "Search by name or location...")}
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -164,19 +166,19 @@ export default function Dashboard() {
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-lg">{lot.name}</CardTitle>
                   <Badge variant={lot.is_active ? "default" : "secondary"}>
-                    {lot.is_active ? "Open" : "Closed"}
+                    {lot.is_active ? t("common.open", "Open") : t("common.closed", "Closed")}
                   </Badge>
                 </div>
                 <CardDescription className="flex items-center">
                   {lot.google_map_url ? (
                     <button onClick={() => navigate(`/parking/${lot.id}`)} className="flex items-center text-primary hover:underline font-medium text-xs">
                       <MapPin className="h-4 w-4 mr-1" />
-                      View Location
+                      {t("parking.location_map", "View Location")}
                     </button>
                   ) : (
                     <span className="flex items-center">
                       <MapPin className="h-4 w-4 mr-1" />
-                      Location not specified
+                      {t("parking.location_map", "Location not specified")}
                     </span>
                   )}
                 </CardDescription>
@@ -184,7 +186,7 @@ export default function Dashboard() {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm py-1 border-t border-border/40">
-                    <span className="text-muted-foreground">Rate:</span>
+                    <span className="text-muted-foreground">{t("common.rate", "Rate")}:</span>
                     <span className="font-semibold text-primary">
                       {lot.rate_per_hour != null ? `${lot.rate_per_hour.toLocaleString()} MMK / hr` : "Standard Rate"}
                     </span>
@@ -194,7 +196,7 @@ export default function Dashboard() {
                     disabled={!lot.is_active}
                     onClick={() => navigate(`/parking/${lot.id}`)}
                   >
-                    {lot.is_active ? "Book Now" : "Closed"}
+                    {lot.is_active ? t("common.details", "Book Now") : t("common.closed", "Closed")}
                   </Button>
                 </div>
               </CardContent>
@@ -205,7 +207,7 @@ export default function Dashboard() {
         {filteredLots.length === 0 && (
           <div className="text-center py-12">
             <Ticket className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No parking lots found</p>
+            <p className="text-muted-foreground">{t("home.active_lots", "No parking lots found")}</p>
           </div>
         )}
       </div>

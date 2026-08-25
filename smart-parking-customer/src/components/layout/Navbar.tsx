@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom"
-import { Car, History, LogOut, Menu, ParkingCircle, User, X } from "lucide-react"
+import { Car, History, Home, LogOut, Menu, ParkingCircle, User, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme/ThemeToggle"
 import { LanguageToggle } from "@/components/theme/LanguageToggle"
@@ -49,6 +49,7 @@ export default function Navbar() {
   }
 
   const navItems = [
+    { icon: Home, label: t("nav.home", "Home"), path: "/" },
     { icon: ParkingCircle, label: t("nav.parking", "Parking"), path: "/dashboard" },
     { icon: Car, label: t("nav.cars", "My Cars"), path: "/cars" },
     { icon: History, label: t("nav.sessions", "Sessions"), path: "/sessions" },
@@ -57,7 +58,7 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <button

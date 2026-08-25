@@ -12,8 +12,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ThemeToggle } from "@/components/theme/ThemeToggle"
-import { LanguageToggle } from "@/components/theme/LanguageToggle"
-import { useLanguage } from "@/lib/i18n"
 import { useAuth } from "@/hooks/useAuth"
 import { authApi } from "@/api/auth"
 import { useAuthStore } from "@/stores/authStore"
@@ -24,7 +22,6 @@ import { API_ORIGIN } from "@/api/client"
 export function StaffNavbar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const { t } = useLanguage()
   const navItems = NAV_CONFIG.STAFF
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -77,7 +74,7 @@ export function StaffNavbar() {
               </div>
               <div className="hidden sm:block">
                 <p className="font-extrabold text-sm leading-tight tracking-tight text-foreground">Smart Parking</p>
-                <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{t("role.staff", "Staff Portal")}</p>
+                <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Staff Portal</p>
               </div>
             </NavLink>
 
@@ -105,9 +102,8 @@ export function StaffNavbar() {
             </nav>
           </div>
 
-          {/* ── Right: Language & Theme Toggle + User Menu + Hamburger ── */}
+          {/* ── Right: Theme Toggle + User Menu + Hamburger ── */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <LanguageToggle />
             <ThemeToggle />
 
             {/* Desktop User Dropdown */}
@@ -137,12 +133,12 @@ export function StaffNavbar() {
                   </DropdownMenuGroup>
                   <DropdownMenuItem onClick={() => navigate("/profile")} className="text-xs gap-2 cursor-pointer">
                     <UserIcon className="size-4" />
-                    {t("nav.profile", "Profile & Settings")}
+                    Profile & Settings
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem variant="destructive" onClick={handleLogout} className="text-xs gap-2 cursor-pointer">
                     <LogOut className="size-4" />
-                    {t("nav.logout", "Log out")}
+                    Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

@@ -29,6 +29,8 @@ import { format, addHours } from "date-fns"
 import { trackParkingSlot, type ParkingTrackTarget, type SlotTrackDetails } from "@/lib/parkingTrack"
 import { findCarSessionOverlap } from "@/lib/sessionSchedule"
 
+import { useLanguage } from "@/lib/i18n"
+
 type BookingStep = "select" | "schedule" | "pay" | "success"
 
 function toLocalDatetimeValue(date: Date): string {
@@ -43,7 +45,7 @@ function toISOUTC(localDatetimeValue: string): string {
 
 function calcFee(start: string, end: string, ratePerHour: number): number {
   const startDate = new Date(start)
-  const endDate = new Date(end)
+  const endDate = end ? new Date(end) : new Date()
   const mins = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / 60000))
   return Math.round((mins / 60) * ratePerHour * 100) / 100
 }
@@ -87,6 +89,7 @@ function getEmbedUrl(mapUrl?: string | null): string | null {
 export default function ParkingDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [searchParams] = useSearchParams()
   const { cars } = useCarStore()
   const [lot, setLot] = useState<ParkingLotOut | null>(null)
@@ -415,7 +418,7 @@ export default function ParkingDetail() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="p-6 space-y-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         <Button variant="ghost" onClick={() => navigate("/dashboard")} className="w-fit">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Parking Lots

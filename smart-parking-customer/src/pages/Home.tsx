@@ -257,22 +257,22 @@ export default function Home() {
           {/* Eyebrow badge */}
           <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary rounded-full px-4 py-1.5 text-xs font-semibold mb-8 animate-bounce">
             <span className="size-1.5 rounded-full bg-primary animate-ping" />
-            Yangon's Smart Parking Platform
+            {t("home.hero_badge", "Yangon's Smart Parking Platform")}
           </div>
 
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight mb-6">
-            <span className="text-foreground">Park Smarter,</span>
+            <span className="text-foreground">{t("home.hero_title_1", "Park Smarter,")}</span>
             <br />
             <span
               className="text-transparent bg-clip-text"
               style={{ backgroundImage: "linear-gradient(135deg, #FF8F00, #fbbf24)" }}
             >
-              Drive Faster
+              {t("home.hero_title_2", "Drive Faster")}
             </span>
           </h1>
 
           <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            {t("home.hero_subtitle", "Find, reserve, and manage your vehicle parking easily across Yangon. Real-time slots, digital payments, and instant activation.")}
+            {t("home.hero_subtitle", "Find, reserve, and manage your vehicle parking easily across Yangon.")}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -281,7 +281,7 @@ export default function Home() {
               className="w-full sm:w-auto text-base px-8 py-6 rounded-xl shadow-lg shadow-primary/30 hover:shadow-primary/40 transition-shadow gap-2"
               onClick={() => navigate("/register")}
             >
-              Get Started Free
+              {t("home.get_started", "Get Started Free")}
               <ArrowRight className="size-5" />
             </Button>
             <Button
@@ -297,7 +297,7 @@ export default function Home() {
 
           {/* Proof badges */}
           <div className="flex flex-wrap items-center justify-center gap-6 mt-12 text-sm text-muted-foreground">
-            {["No credit card required", "Instant setup", "Available 24/7"].map((text) => (
+            {[t("home.proof1", "No credit card required"), t("home.proof2", "Instant setup"), t("home.proof3", "Available 24/7")].map((text) => (
               <span key={text} className="flex items-center gap-1.5">
                 <CheckCircle2 className="size-4 text-primary" />
                 {text}
@@ -311,7 +311,12 @@ export default function Home() {
       <section className="py-16 border-y border-border/50 bg-muted/30">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map(({ value, suffix, label }) => (
+            {[
+              { value: 20, suffix: "+", label: t("home.stat_lots", "Parking Lots") },
+              { value: 500, suffix: "+", label: t("home.stat_slots", "Parking Slots") },
+              { value: 1000, suffix: "+", label: t("home.stat_drivers", "Happy Drivers") },
+              { value: 24, suffix: "/7", label: t("home.stat_online", "Always Online") },
+            ].map(({ value, suffix, label }) => (
               <div key={label} className="text-center">
                 <div className="text-3xl sm:text-4xl font-extrabold text-primary mb-1">
                   <AnimatedCounter target={value} suffix={suffix} />
@@ -326,13 +331,10 @@ export default function Home() {
       {/* ── Features Section ────────────────────────────────────── */}
       <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-16">
-          <p className="text-primary text-xs font-bold uppercase tracking-[0.2em] mb-3">Why Smart Parking?</p>
+          <p className="text-primary text-xs font-bold uppercase tracking-[0.2em] mb-3">{t("home.why_smart", "Why Smart Parking?")}</p>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground mb-4">
-            Everything you need, nothing you don't
+            {t("home.why_subtitle", "Everything you need, nothing you don't")}
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            A fully integrated parking management system built for the modern Yangon driver.
-          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -355,17 +357,19 @@ export default function Home() {
       <section className="py-24 bg-muted/30 border-y border-border/50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-16">
-            <p className="text-primary text-xs font-bold uppercase tracking-[0.2em] mb-3">How It Works</p>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground mb-4">
-              Park in 4 simple steps
-            </h2>
+            <p className="text-primary text-xs font-bold uppercase tracking-[0.2em] mb-3">{t("home.how_it_works", "Park in 4 simple steps")}</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {steps.map(({ step, title, desc }, i) => (
+            {[
+              { step: "01", title: t("home.step1_title", "Register & Add Vehicle"), desc: t("home.step1_desc", "Create your account and register your vehicle plate number in seconds.") },
+              { step: "02", title: t("home.step2_title", "Find a Parking Lot"), desc: t("home.step2_desc", "Browse all available parking lots in Yangon and check real-time slot availability.") },
+              { step: "03", title: t("home.step3_title", "Book Your Slot"), desc: t("home.step3_desc", "Select your preferred slot, set your parking schedule, and proceed to payment.") },
+              { step: "04", title: t("home.step4_title", "Pay & Park"), desc: t("home.step4_desc", "Complete payment via digital wallet and your session goes live instantly.") },
+            ].map(({ step, title, desc }, i) => (
               <div key={step} className="relative">
                 {/* Connector line */}
-                {i < steps.length - 1 && (
+                {i < 3 && (
                   <div className="hidden lg:block absolute top-6 left-[calc(100%-8px)] w-full h-px border-t-2 border-dashed border-border z-0" />
                 )}
                 <div className="relative z-10">
@@ -385,7 +389,6 @@ export default function Home() {
       <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
           <div>
-            <p className="text-primary text-xs font-bold uppercase tracking-[0.2em] mb-3">Available Now</p>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground">
               {t("home.nearby_lots", "Parking Lots in Yangon")}
             </h2>
@@ -395,7 +398,7 @@ export default function Home() {
             className="self-start sm:self-auto rounded-xl gap-2"
             onClick={() => navigate("/login")}
           >
-            View all lots
+            {t("common.all", "View all lots")}
             <ChevronRight className="size-4" />
           </Button>
         </div>
@@ -424,61 +427,6 @@ export default function Home() {
         )}
       </section>
 
-      {/* ── Testimonials ──────────────────────────────────────────── */}
-      <section className="py-24 bg-muted/30 border-y border-border/50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <p className="text-primary text-xs font-bold uppercase tracking-[0.2em] mb-3">Testimonials</p>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground">
-              Trusted by Yangon drivers
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                name: "Zaw Min Tun",
-                handle: "@zawmintun",
-                review: "No more circling blocks looking for parking. I book my slot before I even leave home. Game changer!",
-                rating: 5,
-              },
-              {
-                name: "Su Su Myint",
-                handle: "@susumyint",
-                review: "The digital wallet payment is super easy. I paid in seconds and my session was active instantly.",
-                rating: 5,
-              },
-              {
-                name: "Kyaw Zin Oo",
-                handle: "@kyawzinoo",
-                review: "Love the 3D view feature! I can see exactly where my slot is in the lot. Very helpful.",
-                rating: 5,
-              },
-            ].map(({ name, handle, review, rating }) => (
-              <div
-                key={name}
-                className="bg-card border border-border rounded-2xl p-6 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
-              >
-                <div className="flex gap-0.5 mb-4">
-                  {Array.from({ length: rating }).map((_, i) => (
-                    <Star key={i} className="size-4 fill-primary text-primary" />
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-5">"{review}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="size-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
-                    {name[0]}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{name}</p>
-                    <p className="text-xs text-muted-foreground">{handle}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── CTA Section ──────────────────────────────────────────── */}
       <section className="py-28 max-w-4xl mx-auto px-4 sm:px-6 text-center">
         <div
@@ -487,23 +435,15 @@ export default function Home() {
             background: "linear-gradient(135deg, #FF8F00 0%, #f59e0b 100%)",
           }}
         >
-          {/* Subtle grid */}
-          <div
-            className="absolute inset-0 opacity-10"
-            style={{
-              backgroundImage: "linear-gradient(white 1px, transparent 1px), linear-gradient(to right, white 1px, transparent 1px)",
-              backgroundSize: "30px 30px",
-            }}
-          />
           <div className="relative">
             <div className="size-16 mx-auto rounded-2xl bg-white/20 flex items-center justify-center mb-6">
               <Car className="size-9 text-white" />
             </div>
             <h2 className="text-3xl sm:text-5xl font-extrabold text-white mb-4 leading-tight">
-              Ready to park smarter?
+              {t("home.cta_title", "Ready to park smarter?")}
             </h2>
             <p className="text-white/80 text-base sm:text-lg mb-10 max-w-xl mx-auto">
-              Join thousands of drivers using Smart Parking to save time, money, and stress in Yangon.
+              {t("home.cta_subtitle", "Join thousands of drivers using Smart Parking to save time and money in Yangon.")}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
@@ -511,7 +451,7 @@ export default function Home() {
                 className="w-full sm:w-auto bg-white text-primary hover:bg-white/90 text-base px-8 py-6 rounded-xl font-bold shadow-xl gap-2"
                 onClick={() => navigate("/register")}
               >
-                {t("nav.register", "Create Free Account")}
+                {t("home.create_account", "Create Free Account")}
                 <ArrowRight className="size-5" />
               </Button>
               <Button
@@ -520,7 +460,7 @@ export default function Home() {
                 className="w-full sm:w-auto text-white hover:bg-white/10 text-base px-8 py-6 rounded-xl gap-2"
                 onClick={() => navigate("/login")}
               >
-                {t("nav.login", "Log in instead")}
+                {t("home.login_instead", "Log in instead")}
               </Button>
             </div>
           </div>

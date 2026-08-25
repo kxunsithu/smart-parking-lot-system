@@ -599,7 +599,7 @@ export default function Slot3DView() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="p-6 space-y-5">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">

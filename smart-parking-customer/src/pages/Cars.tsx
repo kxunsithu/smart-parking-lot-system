@@ -18,10 +18,12 @@ import {
 import Navbar from "@/components/layout/Navbar"
 import { carsApi } from "@/api/cars"
 import { useCarStore } from "@/store/carStore"
+import { useLanguage } from "@/lib/i18n"
 import type { CarOut } from "@/api/types"
 import { toast } from "@/components/ui/toaster"
 
 export default function Cars() {
+  const { t } = useLanguage()
   const { cars, setCars, addCar, removeCar } = useCarStore()
   const [showAddForm, setShowAddForm] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -73,17 +75,17 @@ export default function Cars() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="p-6 space-y-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-foreground">My Cars</h1>
+            <h1 className="text-lg font-semibold text-foreground">{t("cars.title", "My Vehicles")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Manage your registered cars
+              {t("cars.title", "Manage your registered cars")}
             </p>
           </div>
           <Button onClick={() => setShowAddForm(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Car
+            {t("cars.add_title", "Add Car")}
           </Button>
         </div>
 
@@ -91,10 +93,10 @@ export default function Cars() {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <CarIcon className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-4">No cars registered</p>
+              <p className="text-muted-foreground mb-4">{t("cars.no_cars", "No vehicles registered yet.")}</p>
               <Button onClick={() => setShowAddForm(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Your First Car
+                {t("cars.add_title", "Add Your First Car")}
               </Button>
             </CardContent>
           </Card>
@@ -114,13 +116,13 @@ export default function Cars() {
                   <div className="space-y-2 text-sm">
                     {car.brand && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Brand</span>
+                        <span className="text-muted-foreground">{t("cars.brand", "Brand")}</span>
                         <span>{car.brand}</span>
                       </div>
                     )}
                     {car.color && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Color</span>
+                        <span className="text-muted-foreground">{t("cars.color", "Color")}</span>
                         <span>{car.color}</span>
                       </div>
                     )}
@@ -132,7 +134,7 @@ export default function Cars() {
                         onClick={() => setDeleteTarget(car)}
                       >
                         <Trash2 className="h-4 w-4 mr-1" />
-                        Delete
+                        {t("common.delete", "Delete")}
                       </Button>
                     </div>
                   </div>
@@ -158,15 +160,15 @@ export default function Cars() {
             <AlertDialogHeader>
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="size-6 text-destructive" />
-                <AlertDialogTitle>Delete Car</AlertDialogTitle>
+                <AlertDialogTitle>{t("common.delete", "Delete Car")}</AlertDialogTitle>
               </div>
               <AlertDialogDescription>
                 Are you sure you want to delete {deleteTarget?.plate_number}? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction variant="destructive" onClick={handleDelete}>Delete</AlertDialogAction>
+              <AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" onClick={handleDelete}>{t("common.delete", "Delete")}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -184,6 +186,7 @@ const carSchema = z.object({
 type CarFormData = z.infer<typeof carSchema>
 
 function AddCarForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (car: CarOut) => void }) {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
 
   const {
@@ -219,13 +222,13 @@ function AddCarForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (c
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Add New Car</CardTitle>
-          <CardDescription>Register a new car to your account</CardDescription>
+          <CardTitle>{t("cars.add_title", "Add New Car")}</CardTitle>
+          <CardDescription>{t("cars.title", "Register a new car to your account")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">License Plate</label>
+              <label className="text-sm font-medium mb-1 block">{t("cars.plate_number", "License Plate")}</label>
               <input
                 type="text"
                 className="flex h-9 w-full rounded border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
@@ -236,7 +239,7 @@ function AddCarForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (c
               )}
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Brand (Optional)</label>
+              <label className="text-sm font-medium mb-1 block">{t("cars.brand", "Brand (Optional)")}</label>
               <input
                 type="text"
                 className="flex h-9 w-full rounded border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
@@ -244,7 +247,7 @@ function AddCarForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (c
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Color (Optional)</label>
+              <label className="text-sm font-medium mb-1 block">{t("cars.color", "Color (Optional)")}</label>
               <input
                 type="text"
                 className="flex h-9 w-full rounded border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
@@ -253,10 +256,10 @@ function AddCarForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: (c
             </div>
             <div className="flex gap-2 pt-4">
               <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
-                Cancel
+                {t("common.cancel", "Cancel")}
               </Button>
               <Button type="submit" className="flex-1" disabled={loading}>
-                {loading ? "Adding..." : "Add Car"}
+                {loading ? "Adding..." : t("common.add", "Add Car")}
               </Button>
             </div>
           </form>

@@ -37,6 +37,8 @@ import { paymentsApi } from "@/api/payments"
 import { ReceiptModal } from "@/components/common/ReceiptModal"
 import type { PaymentListOut } from "@/api/types"
 
+import { useLanguage } from "@/lib/i18n"
+
 type FilterTab = "all" | "active" | "finished"
 
 function formatDuration(start: string, end?: string | null): string {
@@ -76,6 +78,7 @@ function EndSessionModal({
   onCancel: () => void
   loading: boolean
 }) {
+  const { t } = useLanguage()
   const durationMins = differenceInMinutes(new Date(), new Date(session.start_time))
   const hours = Math.floor(durationMins / 60)
   const mins = durationMins % 60
@@ -98,7 +101,7 @@ function EndSessionModal({
         <div className="p-5 space-y-4">
           <div className="rounded bg-muted/60 p-4 space-y-3">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Car</span>
+              <span className="text-muted-foreground">{t("cars.title", "Car")}</span>
               <span className="font-medium">{carPlate || `#${session.car_id}`}</span>
             </div>
             <div className="flex justify-between text-sm">
@@ -106,7 +109,7 @@ function EndSessionModal({
               <span className="font-medium">{format(new Date(session.start_time), "hh:mm a")}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Duration</span>
+              <span className="text-muted-foreground">{t("sessions.duration", "Duration")}</span>
               <span className="font-medium text-primary">
                 {hours > 0 ? `${hours}h ` : ""}{mins}m
               </span>
@@ -123,7 +126,7 @@ function EndSessionModal({
             onClick={onCancel}
             className="flex-1 h-10 rounded border border-border text-sm font-medium hover:bg-muted transition-colors"
           >
-            Cancel
+            {t("common.cancel", "Cancel")}
           </button>
           <button
             onClick={onConfirm}
@@ -140,6 +143,7 @@ function EndSessionModal({
 
 export default function Sessions() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const { sessions, setSessions, setActiveSession } = useParkingStore()
   const [loading, setLoading] = useState(true)
   const [cars, setCars] = useState<CarOut[]>([])
@@ -235,8 +239,6 @@ export default function Sessions() {
     cars.find((c) => c.id === carId)?.plate_number ?? ""
 
   const filteredSessions = sessions.filter((s) => {
-    // PENDING sessions are no longer created in the new payment flow;
-    // only ACTIVE and FINISHED sessions are shown.
     if (s.status === "PENDING") return false
     if (filterTab === "active") return s.status === "ACTIVE"
     if (filterTab === "finished") return s.status === "FINISHED"
@@ -247,15 +249,6 @@ export default function Sessions() {
   const activeSessions = sessions.filter((s) => s.status === "ACTIVE")
   const finishedSessions = sessions.filter((s) => s.status === "FINISHED")
   const totalFee = finishedSessions.reduce((sum, s) => sum + (s.fee ?? 0), 0)
-  const avgDuration =
-    finishedSessions.length > 0
-      ? Math.round(
-        finishedSessions.reduce((sum, s) => {
-          if (!s.end_time) return sum
-          return sum + differenceInMinutes(new Date(s.end_time), new Date(s.start_time))
-        }, 0) / finishedSessions.length
-      )
-      : 0
 
   if (loading) {
     return (
@@ -285,22 +278,22 @@ export default function Sessions() {
         />
       )}
 
-      <div className="p-6 space-y-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
 
         {/* Page header */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold text-foreground">Parking Sessions</h1>
+            <h1 className="text-lg font-semibold text-foreground">{t("nav.sessions", "Parking Sessions")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {sessions.length} total session{sessions.length !== 1 ? "s" : ""}
             </p>
           </div>
           <button
             onClick={() => navigate("/dashboard")}
-            className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
           >
             <ParkingCircle className="w-4 h-4" />
-            Find Parking
+            {t("home.find_parking", "Find Parking")}
           </button>
         </div>
 

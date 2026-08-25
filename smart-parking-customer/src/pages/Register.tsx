@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { AuthLayout } from "@/components/layout/AuthLayout"
 import { authApi } from "@/api/auth"
 import { useAuthStore } from "@/store/authStore"
+import { useLanguage } from "@/lib/i18n"
 import { toast } from "@/components/ui/toaster"
 
 const registerSchema = z.object({
@@ -26,6 +27,7 @@ type RegisterForm = z.infer<typeof registerSchema>
 
 export default function Register() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const { setTokens, setUser, setVerifying } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -84,14 +86,14 @@ export default function Register() {
 
   return (
     <AuthLayout>
-      <h1 className="text-xl font-bold text-foreground mb-2">Create your account</h1>
+      <h1 className="text-xl font-bold text-foreground mb-2">{t("nav.register", "Register")}</h1>
       <p className="text-sm text-muted-foreground mb-8">
-        Sign up to start using Smart Parking.
+        {t("home.cta_subtitle", "Sign up to start using Smart Parking.")}
       </p>
 
       <form onSubmit={handleFormSubmit} className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="name" className="text-sm text-foreground font-bold">Full Name</Label>
+          <Label htmlFor="name" className="text-sm text-foreground font-bold">{t("profile.name", "Full Name")}</Label>
           <div className="relative">
             <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -107,7 +109,7 @@ export default function Register() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="email" className="text-sm text-foreground font-bold">Email Address</Label>
+          <Label htmlFor="email" className="text-sm text-foreground font-bold">{t("profile.email", "Email Address")}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -124,7 +126,7 @@ export default function Register() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="password" className="text-sm text-foreground font-bold">Password</Label>
+          <Label htmlFor="password" className="text-sm text-foreground font-bold">{t("profile.change_password", "Password")}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -148,7 +150,7 @@ export default function Register() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="confirmPassword" className="text-sm text-foreground font-bold">Confirm Password</Label>
+          <Label htmlFor="confirmPassword" className="text-sm text-foreground font-bold">{t("profile.change_password", "Confirm Password")}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -173,7 +175,7 @@ export default function Register() {
 
         <Button type="submit" className="w-full h-11" disabled={isLoading}>
           {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-          {isLoading ? "Creating Account..." : "Sign Up"}
+          {isLoading ? "Creating Account..." : t("nav.register", "Register")}
         </Button>
 
         <div className="text-center text-sm">
@@ -183,7 +185,7 @@ export default function Register() {
             onClick={() => navigate("/login")}
             className="text-primary hover:underline font-medium"
           >
-            Sign in
+            {t("nav.login", "Log in")}
           </button>
         </div>
       </form>

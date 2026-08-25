@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { AuthLayout } from "@/components/layout/AuthLayout"
 import { authApi } from "@/api/auth"
 import { useAuthStore } from "@/store/authStore"
+import { useLanguage } from "@/lib/i18n"
 import { toast } from "@/components/ui/toaster"
 
 const loginSchema = z.object({
@@ -21,6 +22,7 @@ type LoginForm = z.infer<typeof loginSchema>
 
 export default function Login() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const { setTokens, setUser, setVerifying } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -92,14 +94,14 @@ export default function Login() {
 
   return (
     <AuthLayout>
-      <h1 className="text-xl font-bold text-foreground mb-2">Sign in to your account</h1>
+      <h1 className="text-xl font-bold text-foreground mb-2">{t("nav.login", "Log in")}</h1>
       <p className="text-sm text-muted-foreground mb-8">
-        Enter your credentials to continue to Smart Parking.
+        {t("home.cta_subtitle", "Enter your credentials to continue to Smart Parking.")}
       </p>
 
       <form onSubmit={handleFormSubmit} className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="email" className="text-sm text-foreground font-bold">Email Address</Label>
+          <Label htmlFor="email" className="text-sm text-foreground font-bold">{t("profile.email", "Email Address")}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -116,7 +118,7 @@ export default function Login() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="password" className="text-sm text-foreground font-bold">Password</Label>
+          <Label htmlFor="password" className="text-sm text-foreground font-bold">{t("profile.change_password", "Password")}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -143,7 +145,7 @@ export default function Login() {
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin mr-2" /> 
           ) : null}
-          {isLoading ? "Signing in..." : "Sign In"}
+          {isLoading ? "Signing in..." : t("nav.login", "Log in")}
         </Button>
 
         <div className="text-center text-sm">
@@ -153,7 +155,7 @@ export default function Login() {
             onClick={() => navigate("/register")}
             className="text-primary hover:underline font-medium"
           >
-            Sign up
+            {t("nav.register", "Register")}
           </button>
         </div>
       </form>

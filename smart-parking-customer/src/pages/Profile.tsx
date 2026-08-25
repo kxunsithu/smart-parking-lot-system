@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import Navbar from "@/components/layout/Navbar"
 import { authApi } from "@/api/auth"
 import { useAuthStore } from "@/store/authStore"
+import { useLanguage } from "@/lib/i18n"
 import { toast } from "@/components/ui/toaster"
 
 // Derive the backend origin from the api base URL so static assets resolve correctly
@@ -26,6 +27,7 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"]
 const MAX_SIZE_MB = 5
 
 export default function Profile() {
+  const { t } = useLanguage()
   const { user, setUser } = useAuthStore()
   const [loading, setLoading] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
@@ -96,17 +98,17 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-2xl p-6">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6">
         <div className="mb-8">
-          <h1 className="text-lg font-semibold text-foreground">My Profile</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Manage your account settings and preferences</p>
+          <h1 className="text-lg font-semibold text-foreground">{t("nav.profile", "My Profile")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("profile.account", "Manage your account settings and preferences")}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Avatar Card */}
           <Card className="lg:col-span-1">
             <CardHeader>
-              <CardTitle>Profile Photo</CardTitle>
+              <CardTitle>{t("nav.profile", "Profile Photo")}</CardTitle>
               <CardDescription>Upload a photo to personalise your account</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
@@ -206,7 +208,7 @@ export default function Profile() {
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Account Information</CardTitle>
+                <CardTitle>{t("profile.account", "Account Information")}</CardTitle>
                 <CardDescription>Your personal details</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -222,14 +224,14 @@ export default function Profile() {
 
                 <div className="flex items-center text-sm gap-2 py-2 border-b">
                   <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-muted-foreground">Email</span>
+                  <span className="text-muted-foreground">{t("profile.email", "Email")}</span>
                   <span className="ml-auto font-medium">{user?.email}</span>
                 </div>
 
                 <div className="flex items-center text-sm gap-2 py-2">
-                  <span className="text-muted-foreground">Account Status</span>
+                  <span className="text-muted-foreground">{t("profile.verified", "Account Status")}</span>
                   <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full ${user?.is_active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-100 text-red-700"}`}>
-                    {user?.is_active ? "Active" : "Inactive"}
+                    {user?.is_active ? t("common.open", "Active") : t("common.closed", "Inactive")}
                   </span>
                 </div>
               </CardContent>
@@ -238,7 +240,7 @@ export default function Profile() {
             {/* Change Password */}
             <Card>
               <CardHeader>
-                <CardTitle>Change Password</CardTitle>
+                <CardTitle>{t("profile.change_password", "Change Password")}</CardTitle>
                 <CardDescription>Update your password to keep your account secure</CardDescription>
               </CardHeader>
               <CardContent>
