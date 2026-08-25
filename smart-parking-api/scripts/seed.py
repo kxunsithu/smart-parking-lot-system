@@ -101,6 +101,20 @@ SEED_USERS = [
         "phone": "+959222000020",
         "is_verified": True,
     },
+    {
+        "name": "Aung Ko Ko",
+        "email": "aungkoko.owner@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959444000040",
+        "is_verified": True,
+    },
+    {
+        "name": "Htet Htet Swe",
+        "email": "htethetswe.owner@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959555000050",
+        "is_verified": True,
+    },
     # ── Staff ─────────────────────────────────────────────────────────────────
     {
         "name": "Khun Si Thu (Staff)",
@@ -137,6 +151,90 @@ SEED_USERS = [
         "phone": "+959111000012",
         "is_verified": True,
     },
+    {
+        "name": "Nay Lin Htun",
+        "email": "naylinhtun.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959444000041",
+        "is_verified": True,
+    },
+    {
+        "name": "Moe Moe Khin",
+        "email": "moemoe.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959444000042",
+        "is_verified": True,
+    },
+    {
+        "name": "Ye Naing",
+        "email": "yenaing.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959555000051",
+        "is_verified": True,
+    },
+    {
+        "name": "Thin Zar Aung",
+        "email": "thinzar.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959555000052",
+        "is_verified": True,
+    },
+    {
+        "name": "Kyaw Zin Oo",
+        "email": "kyawzin.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959555000053",
+        "is_verified": True,
+    },
+    {
+        "name": "Min Thant",
+        "email": "minthant.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959555000054",
+        "is_verified": True,
+    },
+    {
+        "name": "Ei Ei Thaw",
+        "email": "eieithaw.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959555000055",
+        "is_verified": True,
+    },
+    {
+        "name": "Kaung Htet",
+        "email": "kaunghtet.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959555000056",
+        "is_verified": True,
+    },
+    {
+        "name": "Nilar Aye",
+        "email": "nilaraye.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959555000057",
+        "is_verified": True,
+    },
+    {
+        "name": "Win Ko",
+        "email": "winko.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959555000058",
+        "is_verified": True,
+    },
+    {
+        "name": "Hlaing Min",
+        "email": "hlaingmin.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959555000059",
+        "is_verified": True,
+    },
+    {
+        "name": "May Thet",
+        "email": "maythet.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959555000060",
+        "is_verified": True,
+    },
     # ── Customers ────────────────────────────────────────────────────────────
     {
         "name": "Khun Si Thu (Customer)",
@@ -150,6 +248,41 @@ SEED_USERS = [
         "email": "nainglin.customer@gmail.com",
         "role": RoleName.CUSTOMER.value,
         "phone": "+959333000030",
+        "is_verified": True,
+    },
+    {
+        "name": "Wai Phyo",
+        "email": "waiphyo.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959333000031",
+        "is_verified": True,
+    },
+    {
+        "name": "Zin Mar Oo",
+        "email": "zinmar.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959333000032",
+        "is_verified": True,
+    },
+    {
+        "name": "Phyo Wai Kyaw",
+        "email": "phyowai.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959333000033",
+        "is_verified": True,
+    },
+    {
+        "name": "Chan Myae Aung",
+        "email": "chanmyae.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959333000034",
+        "is_verified": True,
+    },
+    {
+        "name": "Ei Phyu Sin",
+        "email": "eiphyu.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959333000035",
         "is_verified": True,
     },
 ]
@@ -171,6 +304,14 @@ OWNER_PROFILES = {
         "company_name": "TW Premium Parking",
         "package": "Enterprise",
     },
+    "aungkoko.owner@gmail.com": {
+        "company_name": "AKK Smart Parking",
+        "package": "Pro",
+    },
+    "htethetswe.owner@gmail.com": {
+        "company_name": "HHS Parking Management",
+        "package": "Basic",
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -191,7 +332,7 @@ PARKING_LOTS = [
     {
         "owner_email": "khunsithuaung50@gmail.com",
         "name": "Yangon Central Parking",
-        "google_map_url": "https://maps.google.com/?q=16.77410,96.15940",
+        "google_map_url": "https://maps.google.com/maps?q=16.77410,96.15940&z=15&output=embed",
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 500.0,
@@ -226,7 +367,7 @@ PARKING_LOTS = [
     {
         "owner_email": "khunsithuaung50@gmail.com",
         "name": "Bogyoke Market Parking",
-        "google_map_url": "https://maps.google.com/?q=16.78210,96.15430",
+        "google_map_url": "https://maps.google.com/maps?q=16.78210,96.15430&z=15&output=embed",
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 600.0,
@@ -252,7 +393,7 @@ PARKING_LOTS = [
     {
         "owner_email": "myoaung.owner@gmail.com",
         "name": "Sule Square Parking",
-        "google_map_url": "https://maps.google.com/?q=16.77690,96.15890",
+        "google_map_url": "https://maps.google.com/maps?q=16.77690,96.15890&z=15&output=embed",
         "type": LotType.PRIVATE.value,
         "is_active": True,
         "rate_per_hour": 800.0,
@@ -287,7 +428,7 @@ PARKING_LOTS = [
     {
         "owner_email": "thidawin.owner@gmail.com",
         "name": "Junction Square Parking",
-        "google_map_url": "https://maps.google.com/?q=16.83150,96.13450",
+        "google_map_url": "https://maps.google.com/maps?q=16.83150,96.13450&z=15&output=embed",
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 700.0,
@@ -337,7 +478,7 @@ PARKING_LOTS = [
     {
         "owner_email": "thidawin.owner@gmail.com",
         "name": "Junction City Parking",
-        "google_map_url": "https://maps.google.com/?q=16.79020,96.14520",
+        "google_map_url": "https://maps.google.com/maps?q=16.79020,96.14520&z=15&output=embed",
         "type": LotType.PRIVATE.value,
         "is_active": True,
         "rate_per_hour": 1000.0,
@@ -375,6 +516,445 @@ PARKING_LOTS = [
             },
         ],
     },
+
+    # ── 6. Thaketa Township Parking (Thaketa Tsp) ─────────────────────────
+    {
+        "owner_email": "aungkoko.owner@gmail.com",
+        "name": "Thaketa Township Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.80250,96.19380&z=15&output=embed",
+        "type": LotType.PUBLIC.value,
+        "is_active": True,
+        "rate_per_hour": 400.0,
+        "staff_emails": ["naylinhtun.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.80251, "longitude": 96.19381},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.80252, "longitude": 96.19382},
+                    {"slot_number": "G-A03", "section": "A", "latitude": 16.80253, "longitude": 96.19383},
+                    {"slot_number": "G-A04", "section": "A", "latitude": 16.80254, "longitude": 96.19384},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.80255, "longitude": 96.19385},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.80256, "longitude": 96.19386},
+                    {"slot_number": "G-B03", "section": "B", "latitude": 16.80257, "longitude": 96.19387},
+                    {"slot_number": "G-B04", "section": "B", "latitude": 16.80258, "longitude": 96.19388},
+                    {"slot_number": "G-C01", "section": "C", "latitude": 16.80259, "longitude": 96.19389},
+                    {"slot_number": "G-C02", "section": "C", "latitude": 16.80260, "longitude": 96.19390},
+                ],
+            },
+        ],
+    },
+
+    # ── 7. Insein Road Parking (Insein Tsp) ───────────────────────────────
+    {
+        "owner_email": "aungkoko.owner@gmail.com",
+        "name": "Insein Road Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.87450,96.09820&z=15&output=embed",
+        "type": LotType.PUBLIC.value,
+        "is_active": True,
+        "rate_per_hour": 350.0,
+        "staff_emails": ["moemoe.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.87451, "longitude": 96.09821},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.87452, "longitude": 96.09822},
+                    {"slot_number": "G-A03", "section": "A", "latitude": 16.87453, "longitude": 96.09823},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.87454, "longitude": 96.09824},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.87455, "longitude": 96.09825},
+                    {"slot_number": "G-B03", "section": "B", "latitude": 16.87456, "longitude": 96.09826},
+                ],
+            },
+            {
+                "floor_name": "Level 1 (L1)",
+                "slots": [
+                    {"slot_number": "L1-A01", "section": "A", "latitude": 16.87461, "longitude": 96.09821},
+                    {"slot_number": "L1-A02", "section": "A", "latitude": 16.87462, "longitude": 96.09822},
+                    {"slot_number": "L1-A03", "section": "A", "latitude": 16.87463, "longitude": 96.09823},
+                    {"slot_number": "L1-B01", "section": "B", "latitude": 16.87464, "longitude": 96.09824},
+                    {"slot_number": "L1-B02", "section": "B", "latitude": 16.87465, "longitude": 96.09825},
+                    {"slot_number": "L1-B03", "section": "B", "latitude": 16.87466, "longitude": 96.09826},
+                ],
+            },
+        ],
+    },
+
+    # ── 8. Tamwe Market Parking (Tamwe Tsp) ───────────────────────────────
+    {
+        "owner_email": "htethetswe.owner@gmail.com",
+        "name": "Tamwe Market Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.82640,96.17120&z=15&output=embed",
+        "type": LotType.PUBLIC.value,
+        "is_active": True,
+        "rate_per_hour": 450.0,
+        "staff_emails": ["yenaing.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.82641, "longitude": 96.17121},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.82642, "longitude": 96.17122},
+                    {"slot_number": "G-A03", "section": "A", "latitude": 16.82643, "longitude": 96.17123},
+                    {"slot_number": "G-A04", "section": "A", "latitude": 16.82644, "longitude": 96.17124},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.82645, "longitude": 96.17125},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.82646, "longitude": 96.17126},
+                    {"slot_number": "G-B03", "section": "B", "latitude": 16.82647, "longitude": 96.17127},
+                    {"slot_number": "G-B04", "section": "B", "latitude": 16.82648, "longitude": 96.17128},
+                ],
+            },
+        ],
+    },
+
+    # ── 9. Kamayut Depot Parking (Kamayut Tsp) ────────────────────────────
+    {
+        "owner_email": "htethetswe.owner@gmail.com",
+        "name": "Kamayut Depot Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.83710,96.13250&z=15&output=embed",
+        "type": LotType.PRIVATE.value,
+        "is_active": True,
+        "rate_per_hour": 550.0,
+        "staff_emails": ["thinzar.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Basement (B1)",
+                "slots": [
+                    {"slot_number": "B1-A01", "section": "A", "latitude": 16.83711, "longitude": 96.13251},
+                    {"slot_number": "B1-A02", "section": "A", "latitude": 16.83712, "longitude": 96.13252},
+                    {"slot_number": "B1-A03", "section": "A", "latitude": 16.83713, "longitude": 96.13253},
+                    {"slot_number": "B1-A04", "section": "A", "latitude": 16.83714, "longitude": 96.13254},
+                    {"slot_number": "B1-B01", "section": "B", "latitude": 16.83715, "longitude": 96.13255},
+                    {"slot_number": "B1-B02", "section": "B", "latitude": 16.83716, "longitude": 96.13256},
+                    {"slot_number": "B1-B03", "section": "B", "latitude": 16.83717, "longitude": 96.13257},
+                    {"slot_number": "B1-B04", "section": "B", "latitude": 16.83718, "longitude": 96.13258},
+                ],
+            },
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.83721, "longitude": 96.13251},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.83722, "longitude": 96.13252},
+                    {"slot_number": "G-A03", "section": "A", "latitude": 16.83723, "longitude": 96.13253},
+                    {"slot_number": "G-A04", "section": "A", "latitude": 16.83724, "longitude": 96.13254},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.83725, "longitude": 96.13255},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.83726, "longitude": 96.13256},
+                    {"slot_number": "G-B03", "section": "B", "latitude": 16.83727, "longitude": 96.13257},
+                    {"slot_number": "G-B04", "section": "B", "latitude": 16.83728, "longitude": 96.13258},
+                ],
+            },
+        ],
+    },
+
+    # ── 10. Dagon Centre Parking (Dagon Tsp) ──────────────────────────────
+    {
+        "owner_email": "myoaung.owner@gmail.com",
+        "name": "Dagon Centre Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.77040,96.17590&z=15&output=embed",
+        "type": LotType.PRIVATE.value,
+        "is_active": True,
+        "rate_per_hour": 650.0,
+        "staff_emails": ["kyawzin.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Basement (B1)",
+                "slots": [
+                    {"slot_number": "B1-A01", "section": "A", "latitude": 16.77041, "longitude": 96.17591},
+                    {"slot_number": "B1-A02", "section": "A", "latitude": 16.77042, "longitude": 96.17592},
+                    {"slot_number": "B1-A03", "section": "A", "latitude": 16.77043, "longitude": 96.17593},
+                    {"slot_number": "B1-B01", "section": "B", "latitude": 16.77044, "longitude": 96.17594},
+                    {"slot_number": "B1-B02", "section": "B", "latitude": 16.77045, "longitude": 96.17595},
+                    {"slot_number": "B1-B03", "section": "B", "latitude": 16.77046, "longitude": 96.17596},
+                    {"slot_number": "B1-C01", "section": "C", "latitude": 16.77047, "longitude": 96.17597},
+                    {"slot_number": "B1-C02", "section": "C", "latitude": 16.77048, "longitude": 96.17598},
+                ],
+            },
+            {
+                "floor_name": "Level 1 (L1)",
+                "slots": [
+                    {"slot_number": "L1-A01", "section": "A", "latitude": 16.77051, "longitude": 96.17591},
+                    {"slot_number": "L1-A02", "section": "A", "latitude": 16.77052, "longitude": 96.17592},
+                    {"slot_number": "L1-A03", "section": "A", "latitude": 16.77053, "longitude": 96.17593},
+                    {"slot_number": "L1-B01", "section": "B", "latitude": 16.77054, "longitude": 96.17594},
+                    {"slot_number": "L1-B02", "section": "B", "latitude": 16.77055, "longitude": 96.17595},
+                    {"slot_number": "L1-B03", "section": "B", "latitude": 16.77056, "longitude": 96.17596},
+                    {"slot_number": "L1-C01", "section": "C", "latitude": 16.77057, "longitude": 96.17597},
+                    {"slot_number": "L1-C02", "section": "C", "latitude": 16.77058, "longitude": 96.17598},
+                ],
+            },
+        ],
+    },
+
+    # ── 11. Yankin Market Parking (Yankin Tsp) ────────────────────────────
+    {
+        "owner_email": "khunsithuaung50@gmail.com",
+        "name": "Yankin Market Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.82960,96.16340&z=15&output=embed",
+        "type": LotType.PUBLIC.value,
+        "is_active": True,
+        "rate_per_hour": 500.0,
+        "staff_emails": [],
+        "floors": [
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.82961, "longitude": 96.16341},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.82962, "longitude": 96.16342},
+                    {"slot_number": "G-A03", "section": "A", "latitude": 16.82963, "longitude": 96.16343},
+                    {"slot_number": "G-A04", "section": "A", "latitude": 16.82964, "longitude": 96.16344},
+                    {"slot_number": "G-A05", "section": "A", "latitude": 16.82965, "longitude": 96.16345},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.82966, "longitude": 96.16346},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.82967, "longitude": 96.16347},
+                    {"slot_number": "G-B03", "section": "B", "latitude": 16.82968, "longitude": 96.16348},
+                    {"slot_number": "G-B04", "section": "B", "latitude": 16.82969, "longitude": 96.16349},
+                    {"slot_number": "G-B05", "section": "B", "latitude": 16.82970, "longitude": 96.16350},
+                    {"slot_number": "G-C01", "section": "C", "latitude": 16.82971, "longitude": 96.16351},
+                    {"slot_number": "G-C02", "section": "C", "latitude": 16.82972, "longitude": 96.16352},
+                ],
+            },
+            {
+                "floor_name": "Level 1 (L1)",
+                "slots": [
+                    {"slot_number": "L1-A01", "section": "A", "latitude": 16.82981, "longitude": 96.16341},
+                    {"slot_number": "L1-A02", "section": "A", "latitude": 16.82982, "longitude": 96.16342},
+                    {"slot_number": "L1-A03", "section": "A", "latitude": 16.82983, "longitude": 96.16343},
+                    {"slot_number": "L1-A04", "section": "A", "latitude": 16.82984, "longitude": 96.16344},
+                    {"slot_number": "L1-A05", "section": "A", "latitude": 16.82985, "longitude": 96.16345},
+                    {"slot_number": "L1-B01", "section": "B", "latitude": 16.82986, "longitude": 96.16346},
+                    {"slot_number": "L1-B02", "section": "B", "latitude": 16.82987, "longitude": 96.16347},
+                    {"slot_number": "L1-B03", "section": "B", "latitude": 16.82988, "longitude": 96.16348},
+                    {"slot_number": "L1-B04", "section": "B", "latitude": 16.82989, "longitude": 96.16349},
+                    {"slot_number": "L1-B05", "section": "B", "latitude": 16.82990, "longitude": 96.16350},
+                ],
+            },
+        ],
+    },
+
+    # ── 12. Hledan Centre Parking (Kamayut Tsp) ───────────────────────────
+    {
+        "owner_email": "htethetswe.owner@gmail.com",
+        "name": "Hledan Centre Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.82080,96.13060&z=15&output=embed",
+        "type": LotType.PUBLIC.value,
+        "is_active": True,
+        "rate_per_hour": 600.0,
+        "staff_emails": ["minthant.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Basement 1 (B1)",
+                "slots": [
+                    {"slot_number": "B1-A01", "section": "A", "latitude": 16.82081, "longitude": 96.13061},
+                    {"slot_number": "B1-A02", "section": "A", "latitude": 16.82082, "longitude": 96.13062},
+                    {"slot_number": "B1-A03", "section": "A", "latitude": 16.82083, "longitude": 96.13063},
+                    {"slot_number": "B1-B01", "section": "B", "latitude": 16.82084, "longitude": 96.13064},
+                    {"slot_number": "B1-B02", "section": "B", "latitude": 16.82085, "longitude": 96.13065},
+                    {"slot_number": "B1-B03", "section": "B", "latitude": 16.82086, "longitude": 96.13066},
+                ],
+            },
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.82091, "longitude": 96.13061},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.82092, "longitude": 96.13062},
+                    {"slot_number": "G-A03", "section": "A", "latitude": 16.82093, "longitude": 96.13063},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.82094, "longitude": 96.13064},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.82095, "longitude": 96.13065},
+                    {"slot_number": "G-EV01", "section": "EV", "latitude": 16.82096, "longitude": 96.13066},
+                    {"slot_number": "G-EV02", "section": "EV", "latitude": 16.82097, "longitude": 96.13067},
+                ],
+            },
+            {
+                "floor_name": "Level 1 (L1)",
+                "slots": [
+                    {"slot_number": "L1-A01", "section": "A", "latitude": 16.82101, "longitude": 96.13061},
+                    {"slot_number": "L1-A02", "section": "A", "latitude": 16.82102, "longitude": 96.13062},
+                    {"slot_number": "L1-B01", "section": "B", "latitude": 16.82103, "longitude": 96.13063},
+                    {"slot_number": "L1-B02", "section": "B", "latitude": 16.82104, "longitude": 96.13064},
+                ],
+            },
+        ],
+    },
+
+    # ── 13. Myanmar Plaza Parking (Yankin Tsp) ───────────────────────────
+    {
+        "owner_email": "thidawin.owner@gmail.com",
+        "name": "Myanmar Plaza Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.82850,96.15570&z=15&output=embed",
+        "type": LotType.PRIVATE.value,
+        "is_active": True,
+        "rate_per_hour": 1200.0,
+        "staff_emails": ["eieithaw.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Basement 1 (B1)",
+                "slots": [
+                    {"slot_number": "B1-A01", "section": "A", "latitude": 16.82851, "longitude": 96.15571},
+                    {"slot_number": "B1-A02", "section": "A", "latitude": 16.82852, "longitude": 96.15572},
+                    {"slot_number": "B1-A03", "section": "A", "latitude": 16.82853, "longitude": 96.15573},
+                    {"slot_number": "B1-A04", "section": "A", "latitude": 16.82854, "longitude": 96.15574},
+                    {"slot_number": "B1-B01", "section": "B", "latitude": 16.82855, "longitude": 96.15575},
+                    {"slot_number": "B1-B02", "section": "B", "latitude": 16.82856, "longitude": 96.15576},
+                    {"slot_number": "B1-B03", "section": "B", "latitude": 16.82857, "longitude": 96.15577},
+                ],
+            },
+            {
+                "floor_name": "Basement 2 (B2)",
+                "slots": [
+                    {"slot_number": "B2-A01", "section": "A", "latitude": 16.82861, "longitude": 96.15571},
+                    {"slot_number": "B2-A02", "section": "A", "latitude": 16.82862, "longitude": 96.15572},
+                    {"slot_number": "B2-B01", "section": "B", "latitude": 16.82863, "longitude": 96.15573},
+                    {"slot_number": "B2-B02", "section": "B", "latitude": 16.82864, "longitude": 96.15574},
+                ],
+            },
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.82871, "longitude": 96.15571},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.82872, "longitude": 96.15572},
+                    {"slot_number": "G-VIP01", "section": "VIP", "latitude": 16.82873, "longitude": 96.15573},
+                    {"slot_number": "G-VIP02", "section": "VIP", "latitude": 16.82874, "longitude": 96.15574},
+                ],
+            },
+        ],
+    },
+
+    # ── 14. Times City Parking (Kamayut Tsp) ─────────────────────────────
+    {
+        "owner_email": "aungkoko.owner@gmail.com",
+        "name": "Times City Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.80950,96.13020&z=15&output=embed",
+        "type": LotType.PRIVATE.value,
+        "is_active": True,
+        "rate_per_hour": 1000.0,
+        "staff_emails": ["kaunghtet.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Basement 1 (B1)",
+                "slots": [
+                    {"slot_number": "B1-A01", "section": "A", "latitude": 16.80951, "longitude": 96.13021},
+                    {"slot_number": "B1-A02", "section": "A", "latitude": 16.80952, "longitude": 96.13022},
+                    {"slot_number": "B1-A03", "section": "A", "latitude": 16.80953, "longitude": 96.13023},
+                    {"slot_number": "B1-B01", "section": "B", "latitude": 16.80954, "longitude": 96.13024},
+                    {"slot_number": "B1-B02", "section": "B", "latitude": 16.80955, "longitude": 96.13025},
+                ],
+            },
+            {
+                "floor_name": "Level 1 (L1)",
+                "slots": [
+                    {"slot_number": "L1-A01", "section": "A", "latitude": 16.80961, "longitude": 96.13021},
+                    {"slot_number": "L1-A02", "section": "A", "latitude": 16.80962, "longitude": 96.13022},
+                    {"slot_number": "L1-B01", "section": "B", "latitude": 16.80963, "longitude": 96.13023},
+                    {"slot_number": "L1-B02", "section": "B", "latitude": 16.80964, "longitude": 96.13024},
+                ],
+            },
+        ],
+    },
+
+    # ── 15. St. John City Mall Parking (Lanmadaw Tsp) ────────────────────
+    {
+        "owner_email": "khunsithuaung50@gmail.com",
+        "name": "St. John City Mall Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.78010,96.14150&z=15&output=embed",
+        "type": LotType.PUBLIC.value,
+        "is_active": True,
+        "rate_per_hour": 750.0,
+        "staff_emails": ["nilaraye.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.78011, "longitude": 96.14151},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.78012, "longitude": 96.14152},
+                    {"slot_number": "G-A03", "section": "A", "latitude": 16.78013, "longitude": 96.14153},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.78014, "longitude": 96.14154},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.78015, "longitude": 96.14155},
+                ],
+            },
+            {
+                "floor_name": "Level 1 (L1)",
+                "slots": [
+                    {"slot_number": "L1-A01", "section": "A", "latitude": 16.78021, "longitude": 96.14151},
+                    {"slot_number": "L1-A02", "section": "A", "latitude": 16.78022, "longitude": 96.14152},
+                    {"slot_number": "L1-B01", "section": "B", "latitude": 16.78023, "longitude": 96.14153},
+                ],
+            },
+        ],
+    },
+
+    # ── 16. Ocean Supercenter Parking (South Okkalapa Tsp) ────────────────
+    {
+        "owner_email": "myoaung.owner@gmail.com",
+        "name": "Ocean Supercenter Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.85300,96.18500&z=15&output=embed",
+        "type": LotType.PUBLIC.value,
+        "is_active": True,
+        "rate_per_hour": 500.0,
+        "staff_emails": ["winko.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.85301, "longitude": 96.18501},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.85302, "longitude": 96.18502},
+                    {"slot_number": "G-A03", "section": "A", "latitude": 16.85303, "longitude": 96.18503},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.85304, "longitude": 96.18504},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.85305, "longitude": 96.18505},
+                    {"slot_number": "G-B03", "section": "B", "latitude": 16.85306, "longitude": 96.18506},
+                ],
+            },
+        ],
+    },
+
+    # ── 17. Hlaing Riverfront Parking (Hlaing Tsp) ─────────────────────────
+    {
+        "owner_email": "aungkoko.owner@gmail.com",
+        "name": "Hlaing Riverfront Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.84500,96.11500&z=15&output=embed",
+        "type": LotType.PUBLIC.value,
+        "is_active": True,
+        "rate_per_hour": 600.0,
+        "staff_emails": ["hlaingmin.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.84501, "longitude": 96.11501},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.84502, "longitude": 96.11502},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.84503, "longitude": 96.11503},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.84504, "longitude": 96.11504},
+                ],
+            },
+            {
+                "floor_name": "Level 1 (L1)",
+                "slots": [
+                    {"slot_number": "L1-A01", "section": "A", "latitude": 16.84511, "longitude": 96.11501},
+                    {"slot_number": "L1-A02", "section": "A", "latitude": 16.84512, "longitude": 96.11502},
+                ],
+            },
+        ],
+    },
+
+    # ── 18. North Dagon Plaza Parking (North Dagon Tsp) ───────────────────
+    {
+        "owner_email": "htethetswe.owner@gmail.com",
+        "name": "North Dagon Plaza Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.87200,96.18500&z=15&output=embed",
+        "type": LotType.PUBLIC.value,
+        "is_active": True,
+        "rate_per_hour": 400.0,
+        "staff_emails": ["maythet.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.87201, "longitude": 96.18501},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.87202, "longitude": 96.18502},
+                    {"slot_number": "G-A03", "section": "A", "latitude": 16.87203, "longitude": 96.18503},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.87204, "longitude": 96.18504},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.87205, "longitude": 96.18505},
+                ],
+            },
+        ],
+    },
 ]
 
 # ---------------------------------------------------------------------------
@@ -384,10 +964,30 @@ PARKING_LOTS = [
 CUSTOMER_CARS = {
     "khunsithuaung35@gmail.com": [
         {"plate_number": "1A-1234", "brand": "Toyota", "color": "Silver"},
+        {"plate_number": "1A-5555", "brand": "Nissan", "color": "Black"},
     ],
     "nainglin.customer@gmail.com": [
         {"plate_number": "2B-5678", "brand": "Honda", "color": "White"},
         {"plate_number": "3C-9012", "brand": "Suzuki", "color": "Red"},
+    ],
+    "waiphyo.customer@gmail.com": [
+        {"plate_number": "4D-1111", "brand": "Mazda", "color": "Blue"},
+        {"plate_number": "4D-2222", "brand": "Toyota", "color": "White"},
+    ],
+    "zinmar.customer@gmail.com": [
+        {"plate_number": "5E-3333", "brand": "Hyundai", "color": "Grey"},
+    ],
+    "phyowai.customer@gmail.com": [
+        {"plate_number": "6F-4444", "brand": "Mitsubishi", "color": "Black"},
+        {"plate_number": "6F-5555", "brand": "Toyota", "color": "Gold"},
+        {"plate_number": "6F-6666", "brand": "Honda", "color": "Silver"},
+    ],
+    "chanmyae.customer@gmail.com": [
+        {"plate_number": "7G-7777", "brand": "Suzuki", "color": "White"},
+        {"plate_number": "7G-8888", "brand": "Kia", "color": "Red"},
+    ],
+    "eiphyu.customer@gmail.com": [
+        {"plate_number": "8H-9999", "brand": "Toyota", "color": "Pearl White"},
     ],
 }
 
@@ -643,39 +1243,71 @@ def seed() -> None:
 
         db.commit()
 
-        print("\n" + "=" * 62)
+        print("\n" + "=" * 70)
         print("✅  Seeding complete!")
-        print("=" * 62)
+        print("=" * 70)
         print()
         print("  Accounts (password: asdffdsa)")
-        print("  ─────────────────────────────────────────────────────────")
+        print("  ──────────────────────────────────────────────────────────────────")
         print("  [ADMIN]")
         print("    khunsithu350@gmail.com")
         print()
         print("  [OWNERS]")
-        print("    khunsithuaung50@gmail.com  →  KST Parking Co., Ltd.  (Pro)")
-        print("    myoaung.owner@gmail.com    →  MA Parking Solutions   (Basic)")
-        print("    thidawin.owner@gmail.com   →  TW Premium Parking     (Enterprise)")
+        print("    khunsithuaung50@gmail.com   →  KST Parking Co., Ltd.   (Pro)")
+        print("    myoaung.owner@gmail.com     →  MA Parking Solutions    (Basic)")
+        print("    thidawin.owner@gmail.com    →  TW Premium Parking      (Enterprise)")
+        print("    aungkoko.owner@gmail.com    →  AKK Smart Parking       (Pro)")
+        print("    htethetswe.owner@gmail.com  →  HHS Parking Management  (Basic)")
         print()
         print("  [STAFF]")
-        print("    khunsithu2003@gmail.com    →  Yangon Central Parking")
-        print("    zawlin.staff@gmail.com     →  Sule Square Parking")
-        print("    susuhtwe.staff@gmail.com   →  Junction Square Parking")
-        print("    kyawkyaw.staff@gmail.com   →  Junction City Parking")
-        print("    ayemyatmon.staff@gmail.com →  Bogyoke Market Parking")
+        print("    khunsithu2003@gmail.com     →  Yangon Central Parking")
+        print("    zawlin.staff@gmail.com      →  Sule Square Parking")
+        print("    susuhtwe.staff@gmail.com    →  Junction Square Parking")
+        print("    kyawkyaw.staff@gmail.com    →  Junction City Parking")
+        print("    ayemyatmon.staff@gmail.com  →  Bogyoke Market Parking")
+        print("    naylinhtun.staff@gmail.com  →  Thaketa Township Parking")
+        print("    moemoe.staff@gmail.com      →  Insein Road Parking")
+        print("    yenaing.staff@gmail.com     →  Tamwe Market Parking")
+        print("    thinzar.staff@gmail.com     →  Kamayut Depot Parking")
+        print("    kyawzin.staff@gmail.com     →  Dagon Centre Parking")
+        print("    minthant.staff@gmail.com    →  Hledan Centre Parking")
+        print("    eieithaw.staff@gmail.com    →  Myanmar Plaza Parking")
+        print("    kaunghtet.staff@gmail.com   →  Times City Parking")
+        print("    nilaraye.staff@gmail.com    →  St. John City Mall Parking")
+        print("    winko.staff@gmail.com       →  Ocean Supercenter Parking")
+        print("    hlaingmin.staff@gmail.com   →  Hlaing Riverfront Parking")
+        print("    maythet.staff@gmail.com     →  North Dagon Plaza Parking")
         print()
         print("  [CUSTOMERS]")
-        print("    khunsithuaung35@gmail.com  →  1 car (1A-1234 Toyota Silver)")
-        print("    nainglin.customer@gmail.com→  2 cars (Honda White, Suzuki Red)")
+        print("    khunsithuaung35@gmail.com   →  2 cars (Toyota Silver, Nissan Black)")
+        print("    nainglin.customer@gmail.com →  2 cars (Honda White, Suzuki Red)")
+        print("    waiphyo.customer@gmail.com  →  2 cars (Mazda Blue, Toyota White)")
+        print("    zinmar.customer@gmail.com   →  1 car  (Hyundai Grey)")
+        print("    phyowai.customer@gmail.com  →  3 cars (Mitsubishi, Toyota, Honda)")
+        print("    chanmyae.customer@gmail.com →  2 cars (Suzuki White, Kia Red)")
+        print("    eiphyu.customer@gmail.com   →  1 car  (Toyota Pearl White)")
         print()
         print("  Parking Lots (Yangon, Myanmar)")
-        print("  ─────────────────────────────────────────────────────────")
-        print("  1. Yangon Central Parking    16.7741, 96.1594  500 MMK/hr")
-        print("  2. Bogyoke Market Parking    16.7821, 96.1543  600 MMK/hr")
-        print("  3. Sule Square Parking       16.7769, 96.1589  800 MMK/hr")
-        print("  4. Junction Square Parking   16.8315, 96.1345  700 MMK/hr")
-        print("  5. Junction City Parking     16.7902, 96.1452 1000 MMK/hr")
-        print("=" * 62)
+        print("  ──────────────────────────────────────────────────────────────────")
+        print("   1. Yangon Central Parking     16.7741, 96.1594   500 MMK/hr  [KST]")
+        print("   2. Bogyoke Market Parking     16.7821, 96.1543   600 MMK/hr  [KST]")
+        print("   3. Sule Square Parking        16.7769, 96.1589   800 MMK/hr  [MA]")
+        print("   4. Junction Square Parking    16.8315, 96.1345   700 MMK/hr  [TW]")
+        print("   5. Junction City Parking      16.7902, 96.1452  1000 MMK/hr  [TW]")
+        print("   6. Thaketa Township Parking   16.8025, 96.1938   400 MMK/hr  [AKK]")
+        print("   7. Insein Road Parking        16.8745, 96.0982   350 MMK/hr  [AKK]")
+        print("   8. Tamwe Market Parking       16.8264, 96.1712   450 MMK/hr  [HHS]")
+        print("   9. Kamayut Depot Parking      16.8371, 96.1325   550 MMK/hr  [HHS]")
+        print("  10. Dagon Centre Parking       16.7704, 96.1759   650 MMK/hr  [MA]")
+        print("  11. Yankin Market Parking      16.8296, 96.1634   500 MMK/hr  [KST]")
+        print("  12. Hledan Centre Parking      16.8208, 96.1306   600 MMK/hr  [HHS]")
+        print("  13. Myanmar Plaza Parking      16.8285, 96.1557  1200 MMK/hr  [TW]")
+        print("  14. Times City Parking         16.8095, 96.1302  1000 MMK/hr  [AKK]")
+        print("  15. St. John City Mall Parking 16.7801, 96.1415   750 MMK/hr  [KST]")
+        print("  16. Ocean Supercenter Parking  16.8530, 96.1850   500 MMK/hr  [MA]")
+        print("  17. Hlaing Riverfront Parking  16.8450, 96.1150   600 MMK/hr  [AKK]")
+        print("  18. North Dagon Plaza Parking  16.8720, 96.1850   400 MMK/hr  [HHS]")
+        print("=" * 70)
         print()
 
     except Exception as exc:

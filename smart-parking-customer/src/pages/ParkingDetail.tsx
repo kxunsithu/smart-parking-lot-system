@@ -53,7 +53,7 @@ function getEmbedUrl(mapUrl?: string | null): string | null {
   const str = mapUrl.trim()
   if (str.toLowerCase().includes("<iframe")) {
     const match = str.match(/src=["']([^"']+)["']/i)
-    if (match && match[1]) return match[1]
+    if (match && match[1]) return getEmbedUrl(match[1])
   }
   if (str.includes("maps/embed") || str.includes("output=embed")) {
     return str
@@ -62,8 +62,24 @@ function getEmbedUrl(mapUrl?: string | null): string | null {
     const match = str.match(/[?&]pb=([^&]+)/)
     if (match) return `https://www.google.com/maps/embed?pb=${match[1]}`
   }
+  // Extract q parameter if present (e.g. ?q=16.77410,96.15940)
+  const qMatch = str.match(/[?&]q=([^&]+)/)
+  if (qMatch && qMatch[1]) {
+    const query = decodeURIComponent(qMatch[1])
+    return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=15&output=embed`
+  }
+  // Extract @lat,lng
+  const llMatch = str.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+  if (llMatch) {
+    return `https://maps.google.com/maps?q=${llMatch[1]},${llMatch[2]}&z=15&output=embed`
+  }
+  // Raw lat,lng string
+  const coordMatch = str.match(/^(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)$/)
+  if (coordMatch) {
+    return `https://maps.google.com/maps?q=${coordMatch[1]},${coordMatch[2]}&z=15&output=embed`
+  }
   if (str.startsWith("http://") || str.startsWith("https://")) {
-    return `https://maps.google.com/maps?q=${encodeURIComponent(str)}&output=embed`
+    return `https://maps.google.com/maps?q=${encodeURIComponent(str)}&z=15&output=embed`
   }
   return null
 }
