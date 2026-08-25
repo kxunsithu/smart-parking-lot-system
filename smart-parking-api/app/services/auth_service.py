@@ -176,6 +176,18 @@ class AuthService:
         user.password = hash_password(payload.new_password)
         self.db.commit()
 
+    def reset_password(self, payload) -> None:
+        user = self.user_repo.get_by_email(payload.email)
+        if not user:
+            raise NotFoundException("No account found with this email address.")
+
+        from app.services.otp_service import OTPService
+        OTPService(self.db).verify_otp(payload.email, payload.otp)
+
+        user.password = hash_password(payload.new_password)
+        self.db.commit()
+        self.otp_repo.delete_by_email(payload.email)
+
     def update_profile(self, user: User, payload: UserUpdate) -> User:
         data = payload.model_dump(exclude_unset=True)
         return self.user_repo.update(user, data)

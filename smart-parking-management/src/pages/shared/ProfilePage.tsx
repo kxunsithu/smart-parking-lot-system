@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { Camera, Loader2, LogOut, Trash2 } from "lucide-react"
+import { Camera, Loader2, LogOut, Trash2, Eye, EyeOff } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { FormField } from "@/components/common/FormField"
 import { ConfirmDialog } from "@/components/common/ConfirmDialog"
@@ -19,6 +19,7 @@ import { useAuthStore } from "@/stores/authStore"
 import { useAuth } from "@/hooks/useAuth"
 import { initials } from "@/utils/formatters"
 import { ROLE_LABELS } from "@/utils/navConfig"
+import { strongPassword } from "@/lib/passwordSchema"
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"]
 const MAX_SIZE_MB = 5
@@ -37,7 +38,7 @@ type ProfileFormValues = z.infer<typeof profileSchema>
 const passwordSchema = z
   .object({
     old_password: z.string().min(1, "Current password is required"),
-    new_password: z.string().min(8, "New password must be at least 8 characters"),
+    new_password: strongPassword,
     confirm_password: z.string().min(1, "Please confirm your new password"),
   })
   .refine((data) => data.new_password === data.confirm_password, {
@@ -52,6 +53,9 @@ export function ProfilePage() {
   const { setUser, logout } = useAuthStore()
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [showOldPassword, setShowOldPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
@@ -283,7 +287,22 @@ export function ProfilePage() {
                 error={passwordForm.formState.errors.old_password?.message}
                 required
               >
-                <Input id="old_password" type="password" {...passwordForm.register("old_password")} />
+                <div className="relative">
+                  <Input
+                    id="old_password"
+                    type={showOldPassword ? "text" : "password"}
+                    className="pr-10"
+                    {...passwordForm.register("old_password")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowOldPassword(!showOldPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                    aria-label={showOldPassword ? "Hide password" : "Show password"}
+                  >
+                    {showOldPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
               </FormField>
               <FormField
                 label="New password"
@@ -291,7 +310,22 @@ export function ProfilePage() {
                 error={passwordForm.formState.errors.new_password?.message}
                 required
               >
-                <Input id="new_password" type="password" {...passwordForm.register("new_password")} />
+                <div className="relative">
+                  <Input
+                    id="new_password"
+                    type={showNewPassword ? "text" : "password"}
+                    className="pr-10"
+                    {...passwordForm.register("new_password")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                    aria-label={showNewPassword ? "Hide password" : "Show password"}
+                  >
+                    {showNewPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
               </FormField>
               <FormField
                 label="Confirm new password"
@@ -299,7 +333,22 @@ export function ProfilePage() {
                 error={passwordForm.formState.errors.confirm_password?.message}
                 required
               >
-                <Input id="confirm_password" type="password" {...passwordForm.register("confirm_password")} />
+                <div className="relative">
+                  <Input
+                    id="confirm_password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    className="pr-10"
+                    {...passwordForm.register("confirm_password")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
               </FormField>
               <Button type="submit" disabled={isChangingPassword}>
                 {isChangingPassword ? <Loader2 className="size-4 animate-spin" /> : null}

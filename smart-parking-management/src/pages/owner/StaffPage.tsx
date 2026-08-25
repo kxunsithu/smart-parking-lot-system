@@ -34,11 +34,12 @@ import { getErrorMessage, getFieldErrors } from "@/api/client"
 import { usePaginationState } from "@/hooks/usePaginationState"
 import type { ParkingLotOut, ParkingStaffOut, ParkingOwnerOut, ParkingStaffUpdate as UpdateStaffPayload } from "@/types"
 import type { ListResult } from "@/api/types"
+import { strongPassword } from "@/lib/passwordSchema"
 
 const createStaffSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().min(1, "Email is required").email("Enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: strongPassword,
   parking_lot_id: z.number().min(1, "Parking lot is required"),
 })
 type CreateStaffFormValues = z.infer<typeof createStaffSchema>

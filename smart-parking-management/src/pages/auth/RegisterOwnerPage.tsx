@@ -13,13 +13,14 @@ import type { RegisterOwnerRequest as RegisterOwnerPayload } from "@/types"
 import { getErrorMessage } from "@/api/client"
 import { useAuthStore } from "@/stores/authStore"
 import { toast } from "sonner"
+import { strongPassword } from "@/lib/passwordSchema"
 
 const ownerRegistrationSchema = z
   .object({
     name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name must be at most 100 characters"),
     email: z.string().email("Invalid email address"),
-    password: z.string().min(8, "Password must be at least 8 characters").max(128, "Password must be at most 128 characters"),
-    confirm_password: z.string().min(8, "Password must be at least 8 characters").max(128, "Password must be at most 128 characters"),
+    password: strongPassword,
+    confirm_password: z.string(),
     company_name: z.string().min(2, "Company name must be at least 2 characters").max(100, "Company name must be at most 100 characters"),
   })
   .refine((data) => data.password === data.confirm_password, {

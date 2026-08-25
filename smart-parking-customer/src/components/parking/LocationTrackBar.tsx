@@ -1,4 +1,5 @@
 import { MapPin } from "lucide-react"
+import { useLanguage } from "@/lib/i18n"
 
 export function LocationTrackBar({
   lotName,
@@ -13,16 +14,18 @@ export function LocationTrackBar({
   onTrack: () => void
   showTrack?: boolean
 }) {
+  const { t } = useLanguage()
+
   return (
     <div className="p-3 rounded bg-muted/40 border border-border/40 flex items-center justify-between gap-3">
       <div className="flex items-start gap-2 min-w-0">
         <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
         <div className="min-w-0">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none mb-1">
-            Location
+            {t("parking.location_map", "Location")}
           </p>
           <p className="text-xs font-semibold text-foreground truncate">
-            {lotName} — {floorName} (Slot {slotNumber})
+            {lotName} — {floorName} ({t("parking.slot", "Slot")} {slotNumber})
           </p>
         </div>
       </div>
@@ -32,7 +35,7 @@ export function LocationTrackBar({
           onClick={onTrack}
           className="shrink-0 text-xs font-semibold text-primary hover:underline flex items-center gap-1 bg-primary/10 hover:bg-primary/20 px-2.5 py-1.5 rounded transition-colors border border-primary/20"
         >
-          Track
+          {t("parking.track", "Track")}
         </button>
       )}
     </div>

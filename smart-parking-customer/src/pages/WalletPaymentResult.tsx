@@ -1,6 +1,7 @@
 import { useSearchParams, useNavigate } from "react-router-dom"
 import { CheckCircle2, XCircle } from "lucide-react"
 import Navbar from "@/components/layout/Navbar"
+import Footer from "@/components/layout/Footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -12,10 +13,10 @@ export default function WalletPaymentResult() {
   const success = status === "completed"
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="max-w-md mx-auto px-4 py-16">
-        <Card className={success ? "border-green-500/30 bg-green-500/5" : "border-red-500/30 bg-red-500/5"}>
+      <div className="flex-1 max-w-7xl mx-auto p-4 sm:p-6 w-full py-16">
+        <Card className={`max-w-md mx-auto ${success ? "border-green-500/30 bg-green-500/5" : "border-red-500/30 bg-red-500/5"}`}>
           <CardContent className="pt-8 pb-6 text-center space-y-4">
             <div
               className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto border ${
@@ -60,6 +61,7 @@ export default function WalletPaymentResult() {
           </CardContent>
         </Card>
       </div>
+      <Footer />
     </div>
   )
 }

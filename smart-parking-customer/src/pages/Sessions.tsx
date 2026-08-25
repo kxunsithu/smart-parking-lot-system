@@ -18,6 +18,7 @@ import {
   FileText,
 } from "lucide-react"
 import Navbar from "@/components/layout/Navbar"
+import Footer from "@/components/layout/Footer"
 import { LocationTrackBar } from "@/components/parking/LocationTrackBar"
 import { ParkingTrackModal } from "@/components/parking/ParkingTrackModal"
 import { parkingSessionsApi } from "@/api/parkingSessions"
@@ -264,7 +265,7 @@ export default function Sessions() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
 
       {/* End session confirmation modal */}
@@ -278,7 +279,7 @@ export default function Sessions() {
         />
       )}
 
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+      <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 space-y-6">
 
         {/* Page header */}
         <div className="flex items-start justify-between gap-4">
@@ -416,6 +417,7 @@ export default function Sessions() {
       {showReceipt && receiptPayment && (
         <ReceiptModal payment={receiptPayment} onClose={() => setShowReceipt(false)} />
       )}
+      <Footer />
     </div>
   )
 }

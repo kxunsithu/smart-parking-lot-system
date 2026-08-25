@@ -62,4 +62,8 @@ export const authApi = {
     const response = await apiClient.delete<ApiSuccess<UserOut>>("/auth/me/profile-image")
     return response.data.data
   },
+
+  resetPassword: async (data: { email: string; otp: string; new_password: string }): Promise<void> => {
+    await apiClient.post<ApiSuccess<null>>("/auth/reset-password", data)
+  },
 }

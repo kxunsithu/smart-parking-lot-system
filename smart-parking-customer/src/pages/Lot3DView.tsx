@@ -4,6 +4,7 @@ import { Canvas, useThree, useFrame } from "@react-three/fiber"
 import { OrbitControls, Text, Box } from "@react-three/drei"
 import * as THREE from "three"
 import Navbar from "@/components/layout/Navbar"
+import Footer from "@/components/layout/Footer"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -346,8 +347,8 @@ function ParkingFloor3D({
   const totalDepth = Math.max(zCursor, 10) + floorPad
   const totalWidth = spr * (sw + sg) + 4 + floorPad
 
-  // Sleek night mode obsidian asphalt tint vs day mode slate asphalt
-  const nightAsphalts = ["#090d16", "#0b0f19", "#0e1322", "#0a0e1c"]
+  // Sleek night mode obsidian asphalt tint matching project dark theme (#09090b & #121215) vs day mode slate
+  const nightAsphalts = ["#121215", "#18181b", "#1c1c20", "#141418"]
   const dayAsphalts = ["#334155", "#374151", "#475569", "#3b4252"]
 
   const asphaltColor = isNightMode
@@ -365,11 +366,11 @@ function ParkingFloor3D({
         />
       </Box>
 
-      {/* Floor label in neon cyan for night mode */}
+      {/* Floor label in brand amber for night mode */}
       <Text
         position={[-totalWidth / 2 - 0.8, 1.4, (totalDepth - floorPad) / 2]}
         fontSize={1.0}
-        color={isNightMode ? "#38bdf8" : "#475569"}
+        color={isNightMode ? "#FF8F00" : "#475569"}
         anchorX="right"
         anchorY="middle"
         fontWeight="bold"
@@ -440,29 +441,29 @@ function Scene3D({
   const { scene } = useThree()
 
   useEffect(() => {
-    // Rich midnight navy background in night mode vs daylight soft slate
-    scene.background = new THREE.Color(isNightMode ? "#050814" : "#f1f5f9")
-    scene.fog = new THREE.FogExp2(isNightMode ? "#050814" : "#f1f5f9", 0.008)
+    // Project dark mode background (#09090b) vs daylight soft slate (#f1f5f9)
+    scene.background = new THREE.Color(isNightMode ? "#09090b" : "#f1f5f9")
+    scene.fog = new THREE.FogExp2(isNightMode ? "#09090b" : "#f1f5f9", 0.008)
   }, [isNightMode, scene])
 
   return (
     <>
-      <ambientLight intensity={isNightMode ? 0.85 : 1.6} />
+      <ambientLight intensity={isNightMode ? 0.95 : 1.6} />
 
       <directionalLight
         position={[0, 60, 20]}
-        intensity={isNightMode ? 0.7 : 2.0}
-        color={isNightMode ? "#cbd5e1" : "#ffffff"}
+        intensity={isNightMode ? 0.8 : 2.0}
+        color={isNightMode ? "#fed7aa" : "#ffffff"}
         castShadow
       />
 
-      {/* Night canopy LED lights & sodium streetlamp glow */}
+      {/* Night canopy warm amber LED lights matching brand */}
       {isNightMode && (
         <>
-          <pointLight position={[0, 30, 10]} intensity={2.2} color="#38bdf8" distance={60} />
-          <pointLight position={[-18, 22, -10]} intensity={1.8} color="#818cf8" distance={50} />
-          <pointLight position={[18, 22, 30]} intensity={1.8} color="#fbbf24" distance={50} />
-          <pointLight position={[0, 15, -20]} intensity={1.5} color="#34d399" distance={45} />
+          <pointLight position={[0, 30, 10]} intensity={2.2} color="#FF8F00" distance={60} />
+          <pointLight position={[-18, 22, -10]} intensity={1.8} color="#fbbf24" distance={50} />
+          <pointLight position={[18, 22, 30]} intensity={1.8} color="#f59e0b" distance={50} />
+          <pointLight position={[0, 15, -20]} intensity={1.5} color="#10b981" distance={45} />
         </>
       )}
 
@@ -526,11 +527,17 @@ function checkWebGLSupport(): boolean {
   }
 }
 
+import { useTheme } from "next-themes"
+
 export default function Lot3DView() {
   const { id } = useParams<{ id: string }>()
   const [searchParams] = useSearchParams()
   const lotId = Number(id)
   const navigate = useNavigate()
+
+  const { resolvedTheme, setTheme } = useTheme()
+  const isNightMode = resolvedTheme === "dark"
+
   const containerRef = useRef<HTMLDivElement>(null)
   const [lot, setLot] = useState<ParkingLotOut | null>(null)
   const [floors, setFloors] = useState<ParkingFloorOut[]>([])
@@ -539,7 +546,6 @@ export default function Lot3DView() {
   const [isLoading, setIsLoading] = useState(true)
   const [webGLError, setWebGLError] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [isNightMode, setIsNightMode] = useState(false)
   const [isAutoRotate, setIsAutoRotate] = useState(true)
   const [canvasKey, setCanvasKey] = useState(0)
   const [contextLost, setContextLost] = useState(false)
@@ -629,9 +635,9 @@ export default function Lot3DView() {
   )
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-5">
+      <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 space-y-5">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -647,7 +653,7 @@ export default function Lot3DView() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant={isNightMode ? "default" : "outline"} onClick={() => setIsNightMode(!isNightMode)} className="gap-2">
+            <Button size="sm" variant={isNightMode ? "default" : "outline"} onClick={() => setTheme(isNightMode ? "light" : "dark")} className="gap-2">
               {isNightMode ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
               {isNightMode ? "Day Mode" : "Night Mode"}
             </Button>
@@ -709,7 +715,7 @@ export default function Lot3DView() {
         <div
           ref={containerRef}
           className={`relative w-full rounded overflow-hidden border shadow-xl transition-colors duration-300 ${isFullscreen ? "fixed inset-0 z-50 h-screen w-screen rounded-none border-none" : "h-[600px]"
-            } ${isNightMode ? "bg-[#050814] border-slate-800" : "bg-slate-100 border-slate-200"}`}
+            } ${isNightMode ? "bg-[#09090b] border-zinc-800" : "bg-card border-border"}`}
         >
           {webGLError ? (
             <WebGLFallback message={webGLError} />
@@ -745,7 +751,7 @@ export default function Lot3DView() {
           {/* Floating legend */}
           <div
             className={`absolute bottom-4 left-4 flex items-center gap-3 px-4 py-2 rounded text-xs font-medium backdrop-blur-md border transition-colors duration-300 ${isNightMode
-              ? "bg-slate-950/80 border-slate-800 text-slate-100 shadow-xl"
+              ? "bg-[#09090b]/90 border-zinc-800 text-zinc-100 shadow-xl"
               : "bg-white/80 border-slate-200 text-slate-800 shadow-md"
               }`}
           >
@@ -807,6 +813,7 @@ export default function Lot3DView() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   )
 }

@@ -227,3 +227,9 @@ export interface ChangePasswordRequest {
   old_password: string
   new_password: string
 }
+
+export interface ResetPasswordRequest {
+  email: string
+  otp: string
+  new_password: string
+}

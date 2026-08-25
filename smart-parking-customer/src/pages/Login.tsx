@@ -118,7 +118,16 @@ export default function Login() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="password" className="text-sm text-foreground font-bold">{t("profile.change_password", "Password")}</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password" className="text-sm text-foreground font-bold">{t("profile.change_password", "Password")}</Label>
+            <button
+              type="button"
+              onClick={() => navigate("/forgot-password")}
+              className="text-xs text-primary hover:underline font-medium cursor-pointer"
+            >
+              {t("auth.forgot_password", "Forgot Password?")}
+            </button>
+          </div>
           <div className="relative">
             <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input

@@ -127,4 +127,17 @@
   html {
     @apply font-sans;
     }
+
+  /* Native select dropdown option styling to match project theme */
+  select option {
+    background-color: var(--card);
+    color: var(--card-foreground);
+    padding: 8px 12px;
+  }
+
+  select option:checked,
+  select option:hover {
+    background-color: var(--primary) !important;
+    color: var(--primary-foreground) !important;
+  }
 }

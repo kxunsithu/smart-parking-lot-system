@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider"
 import Home from "@/pages/Home"
 import Login from "@/pages/Login"
 import Register from "@/pages/Register"
+import ForgotPassword from "@/pages/ForgotPassword"
 import VerifyEmail from "@/pages/VerifyEmail"
 import Dashboard from "@/pages/Dashboard"
 import Cars from "@/pages/Cars"
@@ -51,6 +52,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+          <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
           <Route path="/verify-email" element={<AuthOnlyRoute><VerifyEmail /></AuthOnlyRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/cars" element={<ProtectedRoute><Cars /></ProtectedRoute>} />

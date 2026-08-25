@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import Navbar from "@/components/layout/Navbar"
+import Footer from "@/components/layout/Footer"
 import { carsApi } from "@/api/cars"
 import { useCarStore } from "@/store/carStore"
 import { useLanguage } from "@/lib/i18n"
@@ -73,29 +74,34 @@ export default function Cars() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+      <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-foreground">{t("cars.title", "My Vehicles")}</h1>
+            <h1 className="text-xl font-extrabold tracking-normal text-foreground">{t("cars.title", "My Vehicles")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {t("cars.title", "Manage your registered cars")}
+              {t("cars.subtitle", "Manage your registered vehicles and license plates")}
             </p>
           </div>
-          <Button onClick={() => setShowAddForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button onClick={() => setShowAddForm(true)} className="gap-2 shadow-sm">
+            <Plus className="h-4 w-4" />
             {t("cars.add_title", "Add Car")}
           </Button>
         </div>
 
         {cars.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <CarIcon className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-4">{t("cars.no_cars", "No vehicles registered yet.")}</p>
-              <Button onClick={() => setShowAddForm(true)}>
-                <Plus className="h-4 w-4 mr-2" />
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4">
+                <CarIcon className="h-8 w-8" />
+              </div>
+              <h3 className="font-semibold text-lg mb-1">{t("cars.no_cars", "No vehicles registered yet.")}</h3>
+              <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+                Add your vehicle plate number to start reserving parking slots seamlessly.
+              </p>
+              <Button onClick={() => setShowAddForm(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
                 {t("cars.add_title", "Add Your First Car")}
               </Button>
             </CardContent>
@@ -103,40 +109,48 @@ export default function Cars() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {cars.map((car) => (
-              <Card key={car.id}>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{car.plate_number}</CardTitle>
+              <Card key={car.id} className="relative overflow-hidden border border-border/80 hover:border-primary/40 hover:shadow-lg transition-all duration-300">
+                <div className="h-1 bg-gradient-to-r from-primary to-amber-400" />
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <CarIcon className="size-5 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg font-bold tracking-tight">{car.plate_number}</CardTitle>
+                        <CardDescription className="text-xs font-medium capitalize mt-0.5">
+                          {car.brand || "Vehicle"}
+                        </CardDescription>
+                      </div>
+                    </div>
                   </div>
-                  <CardDescription className="capitalize">
-                    {car.brand || "Standard Car"}
-                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
+                <CardContent className="pt-0 space-y-4">
+                  <div className="space-y-2 text-sm bg-muted/30 rounded-lg p-3 border border-border/40">
                     {car.brand && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">{t("cars.brand", "Brand")}</span>
-                        <span>{car.brand}</span>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs text-muted-foreground shrink-0">{t("cars.brand", "Brand / Model")}</span>
+                        <span className="font-semibold text-foreground truncate text-right">{car.brand}</span>
                       </div>
                     )}
                     {car.color && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">{t("cars.color", "Color")}</span>
-                        <span>{car.color}</span>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs text-muted-foreground shrink-0">{t("cars.color", "Color")}</span>
+                        <span className="font-semibold text-foreground truncate text-right">{car.color}</span>
                       </div>
                     )}
-                    <div className="flex gap-2 pt-4">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => setDeleteTarget(car)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        {t("common.delete", "Delete")}
-                      </Button>
-                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="w-full gap-1.5 cursor-pointer"
+                      onClick={() => setDeleteTarget(car)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {t("common.delete", "Delete")}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -173,6 +187,7 @@ export default function Cars() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+      <Footer />
     </div>
   )
 }

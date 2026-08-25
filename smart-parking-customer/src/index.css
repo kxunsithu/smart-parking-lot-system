@@ -1,12 +1,13 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "@fontsource-variable/geist";
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;600;700;800&family=Padauk:wght@400;700&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
     --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
+    --font-sans: 'Noto Sans Myanmar', 'Padauk', 'Pyidaungsu', 'Geist Variable', system-ui, sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -120,10 +121,35 @@
   * {
     @apply border-border outline-ring/50;
     }
-  body {
-    @apply bg-background text-foreground;
-    }
   html {
     @apply font-sans;
+    overflow-x: clip;
+    line-height: 1.6;
     }
+  body {
+    @apply bg-background text-foreground min-h-screen;
+    background: 
+      radial-gradient(circle at 80% 0%, rgba(255, 143, 0, 0.12) 0%, transparent 50%),
+      radial-gradient(circle at 10% 50%, rgba(255, 143, 0, 0.08) 0%, transparent 40%),
+      linear-gradient(180deg, var(--card) 0%, var(--background) 100%);
+    background-attachment: fixed;
+    overflow-x: clip;
+    line-height: 1.6;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.4;
+  }
+
+  /* Native select dropdown option styling to match project theme */
+  select option {
+    background-color: var(--card);
+    color: var(--card-foreground);
+    padding: 8px 12px;
+  }
+
+  select option:checked,
+  select option:hover {
+    background-color: var(--primary) !important;
+    color: var(--primary-foreground) !important;
+  }
 }

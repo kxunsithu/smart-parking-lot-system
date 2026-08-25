@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import { authApi } from "@/api/auth"
 import { useAuthStore } from "@/store/authStore"
 import { toast } from "@/components/ui/toaster"
+import { useLanguage } from "@/lib/i18n"
 
 const otpSchema = z.object({
   otp: z.string().length(6, "Please enter the 6-digit OTP code"),
@@ -29,6 +30,7 @@ export default function VerifyEmail() {
   const [expiresAt, setExpiresAt] = useState<Date | null>(null)
   const [isUsed, setIsUsed] = useState<boolean | null>(null)
   const { user, setUser } = useAuthStore()
+  const { t } = useLanguage()
 
   // Fetch user profile if not populated
   useEffect(() => {
@@ -159,11 +161,11 @@ export default function VerifyEmail() {
 
   return (
     <AuthLayout>
-      <h1 className="text-xl font-bold text-foreground mb-2">Verify your email</h1>
+      <h1 className="text-xl font-bold text-foreground mb-2">{t("auth.verify_title", "Verify your email")}</h1>
       <p className="text-sm text-muted-foreground mb-6">
-        We&apos;ve sent a 6-digit code to{" "}
-        <span className="font-medium text-foreground">{user?.email}</span>.
-        Enter the code below to verify your account.
+        {t("auth.verify_subtitle", "We've sent a 6-digit code to")}{" "}
+        <span className="font-medium text-foreground">{user?.email}</span>.{" "}
+        {t("auth.verify_instruction", "Enter the code below to verify your account.")}
       </p>
 
       <div
@@ -176,12 +178,12 @@ export default function VerifyEmail() {
       >
         <Clock className={cn("size-4 shrink-0", isUsed === true || timeLeft <= 0 ? "text-red-500" : "text-primary")} />
         {isUsed === true ? (
-          <p className="text-sm text-red-500 font-medium">OTP has already been used</p>
+          <p className="text-sm text-red-500 font-medium">{t("auth.otp_used", "OTP has already been used")}</p>
         ) : timeLeft <= 0 ? (
-          <p className="text-sm text-red-500 font-medium">OTP has expired. Request a new code.</p>
+          <p className="text-sm text-red-500 font-medium">{t("auth.otp_expired", "OTP has expired. Request a new code.")}</p>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Code expires in —{" "}
+            {t("auth.code_expires", "Code expires in —")}{" "}
             <span className="font-mono font-bold text-base text-primary">{formatTime(timeLeft)}</span>
           </p>
         )}
@@ -189,7 +191,7 @@ export default function VerifyEmail() {
 
       <form onSubmit={handleSubmit(onOTPSubmit)} className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <label className="text-sm text-foreground font-bold">Enter OTP code</label>
+          <label className="text-sm text-foreground font-bold">{t("auth.enter_otp", "Enter OTP code")}</label>
           <OTPInput value={otpValue} onChange={handleOtpChange} disabled={submitting} />
           {errors.otp && (
             <p className="text-xs text-destructive mt-1">{errors.otp.message}</p>
@@ -202,7 +204,7 @@ export default function VerifyEmail() {
           disabled={submitting || otpValue.length !== 6 || timeLeft <= 0 || isUsed === true}
         >
           {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-          {submitting ? "Verifying..." : "Verify Email"}
+          {submitting ? t("auth.verifying", "Verifying...") : t("auth.verify_btn", "Verify Email")}
         </Button>
 
         <div className="flex items-center justify-between text-sm">
@@ -215,7 +217,7 @@ export default function VerifyEmail() {
             className="text-muted-foreground hover:text-primary"
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Back to Login
+            {t("auth.back_to_login", "Back to Login")}
           </Button>
 
           <button
@@ -225,7 +227,7 @@ export default function VerifyEmail() {
             disabled={resendingOTP || submitting}
           >
             {resendingOTP && <Loader2 className="h-3 w-3 animate-spin" />}
-            Resend OTP
+            {t("auth.resend_otp", "Resend OTP")}
           </button>
         </div>
       </form>
@@ -233,10 +235,10 @@ export default function VerifyEmail() {
       <div className="rounded-lg border border-border bg-muted/40 p-3.5 text-xs text-muted-foreground space-y-1 mt-6">
         <div className="flex items-center gap-1.5 font-semibold text-foreground">
           <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
-          Why verify your email?
+          {t("auth.why_verify", "Why verify your email?")}
         </div>
         <p className="leading-relaxed">
-          Email verification secures your customer account and allows real-time notifications for your parking sessions and payments.
+          {t("auth.why_verify_desc", "Email verification secures your customer account and allows real-time notifications for your parking sessions and payments.")}
         </p>
       </div>
     </AuthLayout>

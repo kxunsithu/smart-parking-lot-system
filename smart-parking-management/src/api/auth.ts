@@ -67,4 +67,9 @@ export const authApi = {
     const res = await apiClient.delete<ApiSuccess<UserOut>>("/auth/me/profile-image")
     return res.data.data
   },
+
+  async resetPassword(payload: { email: string; otp: string; new_password: string }) {
+    const res = await apiClient.post<ApiSuccess<null>>("/auth/reset-password", payload)
+    return res.data
+  },
 }

@@ -1,5 +1,6 @@
-import { useNavigate } from "react-router-dom"
-import { Car, History, Home, LogOut, Menu, ParkingCircle, User, X } from "lucide-react"
+import { useState } from "react"
+import { useNavigate, useLocation } from "react-router-dom"
+import { ArrowRight, Car, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme/ThemeToggle"
 import { LanguageToggle } from "@/components/theme/LanguageToggle"
@@ -7,7 +8,6 @@ import { useLanguage } from "@/lib/i18n"
 import { useAuthStore } from "@/store/authStore"
 import { authApi } from "@/api/auth"
 import { toast } from "@/components/ui/toaster"
-import { useState } from "react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,17 +21,13 @@ import {
 
 export default function Navbar() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { logout, user } = useAuthStore()
   const { t } = useLanguage()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
 
-  const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1").replace("/api/v1", "")
-  const avatarUrl = user?.profile_image
-    ? user.profile_image.startsWith("http")
-      ? user.profile_image
-      : `${API_ORIGIN}${user.profile_image}`
-    : undefined
+  const isAuthenticated = !!user
 
   const handleLogout = async () => {
     try {
@@ -48,49 +44,73 @@ export default function Navbar() {
     navigate("/login")
   }
 
-  const navItems = [
-    { icon: Home, label: t("nav.home", "Home"), path: "/" },
-    { icon: ParkingCircle, label: t("nav.parking", "Parking"), path: "/dashboard" },
-    { icon: Car, label: t("nav.cars", "My Cars"), path: "/cars" },
-    { icon: History, label: t("nav.sessions", "Sessions"), path: "/sessions" },
-    { icon: User, label: t("nav.profile", "Profile"), path: "/profile" },
-  ]
+  const navItems = isAuthenticated
+    ? [
+        { label: t("nav.home", "Home"), path: "/" },
+        { label: t("nav.parking", "Parking"), path: "/dashboard" },
+        { label: t("nav.cars", "My Cars"), path: "/cars" },
+        { label: t("nav.sessions", "Sessions"), path: "/sessions" },
+        { label: t("nav.profile", "Profile"), path: "/profile" },
+      ]
+    : []
 
   return (
-    <nav className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 w-full shrink-0 border-b border-border/60 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="flex items-center space-x-2 cursor-pointer"
-            >
-              <div className="bg-primary p-2 rounded">
-                <Car className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold">Smart Parking</span>
-            </button>
-          </div>
+        <div className="flex justify-between items-center h-16">
+          {/* Brand */}
+          <button
+            onClick={() => navigate(isAuthenticated ? "/dashboard" : "/")}
+            className="flex items-center gap-2.5 group cursor-pointer text-left"
+          >
+            <div className="size-9 rounded-xl bg-primary flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+              <Car className="size-5 text-primary-foreground" />
+            </div>
+            <div>
+              <p className="font-extrabold text-sm leading-tight text-foreground">Smart Parking</p>
+              <p className="text-[10px] text-primary font-semibold uppercase tracking-widest">Myanmar</p>
+            </div>
+          </button>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
-            <LanguageToggle />
-            <ThemeToggle />
-            {navItems.map((item) => (
-              <Button
-                key={item.path}
-                variant="ghost"
-                onClick={() => navigate(item.path)}
-              >
-                {item.label}
-              </Button>
-            ))}
-            <Button variant="ghost" onClick={() => setLogoutDialogOpen(true)}>
-              {t("nav.logout", "Logout")}
-            </Button>
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path
+              return (
+                <Button
+                  key={item.path}
+                  variant={isActive ? "secondary" : "ghost"}
+                  onClick={() => navigate(item.path)}
+                  className={`text-sm ${isActive ? "font-semibold" : ""}`}
+                >
+                  {item.label}
+                </Button>
+              )
+            })}
           </div>
 
-          {/* Mobile actions container */}
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center space-x-2">
+            <LanguageToggle />
+            <ThemeToggle />
+            {isAuthenticated ? (
+              <Button variant="ghost" onClick={() => setLogoutDialogOpen(true)}>
+                {t("nav.logout", "Logout")}
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>
+                  {t("nav.login", "Log in")}
+                </Button>
+                <Button size="sm" onClick={() => navigate("/register")} className="gap-1.5">
+                  {t("nav.register", "Register")}
+                  <ArrowRight className="size-3.5" />
+                </Button>
+              </>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-2">
             <LanguageToggle />
             <ThemeToggle />
@@ -106,32 +126,50 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t p-4 space-y-2 bg-background">
-          {navItems.map((item) => (
-            <Button
-              key={item.path}
-              variant="ghost"
-              onClick={() => {
-                navigate(item.path)
-                setMobileMenuOpen(false)
-              }}
-              className="w-full justify-start"
-            >
-              {item.label}
-            </Button>
-          ))}
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setMobileMenuOpen(false)
-              setLogoutDialogOpen(true)
-            }}
-            className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-          >
-            {t("nav.logout", "Logout")}
-          </Button>
+        <div className="md:hidden border-t p-4 space-y-2 bg-background/95 backdrop-blur-xl">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path
+            return (
+              <Button
+                key={item.path}
+                variant={isActive ? "secondary" : "ghost"}
+                onClick={() => {
+                  navigate(item.path)
+                  setMobileMenuOpen(false)
+                }}
+                className="w-full justify-start"
+              >
+                {item.label}
+              </Button>
+            )
+          })}
+
+          <div className="pt-2 border-t space-y-2">
+            {isAuthenticated ? (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setMobileMenuOpen(false)
+                  setLogoutDialogOpen(true)
+                }}
+                className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                {t("nav.logout", "Logout")}
+              </Button>
+            ) : (
+              <div className="flex flex-col gap-2 pt-1">
+                <Button variant="outline" className="w-full" onClick={() => { setMobileMenuOpen(false); navigate("/login") }}>
+                  {t("nav.login", "Log in")}
+                </Button>
+                <Button className="w-full gap-1.5" onClick={() => { setMobileMenuOpen(false); navigate("/register") }}>
+                  {t("nav.register", "Register")}
+                  <ArrowRight className="size-3.5" />
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -139,14 +177,14 @@ export default function Navbar() {
       <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+            <AlertDialogTitle>{t("nav.logout_title", "Are you sure you want to logout?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              You will need to sign in again to access your account.
+              {t("nav.logout_desc", "You will need to sign in again to access your account.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
+            <AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>{t("nav.logout_confirm", "Logout")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

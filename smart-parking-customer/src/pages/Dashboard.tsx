@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import Navbar from "@/components/layout/Navbar"
+import Footer from "@/components/layout/Footer"
 import { LocationTrackBar } from "@/components/parking/LocationTrackBar"
 import { ParkingTrackModal } from "@/components/parking/ParkingTrackModal"
 import { parkingLotsApi } from "@/api/parkingLots"
@@ -104,9 +105,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+      <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 space-y-6">
         {activeSession && (
           <Card className="mb-6 border-primary bg-primary/5">
             <CardHeader>
@@ -222,6 +223,7 @@ export default function Dashboard() {
           onClose={() => setActiveNavigation(null)}
         />
       )}
+      <Footer />
     </div>
   )
 }

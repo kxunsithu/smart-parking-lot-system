@@ -20,6 +20,7 @@ from app.schemas.auth import (
     SendOTPRequest,
     TokenResponse,
     VerifyOTPRequest,
+    ResetPasswordRequest,
 )
 from app.schemas.common import SuccessResponse
 from app.schemas.user import UserOut, UserUpdate
@@ -108,6 +109,12 @@ def change_password(
 ):
     AuthService(db).change_password(current_user, payload)
     return {"success": True, "message": "Password changed successfully.", "data": None}
+
+
+@router.post("/reset-password", response_model=SuccessResponse[None])
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    AuthService(db).reset_password(payload)
+    return {"success": True, "message": "Password reset successfully. You can now log in with your new password.", "data": None}
 
 
 @router.get("/me", response_model=SuccessResponse[UserOut])

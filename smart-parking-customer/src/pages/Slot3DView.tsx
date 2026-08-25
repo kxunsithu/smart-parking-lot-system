@@ -4,6 +4,7 @@ import { Canvas, useThree, useFrame } from "@react-three/fiber"
 import { OrbitControls, Text, Box } from "@react-three/drei"
 import * as THREE from "three"
 import Navbar from "@/components/layout/Navbar"
+import Footer from "@/components/layout/Footer"
 import { LocationTrackBar } from "@/components/parking/LocationTrackBar"
 import { ParkingTrackModal } from "@/components/parking/ParkingTrackModal"
 import { Button } from "@/components/ui/button"
@@ -422,27 +423,27 @@ function Slot3DScene({
   const { scene } = useThree()
 
   useEffect(() => {
-    scene.background = new THREE.Color(isNightMode ? "#050814" : "#f1f5f9")
-    scene.fog = new THREE.FogExp2(isNightMode ? "#050814" : "#f1f5f9", 0.008)
+    scene.background = new THREE.Color(isNightMode ? "#09090b" : "#f1f5f9")
+    scene.fog = new THREE.FogExp2(isNightMode ? "#09090b" : "#f1f5f9", 0.008)
   }, [isNightMode, scene])
 
   return (
     <>
-      <ambientLight intensity={isNightMode ? 0.85 : 1.6} />
+      <ambientLight intensity={isNightMode ? 0.95 : 1.6} />
 
       <directionalLight
         position={[0, 60, 20]}
-        intensity={isNightMode ? 0.7 : 2.0}
-        color={isNightMode ? "#cbd5e1" : "#ffffff"}
+        intensity={isNightMode ? 0.8 : 2.0}
+        color={isNightMode ? "#fed7aa" : "#ffffff"}
         castShadow
       />
 
       {isNightMode && (
         <>
-          <pointLight position={[0, 30, 10]} intensity={2.2} color="#38bdf8" distance={60} />
-          <pointLight position={[-18, 22, -10]} intensity={1.8} color="#818cf8" distance={50} />
-          <pointLight position={[18, 22, 30]} intensity={1.8} color="#fbbf24" distance={50} />
-          <pointLight position={[0, 15, -20]} intensity={1.5} color="#34d399" distance={45} />
+          <pointLight position={[0, 30, 10]} intensity={2.2} color="#FF8F00" distance={60} />
+          <pointLight position={[-18, 22, -10]} intensity={1.8} color="#fbbf24" distance={50} />
+          <pointLight position={[18, 22, 30]} intensity={1.8} color="#f59e0b" distance={50} />
+          <pointLight position={[0, 15, -20]} intensity={1.5} color="#10b981" distance={45} />
         </>
       )}
 
@@ -492,11 +493,16 @@ function checkWebGLSupport(): boolean {
   }
 }
 
+import { useTheme } from "next-themes"
+
 export default function Slot3DView() {
-  const { id: routeId, slotId } = useParams<{ id?: string; slotId?: string }>()
-  const navigate = useNavigate()
-  const containerRef = useRef<HTMLDivElement>(null)
+  const { slotId } = useParams<{ slotId: string }>()
+  const [searchParams] = useSearchParams()
+  const routeId = searchParams.get("id")
   const id = Number(routeId || slotId)
+
+  const { resolvedTheme, setTheme } = useTheme()
+  const isNightMode = resolvedTheme === "dark"
 
   const [slot, setSlot] = useState<ParkingSlotOut | null>(null)
   const [floor, setFloor] = useState<ParkingFloorOut | null>(null)
@@ -507,7 +513,6 @@ export default function Slot3DView() {
   const [isLoading, setIsLoading] = useState(true)
   const [webGLError, setWebGLError] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [isNightMode, setIsNightMode] = useState(false)
   const [isAutoRotate, setIsAutoRotate] = useState(true)
   const [activeNavigation, setActiveNavigation] = useState<ParkingTrackTarget | null>(null)
 
@@ -597,9 +602,9 @@ export default function Slot3DView() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-5">
+      <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -617,7 +622,7 @@ export default function Slot3DView() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant={isNightMode ? "default" : "outline"} onClick={() => setIsNightMode(!isNightMode)} className="gap-2">
+            <Button size="sm" variant={isNightMode ? "default" : "outline"} onClick={() => setTheme(isNightMode ? "light" : "dark")} className="gap-2">
               {isNightMode ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
               {isNightMode ? "Day Mode" : "Night Mode"}
             </Button>
@@ -723,7 +728,7 @@ export default function Slot3DView() {
             <div
               ref={containerRef}
               className={`relative w-full rounded overflow-hidden border shadow-xl transition-colors duration-300 ${isFullscreen ? "fixed inset-0 z-50 h-screen w-screen rounded-none border-none" : "h-[560px]"
-                } ${isNightMode ? "bg-[#050814] border-slate-800" : "bg-slate-100 border-slate-200"}`}
+                } ${isNightMode ? "bg-[#09090b] border-zinc-800" : "bg-card border-border"}`}
             >
               {webGLError ? (
                 <WebGLFallback message={webGLError} />
@@ -786,6 +791,7 @@ export default function Slot3DView() {
           onClose={() => setActiveNavigation(null)}
         />
       )}
+      <Footer />
     </div>
   )
 }

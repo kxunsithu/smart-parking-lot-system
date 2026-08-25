@@ -2,16 +2,18 @@ import { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Camera, Mail, Loader2, Trash2, User } from "lucide-react"
+import { Camera, Mail, Loader2, Trash2, User, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Navbar from "@/components/layout/Navbar"
+import Footer from "@/components/layout/Footer"
 import { authApi } from "@/api/auth"
 import { useAuthStore } from "@/store/authStore"
 import { useLanguage } from "@/lib/i18n"
 import { toast } from "@/components/ui/toaster"
+import { strongPassword } from "@/lib/passwordSchema"
 
 // Derive the backend origin from the api base URL so static assets resolve correctly
 const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1")
@@ -96,9 +98,9 @@ export default function Profile() {
       .slice(0, 2) ?? "U"
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="max-w-4xl mx-auto p-4 sm:p-6">
+      <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 space-y-6">
         <div className="mb-8">
           <h1 className="text-lg font-semibold text-foreground">{t("nav.profile", "My Profile")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("profile.account", "Manage your account settings and preferences")}</p>
@@ -250,13 +252,14 @@ export default function Profile() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   )
 }
 
 const changePasswordSchema = z.object({
   old_password: z.string().min(1, "Current password is required"),
-  new_password: z.string().min(8, "Password must be at least 8 characters"),
+  new_password: strongPassword,
   confirm_password: z.string(),
 }).refine((data) => data.new_password === data.confirm_password, {
   message: "Passwords don't match",
@@ -266,7 +269,11 @@ const changePasswordSchema = z.object({
 type ChangePasswordFormData = z.infer<typeof changePasswordSchema>
 
 function ChangePasswordForm() {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
+  const [showOldPassword, setShowOldPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const {
     register,
@@ -296,34 +303,67 @@ function ChangePasswordForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
-        <Label htmlFor="old_password">Current Password</Label>
-        <Input
-          id="old_password"
-          type="password"
-          {...register("old_password")}
-        />
+        <Label htmlFor="old_password">{t("profile.current_password", "Current Password")}</Label>
+        <div className="relative mt-1">
+          <Input
+            id="old_password"
+            type={showOldPassword ? "text" : "password"}
+            className="pr-10"
+            {...register("old_password")}
+          />
+          <button
+            type="button"
+            onClick={() => setShowOldPassword(!showOldPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+            aria-label={showOldPassword ? "Hide password" : "Show password"}
+          >
+            {showOldPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
         {errors.old_password && (
           <p className="text-sm text-destructive mt-1">{errors.old_password.message}</p>
         )}
       </div>
       <div>
-        <Label htmlFor="new_password">New Password</Label>
-        <Input
-          id="new_password"
-          type="password"
-          {...register("new_password")}
-        />
+        <Label htmlFor="new_password">{t("profile.new_password", "New Password")}</Label>
+        <div className="relative mt-1">
+          <Input
+            id="new_password"
+            type={showNewPassword ? "text" : "password"}
+            className="pr-10"
+            {...register("new_password")}
+          />
+          <button
+            type="button"
+            onClick={() => setShowNewPassword(!showNewPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+            aria-label={showNewPassword ? "Hide password" : "Show password"}
+          >
+            {showNewPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
         {errors.new_password && (
           <p className="text-sm text-destructive mt-1">{errors.new_password.message}</p>
         )}
       </div>
       <div>
-        <Label htmlFor="confirm_password">Confirm New Password</Label>
-        <Input
-          id="confirm_password"
-          type="password"
-          {...register("confirm_password")}
-        />
+        <Label htmlFor="confirm_password">{t("profile.confirm_password", "Confirm New Password")}</Label>
+        <div className="relative mt-1">
+          <Input
+            id="confirm_password"
+            type={showConfirmPassword ? "text" : "password"}
+            className="pr-10"
+            {...register("confirm_password")}
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+            aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+          >
+            {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
         {errors.confirm_password && (
           <p className="text-sm text-destructive mt-1">{errors.confirm_password.message}</p>
         )}
@@ -332,10 +372,10 @@ function ChangePasswordForm() {
         {loading ? (
           <>
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Changing…
+            {t("profile.saving", "Changing…")}
           </>
         ) : (
-          "Change Password"
+          t("profile.change_password", "Change Password")
         )}
       </Button>
     </form>

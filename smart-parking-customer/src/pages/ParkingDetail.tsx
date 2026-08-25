@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import Navbar from "@/components/layout/Navbar"
+import Footer from "@/components/layout/Footer"
 import { LocationTrackBar } from "@/components/parking/LocationTrackBar"
 import { ParkingTrackModal } from "@/components/parking/ParkingTrackModal"
 import { parkingLotsApi } from "@/api/parkingLots"
@@ -409,19 +410,19 @@ export default function ParkingDetail() {
       <div className="min-h-screen">
         <Navbar />
         <div className="flex items-center justify-center h-64">
-          <p>Parking lot not found</p>
+          <p>{t("parking.no_slots", "Parking lot not found")}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+      <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 space-y-6">
         <Button variant="ghost" onClick={() => navigate("/dashboard")} className="w-fit">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Parking Lots
+          {t("parking.back_to_lots", "Back to Parking Lots")}
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -436,23 +437,23 @@ export default function ParkingDetail() {
                       {lot.google_map_url ? (
                         <span className="flex items-center text-primary font-medium text-xs">
                           <MapPin className="h-4 w-4 mr-1" />
-                          Location Configured
+                          {t("parking.location_configured", "Location Configured")}
                         </span>
                       ) : (
                         <span className="flex items-center text-muted-foreground text-xs">
                           <MapPin className="h-4 w-4 mr-1" />
-                          Location not specified
+                          {t("parking.location_not_set", "Location not configured")}
                         </span>
                       )}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={lot.is_active ? "default" : "secondary"} className="text-sm">
-                      {lot.is_active ? "Open" : "Closed"}
+                      {lot.is_active ? t("common.open", "Open") : t("common.closed", "Closed")}
                     </Badge>
                     <Button variant="outline" size="sm" onClick={() => navigate(`/parking/${id}/3d`)} className="gap-2">
                       <RotateCw className="h-4 w-4" />
-                      3D View
+                      {t("parking.view_3d", "3D View")}
                     </Button>
                   </div>
                 </div>
@@ -460,13 +461,13 @@ export default function ParkingDetail() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-muted-foreground">Status</p>
-                    <p className="mt-1 text-sm font-medium">{lot.is_active ? "Active" : "Inactive"}</p>
+                    <p className="text-xs text-muted-foreground">{t("parking.status", "Status")}</p>
+                    <p className="mt-1 text-sm font-medium">{lot.is_active ? t("parking.active", "Active") : t("parking.inactive", "Inactive")}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Hourly Rate</p>
+                    <p className="text-xs text-muted-foreground">{t("parking.rate_per_hour", "Hourly Rate")}</p>
                     <p className="mt-1 text-sm font-bold text-primary">
-                      {lot.rate_per_hour != null ? `${lot.rate_per_hour.toLocaleString()} MMK/hr` : "Contact owner for rate"}
+                      {lot.rate_per_hour != null ? `${lot.rate_per_hour.toLocaleString()} MMK/${t("common.hour", "hr")}` : t("parking.contact_owner", "Contact owner for rate")}
                     </p>
                   </div>
                 </div>
@@ -474,7 +475,7 @@ export default function ParkingDetail() {
                 {getEmbedUrl(lot.google_map_url) && (
                   <div className="pt-2">
                     <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
-                      <MapPin className="size-3.5 text-primary" /> Location Map
+                      <MapPin className="size-3.5 text-primary" /> {t("parking.location_map", "Location Map")}
                     </p>
                     <div className="relative w-full h-56 rounded overflow-hidden border border-border shadow-sm bg-slate-950">
                       <iframe
@@ -526,50 +527,50 @@ export default function ParkingDetail() {
             {step === "select" && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Book Parking</CardTitle>
-                  <CardDescription>Select your car and a slot — occupied slots can still be booked for a future time</CardDescription>
+                  <CardTitle>{t("parking.book_parking", "Book Parking")}</CardTitle>
+                  <CardDescription>{t("parking.book_desc", "Select your car and a slot — occupied slots can still be booked for a future time")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="car">Select Car</Label>
+                    <Label htmlFor="car">{t("parking.select_car", "Select Car")}</Label>
                     <Select
                       id="car"
                       value={selectedCar?.toString() || ""}
                       onChange={(e) => setSelectedCar(parseInt(e.target.value))}
-                    >
-                      <option value="">Choose a car...</option>
-                      {cars.map((car) => (
-                        <option key={car.id} value={car.id.toString()}>
-                          {car.plate_number} — {car.brand || "Unknown"} {car.color || ""}
-                        </option>
-                      ))}
-                    </Select>
+                      placeholder={t("parking.choose_car", "Choose a car...")}
+                      options={[
+                        ...cars.map((car) => ({
+                          value: car.id.toString(),
+                          label: `${car.plate_number} — ${car.brand || "Unknown"} ${car.color || ""}`.trim(),
+                        }))
+                      ]}
+                    />
                   </div>
 
                   {cars.length === 0 && (
                     <p className="text-sm text-muted-foreground">
-                      No cars.{" "}
+                      {t("parking.no_cars", "No cars.")}{" "}
                       <button onClick={() => navigate("/cars")} className="text-primary hover:underline">
-                        Add a car
+                        {t("parking.add_car", "Add a car")}
                       </button>
                     </p>
                   )}
 
                   <div className="space-y-1 pt-3 border-t">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Selected Slot</span>
+                      <span className="text-muted-foreground">{t("parking.selected_slot", "Selected Slot")}</span>
                       <span className="font-medium">
                         {selectedSlotDetails
-                          ? `Slot ${selectedSlotDetails.slotNumber}`
+                          ? `${t("parking.slot", "Slot")} ${selectedSlotDetails.slotNumber}`
                           : selectedSlot
                             ? `#${selectedSlot}`
-                            : "None"}
+                            : t("parking.none", "None")}
                       </span>
                     </div>
                     {lot.rate_per_hour != null && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Hourly Rate</span>
-                        <span className="font-medium text-primary">{lot.rate_per_hour.toLocaleString()} MMK/hr</span>
+                        <span className="text-muted-foreground">{t("parking.rate_per_hour", "Hourly Rate")}</span>
+                        <span className="font-medium text-primary">{lot.rate_per_hour.toLocaleString()} MMK/{t("common.hour", "hr")}</span>
                       </div>
                     )}
                   </div>
@@ -588,12 +589,12 @@ export default function ParkingDetail() {
                     disabled={!lot.is_active || !selectedCar || !selectedSlot}
                     onClick={handleProceedToSchedule}
                   >
-                    Next: Set Schedule
+                    {t("parking.next_schedule", "Next: Set Schedule")}
                     <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
 
                   {!lot.is_active && (
-                    <p className="text-sm text-destructive text-center">This parking lot is currently closed</p>
+                    <p className="text-sm text-destructive text-center">{t("parking.lot_closed", "This parking lot is currently closed")}</p>
                   )}
                 </CardContent>
               </Card>
@@ -605,13 +606,13 @@ export default function ParkingDetail() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <CalendarDays className="h-5 w-5 text-primary" />
-                    Set Parking Schedule
+                    {t("parking.set_schedule", "Set Parking Schedule")}
                   </CardTitle>
-                  <CardDescription>Enter your planned start and end times</CardDescription>
+                  <CardDescription>{t("parking.schedule_desc", "Enter your planned start and end times")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="start-time">Start Time</Label>
+                    <Label htmlFor="start-time">{t("parking.start_time", "Start Time")}</Label>
                     <input
                       id="start-time"
                       type="datetime-local"
@@ -622,7 +623,7 @@ export default function ParkingDetail() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="end-time">End Time</Label>
+                    <Label htmlFor="end-time">{t("parking.end_time", "End Time")}</Label>
                     <input
                       id="end-time"
                       type="datetime-local"
@@ -636,7 +637,7 @@ export default function ParkingDetail() {
                   <div>
                     <Label htmlFor="schedule-wallet-phone" className="flex items-center gap-1.5">
                       <Wallet className="h-4 w-4 text-primary" />
-                      Sender Wallet Phone Number
+                      {t("parking.wallet_phone", "Sender Wallet Phone Number")}
                     </Label>
                     <Input
                       id="schedule-wallet-phone"
@@ -647,25 +648,25 @@ export default function ParkingDetail() {
                       className="mt-1"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Digital wallet account phone number to charge for this booking.
+                      {t("parking.wallet_phone_hint", "Digital wallet account phone number to charge for this booking.")}
                     </p>
                   </div>
 
                   {durationMins > 0 && (
                     <div className="rounded bg-primary/10 border border-primary/20 p-4 space-y-2">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Fee Preview</p>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("parking.fee_preview", "Fee Preview")}</p>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Duration</span>
+                        <span className="text-muted-foreground">{t("parking.duration", "Duration")}</span>
                         <span className="font-medium">
                           {Math.floor(durationMins / 60) > 0 ? `${Math.floor(durationMins / 60)}h ` : ""}{durationMins % 60}m
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Rate</span>
-                        <span className="font-medium">{effectiveRate.toLocaleString()} MMK/hr</span>
+                        <span className="text-muted-foreground">{t("parking.rate", "Rate")}</span>
+                        <span className="font-medium">{effectiveRate.toLocaleString()} MMK/{t("common.hour", "hr")}</span>
                       </div>
                       <div className="flex justify-between font-bold text-base border-t border-primary/20 pt-2 mt-2">
-                        <span>Estimated Fee</span>
+                        <span>{t("parking.estimated_fee", "Estimated Fee")}</span>
                         <span className="text-primary">{calcFee(toISOUTC(startTime), toISOUTC(endTime), effectiveRate).toLocaleString()} MMK</span>
                       </div>
                     </div>
@@ -673,13 +674,13 @@ export default function ParkingDetail() {
 
                   <div className="flex gap-2">
                     <Button variant="outline" className="flex-1" onClick={() => setStep("select")} disabled={booking}>
-                      Back
+                      {t("parking.back", "Back")}
                     </Button>
                     <Button className="flex-1" onClick={handleProceedToBook} disabled={booking || durationMins <= 0}>
                       {booking ? (
-                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Booking...</>
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {t("parking.booking", "Booking...")}</>
                       ) : (
-                        <>Confirm & Book
+                        <>{t("parking.confirm_book", "Confirm & Book")}
                           <ChevronRight className="h-4 w-4 ml-1" /></>
                       )}
                     </Button>
@@ -694,9 +695,9 @@ export default function ParkingDetail() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Wallet className="h-5 w-5 text-primary" />
-                    Confirm Wallet Payment
+                    {t("parking.confirm_payment", "Confirm Wallet Payment")}
                   </CardTitle>
-                  <CardDescription>Your slot is reserved. Pay to activate your session.</CardDescription>
+                  <CardDescription>{t("parking.slot_reserved", "Your slot is reserved. Pay to activate your session.")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {!paymentInfo ? (
@@ -707,7 +708,7 @@ export default function ParkingDetail() {
                         </p>
                       )}
                       <div>
-                        <Label htmlFor="wallet-phone">Wallet phone number</Label>
+                        <Label htmlFor="wallet-phone">{t("parking.wallet_phone_label", "Wallet phone number")}</Label>
                         <Input
                           id="wallet-phone"
                           inputMode="tel"
@@ -717,65 +718,64 @@ export default function ParkingDetail() {
                           className="mt-1"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                          Optional. Use this if your wallet account phone is different from your profile phone.
+                          {t("parking.wallet_phone_optional", "Optional. Use this if your wallet account phone is different from your profile phone.")}
                         </p>
                       </div>
                       <Button className="w-full" onClick={handleInitiatePayment} disabled={initiating}>
                         {initiating ? (
-                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Requesting payment...</>
+                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {t("parking.requesting_payment", "Requesting payment...")}</>
                         ) : (
-                          <>Pay with Wallet</>
+                          <>{t("parking.pay_with_wallet", "Pay with Wallet")}</>
                         )}
                       </Button>
                       <p className="text-xs text-muted-foreground text-center">
-                        Estimated fee: <span className="font-semibold text-foreground">{(bookedSession?.fee ?? previewFee).toLocaleString()} MMK</span>
+                        {t("parking.estimated_fee_short", "Estimated fee:")} <span className="font-semibold text-foreground">{(bookedSession?.fee ?? previewFee).toLocaleString()} MMK</span>
                       </p>
                     </div>
                   ) : paymentInfo.wallet_payment_url ? (
                     <div className="space-y-4">
                       <div className="rounded bg-primary/10 border border-primary/20 p-4 space-y-2">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Payment Summary</p>
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("parking.payment_summary", "Payment Summary")}</p>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Parking Fee</span>
+                          <span className="text-muted-foreground">{t("parking.parking_fee", "Parking Fee")}</span>
                           <span className="font-medium">{paymentInfo.amount.toLocaleString()} MMK</span>
                         </div>
                         {paymentInfo.fee > 0 && (
                           <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Wallet Fee</span>
+                            <span className="text-muted-foreground">{t("parking.wallet_fee", "Wallet Fee")}</span>
                             <span className="font-medium">{paymentInfo.fee.toLocaleString()} MMK</span>
                           </div>
                         )}
                         <div className="flex justify-between font-bold text-base border-t border-primary/20 pt-2 mt-2">
-                          <span>Total</span>
+                          <span>{t("parking.total", "Total")}</span>
                           <span className="text-primary">{paymentInfo.total.toLocaleString()} MMK</span>
                         </div>
                       </div>
 
                       <div className="rounded bg-card border p-4 space-y-2">
-                        <p className="text-sm font-medium">Complete your payment in the digital wallet</p>
+                        <p className="text-sm font-medium">{t("parking.complete_in_wallet", "Complete your payment in the digital wallet")}</p>
                         <p className="text-xs text-muted-foreground">
-                          You are being redirected to the digital wallet. Enter the OTP and your wallet PIN there,
-                          and you will be brought back to this app automatically once the payment is confirmed.
+                          {t("parking.wallet_redirect_desc", "You are being redirected to the digital wallet. Enter the OTP and your wallet PIN there, and you will be brought back to this app automatically once the payment is confirmed.")}
                         </p>
                         <Button
                           variant="outline"
                           className="w-full"
                           onClick={() => { window.location.href = paymentInfo.wallet_payment_url! }}
                         >
-                          Open payment page
+                          {t("parking.open_payment", "Open payment page")}
                         </Button>
                       </div>
 
                       <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Waiting for payment confirmation...</span>
+                        <span>{t("parking.waiting_payment", "Waiting for payment confirmation...")}</span>
                       </div>
 
                       <Button className="w-full" onClick={handleCheckPaymentStatus} disabled={paymentChecking}>
                         {paymentChecking ? (
-                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Checking...</>
+                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {t("parking.checking", "Checking...")}</>
                         ) : (
-                          <>I've completed the payment</>
+                          <>{t("parking.completed_payment", "I've completed the payment")}</>
                         )}
                       </Button>
 
@@ -786,53 +786,53 @@ export default function ParkingDetail() {
                           disabled={initiating}
                           className="text-primary hover:underline disabled:opacity-50"
                         >
-                          Request a new payment
+                          {t("parking.new_payment", "Request a new payment")}
                         </button>
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       <div className="rounded bg-primary/10 border border-primary/20 p-4 space-y-2">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Payment Summary</p>
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("parking.payment_summary", "Payment Summary")}</p>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Parking Fee</span>
+                          <span className="text-muted-foreground">{t("parking.parking_fee", "Parking Fee")}</span>
                           <span className="font-medium">{paymentInfo.amount.toLocaleString()} MMK</span>
                         </div>
                         {paymentInfo.fee > 0 && (
                           <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Wallet Fee</span>
+                            <span className="text-muted-foreground">{t("parking.wallet_fee", "Wallet Fee")}</span>
                             <span className="font-medium">{paymentInfo.fee.toLocaleString()} MMK</span>
                           </div>
                         )}
                         <div className="flex justify-between font-bold text-base border-t border-primary/20 pt-2 mt-2">
-                          <span>Total</span>
+                          <span>{t("parking.total", "Total")}</span>
                           <span className="text-primary">{paymentInfo.total.toLocaleString()} MMK</span>
                         </div>
                       </div>
 
                       <div>
-                        <Label htmlFor="otp">One-Time Password (OTP)</Label>
+                        <Label htmlFor="otp">{t("parking.otp", "One-Time Password (OTP)")}</Label>
                         <Input
                           id="otp"
                           inputMode="numeric"
                           maxLength={6}
-                          placeholder="6-digit OTP"
+                          placeholder={t("parking.otp_placeholder", "6-digit OTP")}
                           value={otpCode}
                           onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
                           className="mt-1 tracking-widest text-center"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                          Enter the 6-digit code sent to your phone by your wallet app.
+                          {t("parking.otp_hint", "Enter the 6-digit code sent to your phone by your wallet app.")}
                         </p>
                       </div>
                       <div>
-                        <Label htmlFor="pin">Wallet PIN</Label>
+                        <Label htmlFor="pin">{t("parking.pin", "Wallet PIN")}</Label>
                         <Input
                           id="pin"
                           type="password"
                           inputMode="numeric"
                           maxLength={4}
-                          placeholder="4-digit PIN"
+                          placeholder={t("parking.pin_placeholder", "4-digit PIN")}
                           value={pin}
                           onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
                           className="mt-1 tracking-widest text-center"
@@ -847,9 +847,9 @@ export default function ParkingDetail() {
 
                       <Button className="w-full" onClick={handleConfirmPayment} disabled={paying}>
                         {paying ? (
-                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing payment...</>
+                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {t("parking.processing", "Processing payment...")}</>
                         ) : (
-                          <>Pay {paymentInfo.total.toLocaleString()} MMK</>
+                          <>{t("parking.pay", "Pay")} {paymentInfo.total.toLocaleString()} MMK</>
                         )}
                       </Button>
                       <p className="text-xs text-muted-foreground text-center">
@@ -859,7 +859,7 @@ export default function ParkingDetail() {
                           disabled={initiating || paying}
                           className="text-primary hover:underline disabled:opacity-50"
                         >
-                          Request a new OTP
+                          {t("parking.new_otp", "Request a new OTP")}
                         </button>
                       </p>
                     </div>
@@ -876,32 +876,32 @@ export default function ParkingDetail() {
                     <CheckCircle2 className="h-8 w-8 text-green-500" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold">Booking Confirmed!</h3>
+                    <h3 className="text-lg font-bold">{t("parking.booking_confirmed", "Booking Confirmed!")}</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Your parking session is now <span className="text-green-600 font-semibold">ACTIVE</span>
+                      {t("parking.session_active", "Your parking session is now")} <span className="text-green-600 font-semibold">{t("parking.active_label", "ACTIVE")}</span>
                     </p>
                   </div>
                   <div className="rounded bg-card border p-3 space-y-1.5 text-sm text-left">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Slot</span>
+                      <span className="text-muted-foreground">{t("parking.slot", "Slot")}</span>
                       <span className="font-medium">#{selectedSlot}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Car</span>
+                      <span className="text-muted-foreground">{t("parking.car", "Car")}</span>
                       <span className="font-medium">
                         {cars.find(c => c.id === selectedCar)?.plate_number || `#${selectedCar}`}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Start</span>
+                      <span className="text-muted-foreground">{t("parking.start", "Start")}</span>
                       <span className="font-medium">{format(new Date(startTime), "MMM d, hh:mm a")}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">End</span>
+                      <span className="text-muted-foreground">{t("parking.end", "End")}</span>
                       <span className="font-medium">{format(new Date(endTime), "MMM d, hh:mm a")}</span>
                     </div>
                     <div className="flex justify-between font-bold border-t pt-1.5 mt-1">
-                      <span>Parking Fee</span>
+                      <span>{t("parking.parking_fee", "Parking Fee")}</span>
                       <span className="text-primary">
                         {(bookedSession?.fee ?? previewFee).toLocaleString()} MMK
                       </span>
@@ -909,11 +909,11 @@ export default function ParkingDetail() {
                   </div>
                   <div className="flex flex-col gap-2">
                     <Button className="w-full" onClick={() => navigate("/sessions")}>
-                      View My Sessions
+                      {t("parking.view_sessions", "View My Sessions")}
                     </Button>
                     {receiptPayment && (
                       <Button variant="outline" className="w-full" onClick={() => setShowReceipt(true)}>
-                        View Receipt
+                        {t("parking.view_receipt", "View Receipt")}
                       </Button>
                     )}
                   </div>
@@ -924,21 +924,21 @@ export default function ParkingDetail() {
 
           {/* Floors and Slots */}
           <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-lg font-semibold tracking-tight">Floors & Parking Slots</h2>
+            <h2 className="text-lg font-semibold tracking-tight">{t("parking.floors_slots", "Floors & Parking Slots")}</h2>
 
             {floors.length > 0 && (
               <Card className="border border-border/80 shadow-sm rounded">
                 <CardContent className="p-4 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between flex-wrap">
                   <div className="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-wider shrink-0">
                     <Filter className="size-4 text-primary" />
-                    <span>Filter Slots:</span>
+                    <span>{t("parking.filter_slots", "Filter Slots:")}</span>
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 flex-wrap">
                     <div className="relative flex-1 min-w-[180px]">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
                       <Input
-                        placeholder="Search slot number..."
+                        placeholder={t("parking.search_slot", "Search slot number...")}
                         value={slotSearchQuery}
                         onChange={(e) => setSlotSearchQuery(e.target.value)}
                         className="pl-9 h-9 text-xs rounded"
@@ -946,38 +946,34 @@ export default function ParkingDetail() {
                     </div>
 
                     <div className="min-w-[150px]">
-                      <div className="relative">
-                        <Layers className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none z-10" />
-                        <Select
-                          value={selectedFloorId}
-                          onChange={(e) => setSelectedFloorId(e.target.value)}
-                          className="pl-9 h-9 text-xs rounded"
-                        >
-                          <option value="all">All Floors ({floors.length})</option>
-                          {floors.map((floor) => (
-                            <option key={floor.id} value={String(floor.id)}>
-                              {floor.floor_name || `Floor ${floor.id}`}
-                            </option>
-                          ))}
-                        </Select>
-                      </div>
+                      <Select
+                        value={selectedFloorId}
+                        onChange={(e) => setSelectedFloorId(e.target.value)}
+                        options={[
+                          { value: "all", label: `All Floors (${floors.length})` },
+                          ...floors.map((floor) => ({
+                            value: String(floor.id),
+                            label: floor.floor_name || `Floor ${floor.id}`,
+                          }))
+                        ]}
+                        className="h-9 text-xs"
+                      />
                     </div>
 
                     <div className="min-w-[150px]">
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none z-10" />
-                        <Select
-                          value={selectedSection}
-                          onChange={(e) => setSelectedSection(e.target.value)}
-                          className="pl-9 h-9 text-xs rounded"
-                        >
-                          <option value="all">All Sections ({lotSections.length})</option>
-                          <option value="none">No Section (—)</option>
-                          {lotSections.map((sec) => (
-                            <option key={sec} value={sec}>Section {sec}</option>
-                          ))}
-                        </Select>
-                      </div>
+                      <Select
+                        value={selectedSection}
+                        onChange={(e) => setSelectedSection(e.target.value)}
+                        options={[
+                          { value: "all", label: `All Sections (${lotSections.length})` },
+                          { value: "none", label: "No Section (—)" },
+                          ...lotSections.map((sec) => ({
+                            value: sec,
+                            label: `Section ${sec}`,
+                          }))
+                        ]}
+                        className="h-9 text-xs"
+                      />
                     </div>
 
                     {(selectedFloorId !== "all" || selectedSection !== "all" || slotSearchQuery.trim() !== "") && (
@@ -1050,6 +1046,7 @@ export default function ParkingDetail() {
       {showReceipt && receiptPayment && (
         <ReceiptModal payment={receiptPayment} onClose={() => setShowReceipt(false)} />
       )}
+      <Footer />
     </div>
   )
 }
@@ -1168,12 +1165,12 @@ function FloorSection({
                     <div className="flex items-center gap-1.5 text-[10px] font-medium">
                       {available > 0 && (
                         <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                          {available} free
+                          {available} {t("parking.free", "free")}
                         </span>
                       )}
                       {occupied > 0 && (
                         <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-600 border border-red-500/20">
-                          {occupied} taken
+                          {occupied} {t("parking.occupied", "taken")}
                         </span>
                       )}
                     </div>
@@ -1215,7 +1212,7 @@ function FloorSection({
                             className={`text-[9px] font-semibold uppercase tracking-wide ${isAvailable ? "text-emerald-600" : "text-amber-600"
                               }`}
                           >
-                            {isAvailable ? "Free" : "Taken now"}
+                            {isAvailable ? t("parking.available", "Free") : t("parking.occupied", "Taken now")}
                           </span>
 
                           <div className="flex gap-1 mt-0.5">
@@ -1230,7 +1227,7 @@ function FloorSection({
                                 : "bg-amber-500/10 border-amber-500/30 text-amber-700 hover:bg-amber-500/20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                                 }`}
                             >
-                              View 3D
+                              {t("parking.view_3d", "3D View")}
                             </button>
                             <button
                               type="button"
@@ -1245,7 +1242,7 @@ function FloorSection({
                               }}
                               className="flex-1 rounded py-1 text-[10px] font-semibold transition-all border bg-primary/10 border-primary/30 text-primary hover:bg-primary/20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                             >
-                              Track
+                              {t("parking.track", "Track")}
                             </button>
                           </div>
                         </div>
