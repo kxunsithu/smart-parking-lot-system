@@ -221,7 +221,7 @@ export default function Home() {
             </div>
             <div>
               <p className="font-extrabold text-sm leading-tight">Smart Parking</p>
-              <p className="text-[10px] text-primary font-semibold uppercase tracking-widest">Yangon</p>
+              <p className="text-[10px] text-primary font-semibold uppercase tracking-widest">Myanmar</p>
             </div>
           </button>
 
@@ -476,11 +476,11 @@ export default function Home() {
             </div>
             <div>
               <p className="font-bold text-sm">Smart Parking</p>
-              <p className="text-[10px] text-muted-foreground">Yangon Parking System</p>
+              <p className="text-[10px] text-muted-foreground">Myanmar Parking System</p>
             </div>
           </div>
           <p className="text-xs text-muted-foreground text-center">
-            © {new Date().getFullYear()} Smart Parking Lot Management System. Built for Yangon.
+            © {new Date().getFullYear()} Smart Parking Lot Management System. Built for Myanmar.
           </p>
           <div className="flex items-center gap-2">
             <LanguageToggle />

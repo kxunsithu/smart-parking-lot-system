@@ -73,42 +73,19 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-2">
+          <div className="hidden md:flex items-center space-x-1">
             <LanguageToggle />
             <ThemeToggle />
             {navItems.map((item) => (
-              item.path === "/profile" ? (
-                <Button
-                  key={item.path}
-                  variant="ghost"
-                  onClick={() => navigate(item.path)}
-                  className="flex items-center space-x-2"
-                >
-                  {avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      alt="Profile"
-                      className="h-5 w-5 rounded-full object-cover ring-1 ring-primary/30"
-                    />
-                  ) : (
-                    <item.icon className="h-4 w-4" />
-                  )}
-                  <span>{item.label}</span>
-                </Button>
-              ) : (
-                <Button
-                  key={item.path}
-                  variant="ghost"
-                  onClick={() => navigate(item.path)}
-                  className="flex items-center space-x-2"
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Button>
-              )
+              <Button
+                key={item.path}
+                variant="ghost"
+                onClick={() => navigate(item.path)}
+              >
+                {item.label}
+              </Button>
             ))}
             <Button variant="ghost" onClick={() => setLogoutDialogOpen(true)}>
-              <LogOut className="h-4 w-4 mr-2" />
               {t("nav.logout", "Logout")}
             </Button>
           </div>
@@ -142,15 +119,6 @@ export default function Navbar() {
               }}
               className="w-full justify-start"
             >
-              {item.path === "/profile" && avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt="Profile"
-                  className="h-4 w-4 mr-2 rounded-full object-cover ring-1 ring-primary/30"
-                />
-              ) : (
-                <item.icon className="h-4 w-4 mr-2" />
-              )}
               {item.label}
             </Button>
           ))}
@@ -162,8 +130,7 @@ export default function Navbar() {
             }}
             className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
           >
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
+            {t("nav.logout", "Logout")}
           </Button>
         </div>
       )}
