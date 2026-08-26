@@ -1,3 +1,6 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "http://enmzfspedozw0hnayaolbic7.187.127.218.159.sslip.io/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
