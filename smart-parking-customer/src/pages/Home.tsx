@@ -180,10 +180,11 @@ export default function Home() {
   useEffect(() => {
     async function loadRealStats() {
       try {
-        const [lotsData, slotsData] = await Promise.all([
-          parkingLotsApi.list({ limit: 100 }).catch(() => []),
+        const [lotsResult, slotsData] = await Promise.all([
+          parkingLotsApi.list({ limit: 100 }).catch(() => ({ items: [], meta: null })),
           parkingSlotsApi.list({ limit: 1000 }).catch(() => []),
         ])
+        const lotsData = lotsResult.items
 
         setLots(lotsData.slice(0, 6))
 

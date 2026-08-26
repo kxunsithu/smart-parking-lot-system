@@ -30,7 +30,7 @@ services:
       - key: REFRESH_TOKEN_EXPIRE_DAYS
         value: "7"
       - key: BACKEND_CORS_ORIGINS
-        value: '[ "https://smart-parking-customer.onrender.com", "https://smart-parking-management.onrender.com" ]'
+        value: '[ "https://smart-parking-customer.onrender.com", "https://smart-parking-management.onrender.com", "http://localhost:5173", "http://localhost:5174" ]'
       - key: DEFAULT_PAGE_SIZE
         value: "10"
       - key: MAX_PAGE_SIZE
@@ -68,7 +68,7 @@ services:
       - key: WALLET_REFERENCE_PREFIX
         value: PP
       - key: WALLET_REDIRECT_BASE_URL
-        value: http://enmzfspedozw0hnayaolbic7.187.127.218.159.sslip.io
+        value: https://enmzfspedozw0hnayaolbic7.187.127.218.159.sslip.io
       - key: CUSTOMER_APP_URL
         value: https://smart-parking-customer.onrender.com
       - key: MANAGEMENT_APP_URL
@@ -85,7 +85,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_BASE_URL
-        value: http://enmzfspedozw0hnayaolbic7.187.127.218.159.sslip.io/api/v1
+        value: https://enmzfspedozw0hnayaolbic7.187.127.218.159.sslip.io/api/v1
 
   - type: web
     name: smart-parking-management
@@ -98,7 +98,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_BASE_URL
-        value: http://enmzfspedozw0hnayaolbic7.187.127.218.159.sslip.io/api/v1
+        value: https://enmzfspedozw0hnayaolbic7.187.127.218.159.sslip.io/api/v1
 
 databases:
   - name: smart-parking-db

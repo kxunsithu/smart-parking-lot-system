@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { sessionStatusTone } from "@/utils/statusColors"
 import { formatCurrency, formatDateTime, formatDuration, initials } from "@/utils/formatters"
+import { cn } from "@/lib/utils"
 import type { ParkingSessionOut } from "@/types"
 
 interface SessionCardProps {
@@ -160,13 +161,14 @@ export function SessionCard({ session, onFinish }: SessionCardProps) {
   )
 }
 
-export function SessionCardGrid({ sessions, isFetching, onFinish }: {
+export function SessionCardGrid({ sessions, isFetching, onFinish, className }: {
   sessions: ParkingSessionOut[]
   isFetching?: boolean
   onFinish?: (session: ParkingSessionOut) => void
+  className?: string
 }) {
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 ${isFetching ? "opacity-60" : ""}`}>
+    <div className={cn("grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5", isFetching && "opacity-60", className)}>
       {sessions.map((session) => (
         <SessionCard
           key={session.id}

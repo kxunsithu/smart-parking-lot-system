@@ -15,8 +15,8 @@ export function DashboardLayout() {
     return (
       <div className="min-h-screen flex flex-col bg-muted/20">
         <StaffNavbar />
-        <main className="flex-1 p-6">
-          <div className="space-y-6">
+        <main className="flex-1 py-6">
+          <div className="mx-auto w-full max-w-6xl space-y-6 px-4 sm:px-6">
             <Breadcrumbs />
             <Outlet />
           </div>

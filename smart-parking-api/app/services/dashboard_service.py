@@ -2,15 +2,16 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.constants import SessionStatus, SlotStatus
+from app.core.constants import PaymentStatus, SessionStatus, SlotStatus
 from app.core.exceptions import NotFoundException
+from app.models.customer import Customer
+from app.models.payment import Payment
 from app.models.parking_floor import ParkingFloor
 from app.models.parking_lot import ParkingLot
 from app.models.parking_owner import ParkingOwner
 from app.models.parking_session import ParkingSession
 from app.models.parking_slot import ParkingSlot
 from app.models.parking_staff import ParkingStaff
-from app.models.customer import Customer
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.repositories.parking_staff_repository import ParkingStaffRepository
 from app.schemas.dashboard import AdminDashboardOut, OwnerDashboardOut, StaffDashboardOut
@@ -29,8 +30,8 @@ class DashboardService:
         total_parking_lots = self.db.scalar(select(func.count()).select_from(ParkingLot)) or 0
         total_revenue = (
             self.db.scalar(
-                select(func.coalesce(func.sum(ParkingSession.fee), 0)).where(
-                    ParkingSession.status == SessionStatus.FINISHED.value
+                select(func.coalesce(func.sum(Payment.amount), 0)).where(
+                    Payment.status == PaymentStatus.COMPLETED.value
                 )
             )
             or 0

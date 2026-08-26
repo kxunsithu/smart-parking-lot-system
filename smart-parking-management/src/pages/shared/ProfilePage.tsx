@@ -32,6 +32,7 @@ function getAvatarUrl(path: string | null | undefined): string | undefined {
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
+  phone: z.string().trim().min(8, "Phone number is required for wallet payments").max(20, "Phone number is too long"),
 })
 type ProfileFormValues = z.infer<typeof profileSchema>
 
@@ -66,7 +67,7 @@ export function ProfilePage() {
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    values: { name: user?.name ?? "" },
+    values: { name: user?.name ?? "", phone: user?.phone ?? "" },
   })
 
   const passwordForm = useForm<PasswordFormValues>({ resolver: zodResolver(passwordSchema) })
@@ -248,7 +249,7 @@ export function ProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle>Personal information</CardTitle>
-            <CardDescription>Update your full name.</CardDescription>
+            <CardDescription>Update your full name and wallet phone number.</CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -262,6 +263,15 @@ export function ProfilePage() {
                 required
               >
                 <Input id="name" {...profileForm.register("name")} />
+              </FormField>
+              <FormField
+                label="Phone number"
+                htmlFor="phone"
+                hint="Used automatically for digital wallet payments."
+                error={profileForm.formState.errors.phone?.message}
+                required
+              >
+                <Input id="phone" type="tel" inputMode="tel" {...profileForm.register("phone")} />
               </FormField>
               <Button type="submit" disabled={isUpdatingProfile}>
                 {isUpdatingProfile ? <Loader2 className="size-4 animate-spin" /> : null}

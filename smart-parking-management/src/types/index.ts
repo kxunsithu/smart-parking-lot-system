@@ -233,6 +233,7 @@ export interface RegisterOwnerRequest {
   password: string
   confirm_password: string
   company_name: string
+  phone: string
 }
 
 // Customer Types

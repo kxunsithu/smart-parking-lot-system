@@ -872,15 +872,7 @@ class PaymentService:
 
         if params.search:
             like = f"%{params.search.strip()}%"
-            stmt = stmt.where(
-                or_(
-                    Payment.reference.ilike(like),
-                    Payment.wallet_payment_reference.ilike(like),
-                    Payment.wallet_transaction_number.ilike(like),
-                    Payment.receiver_phone.ilike(like),
-                    Payment.session.has(ParkingSession.car.has(Car.plate_number.ilike(like))),
-                )
-            )
+            stmt = stmt.where(Payment.reference.ilike(like))
 
         stmt = stmt.order_by(Payment.created_at.desc())
         items, total = self.payment_repo.paginate(stmt, page=params.page, limit=params.limit)

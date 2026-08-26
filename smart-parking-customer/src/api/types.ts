@@ -212,6 +212,12 @@ export interface RegisterRequest {
   name: string
   email: string
   password: string
+  phone: string
+}
+
+export interface UserUpdate {
+  name?: string
+  phone?: string | null
 }
 
 export interface SendOTPRequest {

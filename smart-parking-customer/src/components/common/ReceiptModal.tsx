@@ -6,6 +6,7 @@
 import { useEffect } from "react"
 import { X, Printer, CheckCircle2, Clock, XCircle, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { formatDateTime } from "@/lib/datetime"
 import type { PaymentListOut } from "@/api/types"
 
 interface ReceiptModalProps {
@@ -15,16 +16,6 @@ interface ReceiptModalProps {
 
 function formatCurrency(value: number): string {
   return `${value.toLocaleString()} MMK`
-}
-
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
 }
 
 function statusMeta(status: string): {

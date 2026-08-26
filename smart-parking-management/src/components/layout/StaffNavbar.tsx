@@ -59,7 +59,7 @@ export function StaffNavbar() {
     <>
       {/* ── Top Navbar Bar (z-40) ── */}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/95 backdrop-blur-md shadow-sm">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
 
           {/* ── Left: Brand + Desktop Nav ── */}
           <div className="flex items-center gap-2 sm:gap-6">

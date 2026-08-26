@@ -61,7 +61,7 @@ export function WalletTransactionsPage() {
       />
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search reference, wallet ref, plate or phone..." className="w-full sm:max-w-sm" />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by reference number..." className="w-full sm:max-w-sm" />
       </div>
 
       {isLoading ? (

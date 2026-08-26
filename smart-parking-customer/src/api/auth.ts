@@ -1,5 +1,5 @@
 import apiClient from "./client"
-import type { ApiSuccess, UserOut, TokenResponse, LoginRequest, RegisterRequest, SendOTPRequest, VerifyOTPRequest, ChangePasswordRequest } from "./types"
+import type { ApiSuccess, UserOut, TokenResponse, LoginRequest, RegisterRequest, SendOTPRequest, VerifyOTPRequest, ChangePasswordRequest, UserUpdate } from "./types"
 
 export const authApi = {
   login: async (credentials: LoginRequest): Promise<TokenResponse> => {
@@ -20,6 +20,11 @@ export const authApi = {
 
   getMe: async (): Promise<UserOut> => {
     const response = await apiClient.get<ApiSuccess<UserOut>>("/auth/me")
+    return response.data.data
+  },
+
+  updateProfile: async (data: UserUpdate): Promise<UserOut> => {
+    const response = await apiClient.put<ApiSuccess<UserOut>>("/auth/me", data)
     return response.data.data
   },
 

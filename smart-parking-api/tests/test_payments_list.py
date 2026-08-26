@@ -304,14 +304,13 @@ def test_payments_list_pagination_and_search(client, admin_user):
     ids = {p["id"] for p in page1.json()["data"]} | {p["id"] for p in page2.json()["data"]}
     assert len(ids) == 4
 
-    # Search by plate number.
-    searched = client.get("/api/v1/payments?search=PAG-002", headers=admin_headers)
-    assert searched.json()["meta"]["total"] == 1
-    assert searched.json()["data"][0]["plate_number"] == "PAG-002"
-
-    # Search by local reference.
+    # Search by local reference only.
     refs = client.get("/api/v1/payments?limit=100", headers=admin_headers).json()["data"]
     target_ref = next(p["reference"] for p in refs if p["kind"] == "subscription")
     by_ref = client.get(f"/api/v1/payments?search={target_ref}", headers=admin_headers)
     assert by_ref.json()["meta"]["total"] == 1
     assert by_ref.json()["data"][0]["reference"] == target_ref
+
+    # Plate numbers are no longer searchable.
+    by_plate = client.get("/api/v1/payments?search=PAG-002", headers=admin_headers)
+    assert by_plate.json()["meta"]["total"] == 0

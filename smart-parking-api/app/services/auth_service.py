@@ -58,6 +58,7 @@ class AuthService:
             name=payload.name,
             email=payload.email,
             password=hash_password(payload.password),
+            phone=payload.phone.strip(),
             role_id=role.id,
             is_verified=is_verified,
         )
@@ -97,6 +98,7 @@ class AuthService:
             name=payload.name,
             email=payload.email,
             password=hash_password(payload.password),
+            phone=payload.phone.strip(),
             role_id=role.id,
             is_verified=is_verified,
         )

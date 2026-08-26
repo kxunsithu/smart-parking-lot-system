@@ -49,39 +49,39 @@ export function StaffDashboardPage() {
       {isLoading || !data ? (
         <CardGridSkeleton count={3} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard label="Available Slots" value={data.available_slots} icon={CheckCircle2} />
-          <StatCard label="Occupied Slots" value={data.occupied_slots} icon={Car} />
-          <StatCard label="Active Sessions" value={data.active_sessions} icon={Timer} />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:col-span-2 lg:grid-cols-1">
+            <StatCard label="Available Slots" value={data.available_slots} icon={CheckCircle2} />
+            <StatCard label="Occupied Slots" value={data.occupied_slots} icon={Car} />
+            <StatCard label="Active Sessions" value={data.active_sessions} icon={Timer} />
+          </div>
+
+          <Card className="lg:col-span-3">
+            <CardHeader>
+              <CardTitle>Slot status breakdown</CardTitle>
+            </CardHeader>
+            <CardContent className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={slotData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={3}
+                  >
+                    {slotData.map((_, index) => (
+                      <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </div>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Slot status breakdown</CardTitle>
-        </CardHeader>
-        <CardContent className="h-72">
-          {data ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={slotData}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={3}
-                >
-                  {slotData.map((_, index) => (
-                    <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : null}
-        </CardContent>
-      </Card>
     </div>
   )
 }

@@ -17,7 +17,6 @@ import { DataPagination } from "@/components/common/DataPagination"
 import { EmptyState } from "@/components/common/EmptyState"
 import { CardGridSkeleton } from "@/components/common/LoadingBlock"
 import { Card, CardContent } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { parkingLotsApi } from "@/api/parkingLots"
@@ -32,7 +31,6 @@ export function ParkingLotsPage() {
   const [data, setData] = useState<ListResult<ParkingLotWithStaffOut> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isFetching, setIsFetching] = useState(false)
-  const [togglingId, setTogglingId] = useState<number | null>(null)
 
   const fetchData = async () => {
     try {
@@ -45,19 +43,6 @@ export function ParkingLotsPage() {
     } finally {
       setIsLoading(false)
       setIsFetching(false)
-    }
-  }
-
-  const handleToggleStatus = async (lotId: number) => {
-    try {
-      setTogglingId(lotId)
-      await parkingLotsApi.toggleStatus(lotId)
-      toast.success("Parking lot status updated successfully.")
-      fetchData()
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-    } finally {
-      setTogglingId(null)
     }
   }
 
@@ -98,7 +83,7 @@ export function ParkingLotsPage() {
               >
                 <CardContent className="p-5 space-y-4 flex-1 flex flex-col justify-between">
                   <div className="space-y-4">
-                    {/* Header Row: Icon + Lot Name + Status Switch */}
+                    {/* Header Row: Icon + Lot Name + Status Badge */}
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="size-11 rounded bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-sm">
@@ -116,23 +101,15 @@ export function ParkingLotsPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Badge
-                          variant={lot.is_active ? "default" : "secondary"}
-                          className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${lot.is_active
-                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
-                            : "bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30"
-                            }`}
-                        >
-                          {lot.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                        <Switch
-                          checked={lot.is_active}
-                          onCheckedChange={() => handleToggleStatus(lot.id)}
-                          disabled={togglingId === lot.id}
-                          aria-label="Toggle lot status"
-                        />
-                      </div>
+                      <Badge
+                        variant={lot.is_active ? "default" : "secondary"}
+                        className={`shrink-0 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${lot.is_active
+                          ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                          : "bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30"
+                          }`}
+                      >
+                        {lot.is_active ? "Active" : "Inactive"}
+                      </Badge>
                     </div>
 
                     {/* Owner Profile Snippet Card */}

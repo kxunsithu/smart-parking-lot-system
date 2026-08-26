@@ -127,7 +127,6 @@ export default function ParkingDetail() {
   const [paymentInfo, setPaymentInfo] = useState<WalletPaymentOut | null>(null)
   const [otpCode, setOtpCode] = useState("")
   const [pin, setPin] = useState("")
-  const [walletPhone, setWalletPhone] = useState(user?.phone || "")
   const [initiating, setInitiating] = useState(false)
   const [paying, setPaying] = useState(false)
   const [paymentChecking, setPaymentChecking] = useState(false)
@@ -135,12 +134,6 @@ export default function ParkingDetail() {
   const [payError, setPayError] = useState<string | null>(null)
   const [receiptPayment, setReceiptPayment] = useState<PaymentListOut | null>(null)
   const [showReceipt, setShowReceipt] = useState(false)
-
-  useEffect(() => {
-    if (user?.phone && !walletPhone) {
-      setWalletPhone(user.phone)
-    }
-  }, [user])
 
   useEffect(() => {
     if (id) {
@@ -281,10 +274,17 @@ export default function ParkingDetail() {
     setStep("schedule")
   }
 
-  // Step 2 → Book: validate times, check overlap, then create ACTIVE session
+  const ensureProfilePhone = (): boolean => {
+    if (user?.phone?.trim()) return true
+    toast.error("Add your wallet phone number in Profile before making a payment.")
+    navigate("/profile")
+    return false
+  }
+
   // Step 2 → Book: validate times, check overlap, then initiate booking payment
   const handleProceedToBook = async () => {
     if (!lot || !selectedCar || !selectedSlot) return
+    if (!ensureProfilePhone()) return
 
     const start = new Date(startTime)
     const end = new Date(endTime)
@@ -310,7 +310,6 @@ export default function ParkingDetail() {
         slot_id: selectedSlot,
         start_time: toISOUTC(startTime),
         end_time: toISOUTC(endTime),
-        wallet_phone: walletPhone.trim() || null,
       })
       setPaymentInfo(pendingPayment)
       setBookedSession(null)
@@ -335,6 +334,7 @@ export default function ParkingDetail() {
 
   const handleInitiatePayment = async () => {
     if (!selectedCar || !selectedSlot) return
+    if (!ensureProfilePhone()) return
     setInitiating(true)
     setPayInitiateError(null)
     setPayError(null)
@@ -344,7 +344,6 @@ export default function ParkingDetail() {
         slot_id: selectedSlot,
         start_time: toISOUTC(startTime),
         end_time: toISOUTC(endTime),
-        wallet_phone: walletPhone.trim() || null,
       })
       setPaymentInfo(pendingPayment)
       if (pendingPayment.wallet_payment_url) {
@@ -634,21 +633,11 @@ export default function ParkingDetail() {
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="schedule-wallet-phone" className="flex items-center gap-1.5">
-                      <Wallet className="h-4 w-4 text-primary" />
-                      {t("parking.wallet_phone", "Sender Wallet Phone Number")}
-                    </Label>
-                    <Input
-                      id="schedule-wallet-phone"
-                      inputMode="tel"
-                      placeholder="e.g. 09123456789"
-                      value={walletPhone}
-                      onChange={(e) => setWalletPhone(e.target.value)}
-                      className="mt-1"
-                    />
+                  <div className="rounded bg-muted/50 border border-border/60 p-3 text-sm">
+                    <p className="text-xs text-muted-foreground">{t("parking.wallet_phone", "Wallet Phone Number")}</p>
+                    <p className="font-medium mt-1">{user?.phone}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {t("parking.wallet_phone_hint", "Digital wallet account phone number to charge for this booking.")}
+                      {t("parking.wallet_phone_profile_hint", "This number from your profile will be charged automatically.")}
                     </p>
                   </div>
 
@@ -707,18 +696,11 @@ export default function ParkingDetail() {
                           {payInitiateError}
                         </p>
                       )}
-                      <div>
-                        <Label htmlFor="wallet-phone">{t("parking.wallet_phone_label", "Wallet phone number")}</Label>
-                        <Input
-                          id="wallet-phone"
-                          inputMode="tel"
-                          placeholder="e.g. +959123456789"
-                          value={walletPhone}
-                          onChange={(e) => setWalletPhone(e.target.value)}
-                          className="mt-1"
-                        />
+                      <div className="rounded bg-muted/50 border border-border/60 p-3 text-sm">
+                        <p className="text-xs text-muted-foreground">{t("parking.wallet_phone_label", "Wallet phone number")}</p>
+                        <p className="font-medium mt-1">{user?.phone ?? "—"}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {t("parking.wallet_phone_optional", "Optional. Use this if your wallet account phone is different from your profile phone.")}
+                          {t("parking.wallet_phone_profile_hint", "This number from your profile will be charged automatically.")}
                         </p>
                       </div>
                       <Button className="w-full" onClick={handleInitiatePayment} disabled={initiating}>

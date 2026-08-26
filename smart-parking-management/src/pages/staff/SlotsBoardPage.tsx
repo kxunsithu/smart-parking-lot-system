@@ -347,8 +347,8 @@ export function SlotsBoardPage() {
                               <div className="flex-1 h-px bg-border/50" />
                             </div>
 
-                            {/* Slots Grid — 5 compact columns */}
-                            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                            {/* Slots Grid */}
+                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                               {sectionSlots.map((slot) => (
                                 <div
                                   key={slot.id}

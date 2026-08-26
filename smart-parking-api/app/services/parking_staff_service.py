@@ -1,5 +1,5 @@
 """Business logic for Parking Staff (created by Owner or Admin)."""
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.constants import RoleName
@@ -89,6 +89,17 @@ class ParkingStaffService:
             owner = self.owner_repo.get_by_user_id(current_user.id)
             if owner:
                 stmt = stmt.join(ParkingLot, ParkingStaff.parking_lot_id == ParkingLot.id).where(ParkingLot.owner_id == owner.id)
+
+        if params.search:
+            like = f"%{params.search.strip()}%"
+            stmt = stmt.where(
+                or_(
+                    ParkingStaff.user.has(User.name.ilike(like)),
+                    ParkingStaff.user.has(User.email.ilike(like)),
+                    ParkingStaff.user.has(User.phone.ilike(like)),
+                    ParkingStaff.parking_lot.has(ParkingLot.name.ilike(like)),
+                )
+            )
 
         items, total = self.staff_repo.paginate(
             stmt,

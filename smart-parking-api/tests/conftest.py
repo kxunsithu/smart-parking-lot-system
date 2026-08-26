@@ -23,6 +23,35 @@ from app.services.wallet_payment_client import get_wallet_client
 
 TEST_DATABASE_URL = "sqlite://"
 
+DEFAULT_TEST_PHONE = "+959000000001"
+
+
+def customer_register_json(
+    name: str,
+    email: str,
+    password: str,
+    phone: str = DEFAULT_TEST_PHONE,
+) -> dict:
+    return {"name": name, "email": email, "password": password, "phone": phone}
+
+
+def owner_register_json(
+    name: str,
+    email: str,
+    password: str,
+    company_name: str,
+    phone: str = DEFAULT_TEST_PHONE,
+    confirm_password: str | None = None,
+) -> dict:
+    return {
+        "name": name,
+        "email": email,
+        "password": password,
+        "confirm_password": confirm_password or password,
+        "company_name": company_name,
+        "phone": phone,
+    }
+
 
 class FakeWalletClient:
     """Stands in for the digital wallet external payment API during tests."""

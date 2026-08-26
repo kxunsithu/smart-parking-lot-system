@@ -6,13 +6,15 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import Navbar from "@/components/layout/Navbar"
 import Footer from "@/components/layout/Footer"
+import { DataPagination } from "@/components/common/DataPagination"
 import { LocationTrackBar } from "@/components/parking/LocationTrackBar"
 import { ParkingTrackModal } from "@/components/parking/ParkingTrackModal"
 import { parkingLotsApi } from "@/api/parkingLots"
 import { parkingSessionsApi } from "@/api/parkingSessions"
 import { useParkingStore } from "@/store/parkingStore"
 import { useLanguage } from "@/lib/i18n"
-import type { ParkingLotOut } from "@/api/types"
+import { usePaginationState } from "@/hooks/usePaginationState"
+import type { ApiMeta, ParkingLotOut } from "@/api/types"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@/components/ui/toaster"
 import {
@@ -25,15 +27,20 @@ import {
 export default function Dashboard() {
   const navigate = useNavigate()
   const { t } = useLanguage()
+  const { setPage, setSearch, search, params } = usePaginationState(9)
   const { setParkingLots, activeSession, setActiveSession } = useParkingStore()
   const [lots, setLots] = useState<ParkingLotOut[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
+  const [meta, setMeta] = useState<ApiMeta | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isFetching, setIsFetching] = useState(false)
   const [activeSessionLocation, setActiveSessionLocation] = useState<SlotTrackContext | null>(null)
   const [activeNavigation, setActiveNavigation] = useState<ParkingTrackTarget | null>(null)
 
   useEffect(() => {
     loadParkingLots()
+  }, [params])
+
+  useEffect(() => {
     loadActiveSession()
   }, [])
 
@@ -54,13 +61,16 @@ export default function Dashboard() {
 
   const loadParkingLots = async () => {
     try {
-      const response = await parkingLotsApi.list()
-      setLots(response)
-      setParkingLots(response)
+      setIsFetching(true)
+      const response = await parkingLotsApi.list(params)
+      setLots(response.items)
+      setMeta(response.meta)
+      setParkingLots(response.items)
     } catch {
       toast.error("Failed to load parking lots")
     } finally {
       setLoading(false)
+      setIsFetching(false)
     }
   }
 
@@ -83,11 +93,6 @@ export default function Dashboard() {
       setActiveNavigation
     )
   }
-
-  const filteredLots = lots.filter(
-    (lot) =>
-      (lot.name?.toLowerCase() || "").includes(searchTerm.toLowerCase())
-  )
 
   if (loading) {
     return (
@@ -154,14 +159,14 @@ export default function Dashboard() {
             <Input
               placeholder={t("common.search", "Search by name or location...")}
               className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
         </form>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredLots.map((lot) => (
+        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${isFetching ? "opacity-60" : ""}`}>
+          {lots.map((lot) => (
             <Card key={lot.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -205,12 +210,14 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {filteredLots.length === 0 && (
+        {lots.length === 0 && !isFetching && (
           <div className="text-center py-12">
             <Ticket className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">{t("home.active_lots", "No parking lots found")}</p>
           </div>
         )}
+
+        <DataPagination meta={meta} onPageChange={setPage} />
       </div>
 
       {activeNavigation && (

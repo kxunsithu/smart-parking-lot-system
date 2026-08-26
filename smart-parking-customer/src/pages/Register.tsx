@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Lock, Mail, User, Eye, EyeOff, Loader2 } from "lucide-react"
+import { Lock, Mail, User, Phone, Eye, EyeOff, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,6 +17,7 @@ import { strongPassword } from "@/lib/passwordSchema"
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
+  phone: z.string().trim().min(8, "Phone number is required for wallet payments").max(20, "Phone number is too long"),
   password: strongPassword,
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -123,6 +124,25 @@ export default function Register() {
           </div>
           {errors.email && (
             <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="phone" className="text-sm text-foreground font-bold">{t("profile.phone", "Phone Number")}</Label>
+          <div className="relative">
+            <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="phone"
+              type="tel"
+              inputMode="tel"
+              placeholder="e.g. +959XXXXXXXXX"
+              className="pl-10"
+              {...register("phone")}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">Used for digital wallet payments. You can change this later in your profile.</p>
+          {errors.phone && (
+            <p className="text-xs text-destructive mt-1">{errors.phone.message}</p>
           )}
         </div>
 

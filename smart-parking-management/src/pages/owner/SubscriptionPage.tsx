@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import {
   CheckCircle2,
@@ -35,6 +36,7 @@ import {
 import { packagesApi } from "@/api/packages"
 import { subscriptionsApi } from "@/api/subscriptions"
 import { getErrorMessage } from "@/api/client"
+import { useAuth } from "@/hooks/useAuth"
 import type { PackageOut, SubscriptionOut, SubscriptionStatus, WalletPaymentOut } from "@/types"
 
 function formatPrice(price: number): string {
@@ -71,6 +73,8 @@ const TIER_ACCENT: Record<string, string> = {
 }
 
 export function OwnerSubscriptionPage() {
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const [activeSub, setActiveSub] = useState<SubscriptionOut | null | undefined>(undefined)
   const [history, setHistory] = useState<SubscriptionOut[]>([])
   const [packages, setPackages] = useState<PackageOut[]>([])
@@ -85,7 +89,6 @@ export function OwnerSubscriptionPage() {
   const [isInitiating, setIsInitiating] = useState(false)
   const [isPaying, setIsPaying] = useState(false)
   const [paymentChecking, setPaymentChecking] = useState(false)
-  const [walletPhone, setWalletPhone] = useState("")
   const [payInitiateError, setPayInitiateError] = useState<string | null>(null)
   const [payError, setPayError] = useState<string | null>(null)
 
@@ -112,12 +115,16 @@ export function OwnerSubscriptionPage() {
   }, [])
 
   const openPaymentModal = (pkg: PackageOut, actionType: "purchase" | "renew") => {
+    if (!user?.phone?.trim()) {
+      toast.error("Add your wallet phone number in Profile before making a payment.")
+      navigate("/profile")
+      return
+    }
     setSelectedPkg(pkg)
     setPaymentActionType(actionType)
     setPaymentInfo(null)
     setOtp("")
     setPin("")
-    setWalletPhone("")
     setPayInitiateError(null)
     setPayError(null)
     setPaymentChecking(false)
@@ -128,7 +135,6 @@ export function OwnerSubscriptionPage() {
     setPaymentInfo(null)
     setOtp("")
     setPin("")
-    setWalletPhone("")
     setPayInitiateError(null)
     setPayError(null)
     setPaymentChecking(false)
@@ -136,6 +142,11 @@ export function OwnerSubscriptionPage() {
 
   const handleInitiatePayment = async () => {
     if (!selectedPkg) return
+    if (!user?.phone?.trim()) {
+      toast.error("Add your wallet phone number in Profile before making a payment.")
+      navigate("/profile")
+      return
+    }
     setIsInitiating(true)
     setPayInitiateError(null)
     setPayError(null)
@@ -143,7 +154,6 @@ export function OwnerSubscriptionPage() {
       const info = await subscriptionsApi.payInitiate({
         package_id: selectedPkg.id,
         is_renewal: paymentActionType === "renew",
-        wallet_phone: walletPhone.trim() || undefined,
       })
       setPaymentInfo(info)
       if (info.wallet_payment_url) {
@@ -470,15 +480,13 @@ export function OwnerSubscriptionPage() {
                 </div>
               </div>
 
-              <FormField label="Wallet Phone Number" htmlFor="wallet-phone" hint="Phone number of the wallet account used to pay (optional if profile phone matches)." error={undefined}>
-                <Input
-                  id="wallet-phone"
-                  type="tel"
-                  placeholder="e.g. +959XXXXXXXXX"
-                  value={walletPhone}
-                  onChange={(e) => setWalletPhone(e.target.value)}
-                />
-              </FormField>
+              <div className="rounded border border-border/60 bg-muted/40 p-3 text-sm">
+                <p className="text-xs text-muted-foreground">Wallet phone number</p>
+                <p className="font-medium mt-1">{user?.phone}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  This number from your profile will be charged automatically.
+                </p>
+              </div>
 
               {payInitiateError && (
                 <p className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded p-3">

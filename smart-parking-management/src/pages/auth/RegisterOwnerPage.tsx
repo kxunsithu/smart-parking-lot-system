@@ -22,6 +22,7 @@ const ownerRegistrationSchema = z
     password: strongPassword,
     confirm_password: z.string(),
     company_name: z.string().min(2, "Company name must be at least 2 characters").max(100, "Company name must be at most 100 characters"),
+    phone: z.string().trim().min(8, "Phone number is required for wallet payments").max(20, "Phone number is too long"),
   })
   .refine((data) => data.password === data.confirm_password, {
     message: "Passwords do not match",
@@ -47,6 +48,7 @@ export function RegisterOwnerPage() {
       password: "",
       confirm_password: "",
       company_name: "",
+      phone: "",
     },
   })
 
@@ -59,6 +61,7 @@ export function RegisterOwnerPage() {
         password: data.password,
         confirm_password: data.confirm_password,
         company_name: data.company_name,
+        phone: data.phone,
       }
 
       const user = await authApi.registerOwner(payload)
@@ -115,6 +118,20 @@ export function RegisterOwnerPage() {
             disabled={submitting}
           />
           {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="phone" className="text-sm text-foreground font-bold">Phone Number</Label>
+          <Input
+            id="phone"
+            type="tel"
+            inputMode="tel"
+            placeholder="e.g. +959XXXXXXXXX"
+            {...register("phone")}
+            disabled={submitting}
+          />
+          <p className="text-xs text-muted-foreground">Used for digital wallet payments. You can change this later in your profile.</p>
+          {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
         </div>
 
         <div className="flex flex-col gap-1.5">

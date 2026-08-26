@@ -188,6 +188,7 @@ export function StaffSessionsPage() {
           sessions={sessions}
           isFetching={isFetching}
           onFinish={setFinishTarget}
+          className="xl:grid-cols-2"
         />
       )}
 

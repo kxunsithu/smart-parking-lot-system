@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Camera, Mail, Loader2, Trash2, User, Eye, EyeOff } from "lucide-react"
+import { Camera, Mail, Phone, Loader2, Trash2, User, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -28,10 +28,17 @@ function getAvatarUrl(path: string | null | undefined): string | undefined {
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"]
 const MAX_SIZE_MB = 5
 
+const profileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  phone: z.string().trim().min(8, "Phone number is required for wallet payments").max(20, "Phone number is too long"),
+})
+type ProfileFormData = z.infer<typeof profileSchema>
+
 export default function Profile() {
   const { t } = useLanguage()
   const { user, setUser } = useAuthStore()
   const [loading, setLoading] = useState(false)
+  const [savingProfile, setSavingProfile] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [removingImage, setRemovingImage] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | undefined>(
@@ -39,9 +46,45 @@ export default function Profile() {
   )
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const {
+    register: registerProfile,
+    handleSubmit: handleProfileSubmit,
+    reset: resetProfile,
+    formState: { errors: profileErrors },
+  } = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    values: {
+      name: user?.name ?? "",
+      phone: user?.phone ?? "",
+    },
+  })
+
+  useEffect(() => {
+    resetProfile({
+      name: user?.name ?? "",
+      phone: user?.phone ?? "",
+    })
+  }, [user?.name, user?.phone, resetProfile])
+
   useEffect(() => {
     setPreviewUrl(getAvatarUrl(user?.profile_image))
   }, [user?.profile_image])
+
+  const onSaveProfile = async (data: ProfileFormData) => {
+    setSavingProfile(true)
+    try {
+      const updated = await authApi.updateProfile({
+        name: data.name,
+        phone: data.phone.trim(),
+      })
+      setUser(updated)
+      toast.success("Profile updated successfully.")
+    } catch {
+      toast.error("Failed to update profile.")
+    } finally {
+      setSavingProfile(false)
+    }
+  }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -211,31 +254,57 @@ export default function Profile() {
             <Card>
               <CardHeader>
                 <CardTitle>{t("profile.account", "Account Information")}</CardTitle>
-                <CardDescription>Your personal details</CardDescription>
+                <CardDescription>Your personal details and wallet phone number</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <div className="bg-primary p-2.5 rounded-full shrink-0">
-                    <User className="h-4 w-4 text-primary-foreground" />
-                  </div>
+              <CardContent>
+                <form onSubmit={handleProfileSubmit(onSaveProfile)} className="space-y-4">
                   <div>
-                    <p className="font-semibold">{user?.name}</p>
-                    <p className="text-xs text-muted-foreground">{user?.role?.name ?? "Customer"}</p>
+                    <Label htmlFor="profile-name">{t("profile.name", "Full Name")}</Label>
+                    <div className="relative mt-1">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input id="profile-name" className="pl-10" {...registerProfile("name")} />
+                    </div>
+                    {profileErrors.name && (
+                      <p className="text-sm text-destructive mt-1">{profileErrors.name.message}</p>
+                    )}
                   </div>
-                </div>
 
-                <div className="flex items-center text-sm gap-2 py-2 border-b">
-                  <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-muted-foreground">{t("profile.email", "Email")}</span>
-                  <span className="ml-auto font-medium">{user?.email}</span>
-                </div>
+                  <div>
+                    <Label htmlFor="profile-phone">{t("profile.phone", "Phone Number")}</Label>
+                    <div className="relative mt-1">
+                      <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input id="profile-phone" type="tel" inputMode="tel" className="pl-10" {...registerProfile("phone")} />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Used automatically for digital wallet payments.</p>
+                    {profileErrors.phone && (
+                      <p className="text-sm text-destructive mt-1">{profileErrors.phone.message}</p>
+                    )}
+                  </div>
 
-                <div className="flex items-center text-sm gap-2 py-2">
-                  <span className="text-muted-foreground">{t("profile.verified", "Account Status")}</span>
-                  <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full ${user?.is_active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-100 text-red-700"}`}>
-                    {user?.is_active ? t("common.open", "Active") : t("common.closed", "Inactive")}
-                  </span>
-                </div>
+                  <div className="flex items-center text-sm gap-2 py-2 border-t border-b">
+                    <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground">{t("profile.email", "Email")}</span>
+                    <span className="ml-auto font-medium">{user?.email}</span>
+                  </div>
+
+                  <div className="flex items-center text-sm gap-2 py-2">
+                    <span className="text-muted-foreground">{t("profile.verified", "Account Status")}</span>
+                    <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full ${user?.is_active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-100 text-red-700"}`}>
+                      {user?.is_active ? t("common.open", "Active") : t("common.closed", "Inactive")}
+                    </span>
+                  </div>
+
+                  <Button type="submit" disabled={savingProfile}>
+                    {savingProfile ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        {t("profile.saving", "Saving…")}
+                      </>
+                    ) : (
+                      t("profile.save", "Save Changes")
+                    )}
+                  </Button>
+                </form>
               </CardContent>
             </Card>
 
