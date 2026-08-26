@@ -37,14 +37,22 @@ If you didn't request this code, please ignore this email.
             """
             message.set_content(body)
 
+            # Determine SSL vs STARTTLS based on port
+            is_ssl_port = (self.smtp_port == 465)
+            use_tls = is_ssl_port
+            start_tls = self.use_tls if not is_ssl_port else False
+
             await aiosmtplib.send(
                 message,
                 hostname=self.smtp_host,
                 port=self.smtp_port,
                 username=self.smtp_user,
                 password=self.smtp_password,
-                start_tls=self.use_tls,
+                use_tls=use_tls,
+                start_tls=start_tls,
+                timeout=5.0,
             )
+            print(f"[EMAIL SENT] OTP sent to {to_email}")
             return True
         except Exception as e:
             # Log OTP even if email fails for development

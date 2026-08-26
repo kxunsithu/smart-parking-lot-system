@@ -24,7 +24,7 @@ services:
     container_name: smart-parking
     restart: unless-stopped
     env_file:
-      - smart-parking-api/.env
+      - smart-parking-api/.env.production
     environment:
       DATABASE_URL: postgresql+psycopg2://smart_parking:smart_parking@db:5432/smart_parking
       # The parking API (in this container) talks to the deployed digital wallet
@@ -32,7 +32,7 @@ services:
       WALLET_API_BASE_URL: https://digital-wallet-backend-api.up.railway.app
       # Public (browser-facing) URL of THIS API so the wallet hosted page can
       # redirect back to the parking callback after OTP/PIN is entered.
-      WALLET_REDIRECT_BASE_URL: http://localhost:8000
+      WALLET_REDIRECT_BASE_URL: https://smart-parking-backend-api.up.railway.app
     ports:
       - "8000:8000"
     depends_on:
@@ -43,7 +43,7 @@ services:
     build:
       context: ./smart-parking-customer
       args:
-        VITE_API_BASE_URL: http://localhost:8000/api/v1
+        VITE_API_BASE_URL: https://smart-parking-backend-api.up.railway.app/api/v1
     container_name: smart-parking-customer
     restart: unless-stopped
     ports:
@@ -55,7 +55,7 @@ services:
     build:
       context: ./smart-parking-management
       args:
-        VITE_API_BASE_URL: http://localhost:8000/api/v1
+        VITE_API_BASE_URL: https://smart-parking-backend-api.up.railway.app/api/v1
     container_name: smart-parking-management
     restart: unless-stopped
     ports:

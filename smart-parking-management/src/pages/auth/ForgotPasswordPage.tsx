@@ -12,7 +12,7 @@ import { FormField } from "@/components/common/FormField"
 import { authApi } from "@/api/auth"
 import { getErrorMessage } from "@/api/client"
 import { toast } from "sonner"
-import { strongPassword } from "@/utils/passwordSchema"
+import { strongPassword } from "@/lib/passwordSchema"
 
 const emailSchema = z.object({
   email: z.string().min(1, "Email is required").email("Enter a valid email address"),

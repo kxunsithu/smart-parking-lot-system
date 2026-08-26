@@ -45,15 +45,24 @@ class OTPService:
         )
         self.otp_repo.create(otp)
 
-        # Send email
-        sent = await self.email_service.send_otp_email(email, otp_code)
-        if not sent:
-            logger.warning(
-                "OTP email failed to send for %s. OTP code is available in the server console/logs.", email
-            )
-            print(f"[EMAIL FAILED] OTP for {email}: {otp_code}")
+        # Always log OTP to server console immediately
+        print(f"[OTP GENERATED] OTP for {email}: {otp_code}")
+
+        # Send email in background task so API response is non-blocking and instant
+        import asyncio
+        asyncio.create_task(self._send_email_background(email, otp_code))
 
         return otp_code
+
+    async def _send_email_background(self, email: str, otp_code: str):
+        try:
+            sent = await self.email_service.send_otp_email(email, otp_code)
+            if not sent:
+                logger.warning(
+                    "OTP email failed to send for %s. OTP code is available in the server console/logs.", email
+                )
+        except Exception as e:
+            logger.error("Background OTP email error for %s: %s", email, e)
 
     def verify_otp(self, email: str, code: str) -> bool:
         """Verify OTP code for email."""

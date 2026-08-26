@@ -116,7 +116,7 @@ The project is designed to achieve the following concrete objectives:
 
 **FastAPI** (v0.100+) is a modern, high-performance Python web framework built on top of Starlette and Pydantic. It generates OpenAPI documentation automatically, supports native async operations, and uses Python type hints for request/response validation. **Uvicorn** serves as the ASGI server.
 
-**SQLAlchemy 2.0** is used as the ORM, with its new `mapped_column` / `Mapped` declarative style providing a clean, type-safe model definition. **Alembic** handles database schema migrations, allowing schema changes to be version-controlled alongside application code. The default datastore is **SQLite** (for portability), but the `DATABASE_URL` environment variable supports PostgreSQL or MySQL for production.
+**SQLAlchemy 2.0** is used as the ORM, with its new `mapped_column` / `Mapped` declarative style providing a clean, type-safe model definition. **Alembic** handles database schema migrations, allowing schema changes to be version-controlled alongside application code. The datastore is **PostgreSQL** — configured via the `DATABASE_URL` environment variable and required for both local development and production.
 
 **Pydantic v2** validates all incoming request bodies and outgoing response payloads through schema classes, ensuring data integrity at API boundaries. **PyJWT** handles JSON Web Token creation and verification for authentication. **Passlib + bcrypt** are used for secure password hashing.
 
@@ -343,7 +343,7 @@ The class diagram below represents the full domain model of the Smart Parking Lo
 | **Package** | Subscription | Subscription tier defined by Admin (price, duration, lot cap, staff cap). | `is_active=false` hides a package from the owner marketplace without deleting historical subscriptions. |
 | **OwnerSubscription** | Subscription | Instance of an owner purchasing a package. Tracks `PENDING → ACTIVE` state. | An owner may only have one `ACTIVE` subscription at a time. Lot/staff limits come from the associated `Package`. |
 | **WalletAccount** | Payment | Digital wallet API credentials (API key, phone) belonging to either Admin (subscription fees) or Owner (session fees). | The API key is used to initiate and confirm two-phase wallet payments. |
-| **Payment** | Payment | Ledger record for a single wallet transaction. Linked to either a `ParkingSession` or an `OwnerSubscription`. | Tracks `PENDING → COMPLETED / FAILED` status and stores the wallet transaction reference for audit. |
+| **Payment** | Payment | Ledger record for a single completed wallet transaction. Linked to either a `ParkingSession` or an `OwnerSubscription`. | Tracks `PENDING → COMPLETED / FAILED` status and stores the wallet transaction reference for audit. |
 
 ```mermaid
 classDiagram
@@ -535,6 +535,7 @@ classDiagram
         +str api_key
         +bool is_active
         +datetime created_at
+        +datetime updated_at
         +ParkingOwner owner
         +list~Payment~ payments
         +verify_api_key(key) bool
@@ -1498,7 +1499,7 @@ Repository Layer (app/repositories/*.py) — Database queries, pagination helper
     ↓
 Model Layer (app/models/*.py)    — SQLAlchemy ORM class definitions (table schema)
     ↓
-Database (SQLite / PostgreSQL)
+Database (PostgreSQL)
 ```
 
 Request/response data crosses layer boundaries as **Pydantic schemas** (`app/schemas/*.py`), which validate types, enforce constraints, and provide serialisation/deserialisation without coupling the service layer to ORM model internals.
@@ -1640,7 +1641,7 @@ services:
     ports: ["3000:80"]
 ```
 
-For cloud deployment, `render.yaml` defines three Render services: one Web Service for the API and two Static Sites for the frontends. The API's `DATABASE_URL` is swapped from SQLite to a managed PostgreSQL database on Render.
+For cloud deployment, `render.yaml` defines three Render services: one Web Service for the API and two Static Sites for the frontends. The API's `DATABASE_URL` points to a managed PostgreSQL database on Render.
 
 ---
 
@@ -1668,7 +1669,7 @@ The Smart Parking Lot Management System successfully demonstrates how a modern, 
 | Slot scheduling uses time-window booking only | Add support for walk-in (open-ended) sessions with real-time sensor data |
 | No self-service password reset flow | Implement email-based password reset using a secure token link |
 | No real-time slot status push | Integrate WebSocket notifications so the slot board auto-refreshes |
-| SQLite in development | Always use PostgreSQL in staging/production for full concurrency support |
+| No real-time WebSocket push for slot events | Integrate WebSocket or SSE so the customer app and slot board auto-refresh without manual polling |
 
 ---
 

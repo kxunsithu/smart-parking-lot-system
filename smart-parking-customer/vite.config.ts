@@ -43,11 +43,11 @@ export default defineConfig({
     port: 5174,
     proxy: {
       "/api": {
-        target: "https://smart-parking-backend-api.up.railway.app",
+        target: "http://localhost:8000",
         changeOrigin: true,
       },
       "/uploads": {
-        target: "https://smart-parking-backend-api.up.railway.app",
+        target: "http://localhost:8000",
         changeOrigin: true,
       },
     },
