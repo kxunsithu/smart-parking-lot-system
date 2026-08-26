@@ -1070,6 +1070,7 @@ function FloorSection({
   onTrack: (details: SlotTrackDetails) => void
   disabled?: boolean
 }) {
+  const { t } = useLanguage()
   const [slots, setSlots] = useState<ParkingSlotOut[]>([])
   const [loading, setLoading] = useState(true)
 

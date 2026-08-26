@@ -18,7 +18,6 @@ class EmailService:
     async def send_otp_email(self, to_email: str, otp_code: str) -> bool:
         """Send OTP code to user's email."""
         if not self.smtp_from_email or not self.smtp_user or not self.smtp_password:
-            # In development, log the OTP instead of sending email
             print(f"[DEV MODE] OTP for {to_email}: {otp_code}")
             return True
 
@@ -37,7 +36,6 @@ If you didn't request this code, please ignore this email.
             """
             message.set_content(body)
 
-            # Determine SSL vs STARTTLS based on port
             is_ssl_port = (self.smtp_port == 465)
             use_tls = is_ssl_port
             start_tls = self.use_tls if not is_ssl_port else False
@@ -50,12 +48,11 @@ If you didn't request this code, please ignore this email.
                 password=self.smtp_password,
                 use_tls=use_tls,
                 start_tls=start_tls,
-                timeout=5.0,
+                timeout=30.0,
             )
             print(f"[EMAIL SENT] OTP sent to {to_email}")
             return True
         except Exception as e:
-            # Log OTP even if email fails for development
             print(f"[EMAIL FAILED] OTP for {to_email}: {otp_code}")
             print(f"[EMAIL ERROR] {e}")
             return False
