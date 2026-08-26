@@ -3,7 +3,7 @@ import json
 from functools import lru_cache
 from typing import List
 
-from pydantic import field_validator
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,23 +25,28 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     REFRESH_TOKEN_EXPIRE_DAYS: int
 
-    # CORS
-    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    # CORS — stored as str so pydantic-settings doesn't attempt JSON decoding
+    # on the raw env var (which may be empty or malformed). Parsed into a
+    # list[str] by the model validator below.
+    BACKEND_CORS_ORIGINS: str = ""
 
-    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, v):
-        if isinstance(v, str):
+    @model_validator(mode="after")
+    def _parse_cors_origins(self) -> "Settings":
+        raw = self.BACKEND_CORS_ORIGINS
+        if isinstance(raw, list):
+            return self
+        raw = raw.strip() if isinstance(raw, str) else ""
+        if not raw:
+            self.BACKEND_CORS_ORIGINS = []
+        else:
             try:
-                parsed = json.loads(v)
-                if isinstance(parsed, list):
-                    return parsed
+                parsed = json.loads(raw)
+                self.BACKEND_CORS_ORIGINS = parsed if isinstance(parsed, list) else []
             except (json.JSONDecodeError, TypeError):
-                pass
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
-        if isinstance(v, list):
-            return v
-        return []
+                self.BACKEND_CORS_ORIGINS = [
+                    o.strip() for o in raw.split(",") if o.strip()
+                ]
+        return self
 
     # Pagination defaults
     DEFAULT_PAGE_SIZE: int
