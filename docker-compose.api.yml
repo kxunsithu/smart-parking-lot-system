@@ -34,6 +34,8 @@ services:
       WALLET_REDIRECT_BASE_URL: http://localhost:8000
       CUSTOMER_APP_URL: http://localhost:5174
       MANAGEMENT_APP_URL: http://localhost:5173
+    volumes:
+      - uploads:/app/uploads
     ports:
       - "8000:8000"
     depends_on:
@@ -42,3 +44,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:
