@@ -54,20 +54,6 @@ export const authApi = {
     return res.data.data
   },
 
-  async uploadProfileImage(file: File): Promise<UserOut> {
-    const formData = new FormData()
-    formData.append("file", file)
-    const res = await apiClient.post<ApiSuccess<UserOut>>("/auth/me/profile-image", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    })
-    return res.data.data
-  },
-
-  async deleteProfileImage(): Promise<UserOut> {
-    const res = await apiClient.delete<ApiSuccess<UserOut>>("/auth/me/profile-image")
-    return res.data.data
-  },
-
   async resetPassword(payload: { email: string; otp: string; new_password: string }) {
     const res = await apiClient.post<ApiSuccess<null>>("/auth/reset-password", payload)
     return res.data

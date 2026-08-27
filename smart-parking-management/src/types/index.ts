@@ -69,7 +69,6 @@ export interface UserOut {
   name: string
   email: string
   phone?: string | null
-  profile_image?: string | null
   role_id: number
   role?: RoleOut | null
   is_active: boolean

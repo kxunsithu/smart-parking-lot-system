@@ -10,26 +10,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ThemeToggle } from "@/components/theme/ThemeToggle"
 import { useAuth } from "@/hooks/useAuth"
 import { authApi } from "@/api/auth"
 import { useAuthStore } from "@/stores/authStore"
 import { initials } from "@/utils/formatters"
 import { NAV_CONFIG } from "@/utils/navConfig"
-import { API_ORIGIN } from "@/api/client"
 
 export function StaffNavbar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const navItems = NAV_CONFIG.STAFF
   const [mobileOpen, setMobileOpen] = useState(false)
-
-  const avatarUrl = user?.profile_image
-    ? user.profile_image.startsWith("http")
-      ? user.profile_image
-      : `${API_ORIGIN}${user.profile_image}`
-    : undefined
 
   // Lock body scroll when mobile nav is open
   useEffect(() => {
@@ -112,7 +105,6 @@ export function StaffNavbar() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-2 px-2 sm:px-3 rounded hover:bg-muted h-9">
                     <Avatar className="size-8 border-2 border-primary/20 shrink-0">
-                      <AvatarImage src={avatarUrl} alt={user?.name ?? "Avatar"} className="object-cover" />
                       <AvatarFallback className="bg-primary/10 text-primary font-extrabold text-xs">
                         {initials(user?.name)}
                       </AvatarFallback>
@@ -243,7 +235,6 @@ export function StaffNavbar() {
             {/* User Info Card */}
             <div className="flex items-center gap-3 p-3 rounded bg-muted/60">
               <Avatar className="size-10 border-2 border-primary/20 shrink-0">
-                <AvatarImage src={avatarUrl} alt={user?.name ?? "Avatar"} className="object-cover" />
                 <AvatarFallback className="bg-primary/10 text-primary font-extrabold text-sm">
                   {initials(user?.name)}
                 </AvatarFallback>
