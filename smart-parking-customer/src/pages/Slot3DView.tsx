@@ -497,20 +497,22 @@ function checkWebGLSupport(): boolean {
 import { useTheme } from "next-themes"
 
 export default function Slot3DView() {
-  const { slotId } = useParams<{ slotId: string }>()
+  const { id: slotId } = useParams<{ id: string }>()
   const [searchParams] = useSearchParams()
   const routeId = searchParams.get("id")
   const id = Number(routeId || slotId)
+  const navigate = useNavigate()
 
   const { resolvedTheme, setTheme } = useTheme()
   const isNightMode = resolvedTheme === "dark"
 
+  const containerRef = useRef<HTMLDivElement>(null)
   const [slot, setSlot] = useState<ParkingSlotOut | null>(null)
   const [floor, setFloor] = useState<ParkingFloorOut | null>(null)
   const [lot, setLot] = useState<ParkingLotOut | null>(null)
   const [floors, setFloors] = useState<ParkingFloorOut[]>([])
   const [slotsByFloor, setSlotsByFloor] = useState<Record<number, ParkingSlotOut[]>>({})
-  const [reservedSlotIds, setReservedSlotIds] = useState<Set<number>>(new Set())
+  const [reservedSlotIds] = useState<Set<number>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
   const [webGLError, setWebGLError] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)

@@ -12,6 +12,7 @@ from app.models.parking_owner import ParkingOwner
 from app.models.parking_session import ParkingSession
 from app.models.parking_slot import ParkingSlot
 from app.models.parking_staff import ParkingStaff
+from app.models.wallet_account import WalletAccount
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.repositories.parking_staff_repository import ParkingStaffRepository
 from app.schemas.dashboard import AdminDashboardOut, OwnerDashboardOut, StaffDashboardOut
@@ -105,25 +106,36 @@ class DashboardService:
             else 0
         ) or 0
 
-        session_ids = (
-            [
-                s.id
-                for s in self.db.scalars(
-                    select(ParkingSession).where(ParkingSession.slot_id.in_(slot_ids))
-                ).all()
-            ]
+        active_sessions = (
+            self.db.scalar(
+                select(func.count()).select_from(ParkingSession).where(
+                    ParkingSession.slot_id.in_(slot_ids),
+                    ParkingSession.status == SessionStatus.ACTIVE.value,
+                )
+            )
             if slot_ids
-            else []
-        )
+            else 0
+        ) or 0
+
+        # Revenue = total amount received by this owner's wallet account from
+        # completed parking session payments (excludes subscription fees the
+        # owner pays to the platform).
+        owner_account_ids = [
+            a.id
+            for a in self.db.scalars(
+                select(WalletAccount.id).where(WalletAccount.owner_id == owner.id)
+            ).all()
+        ]
 
         total_revenue = (
             self.db.scalar(
-                select(func.coalesce(func.sum(ParkingSession.fee), 0)).where(
-                    ParkingSession.id.in_(session_ids),
-                    ParkingSession.status == SessionStatus.FINISHED.value,
+                select(func.coalesce(func.sum(Payment.amount), 0)).where(
+                    Payment.status == PaymentStatus.COMPLETED.value,
+                    Payment.wallet_account_id.in_(owner_account_ids),
+                    Payment.session_id.isnot(None),
                 )
             )
-            if session_ids
+            if owner_account_ids
             else 0
         ) or 0
 
@@ -135,6 +147,7 @@ class DashboardService:
             reserved_slots=reserved_slots,
             total_staff=total_staff,
             total_sessions=total_sessions,
+            active_sessions=active_sessions,
             total_revenue=float(total_revenue),
         )
 

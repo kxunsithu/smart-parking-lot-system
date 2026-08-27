@@ -18,6 +18,7 @@ class OwnerDashboardOut(BaseModel):
     reserved_slots: int
     total_staff: int
     total_sessions: int
+    active_sessions: int
     total_revenue: float
 
 

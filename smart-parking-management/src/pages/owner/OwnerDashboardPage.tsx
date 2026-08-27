@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { CreditCard, ParkingSquare, Timer, UserCog, Warehouse } from "lucide-react"
+import { CreditCard, ParkingSquare, Timer, UserCog, Warehouse, CheckCircle2, Car } from "lucide-react"
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 import { PageHeader } from "@/components/common/PageHeader"
 import { StatCard } from "@/components/common/StatCard"
@@ -56,6 +56,7 @@ export function OwnerDashboardPage() {
           <StatCard label="Floors" value={data.total_floors} icon={ParkingSquare} />
           <StatCard label="Staff" value={data.total_staff} icon={UserCog} />
           <StatCard label="Total Sessions" value={data.total_sessions} icon={Timer} />
+          <StatCard label="Active Sessions" value={data.active_sessions} icon={Car} />
           <StatCard
             label="Total Revenue"
             value={formatCurrency(data.total_revenue)}
@@ -93,15 +94,27 @@ export function OwnerDashboardPage() {
           <CardContent className="space-y-3 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Available slots</span>
-              <span className="font-medium">{data?.available_slots ?? "-"}</span>
+              <span className="font-medium text-emerald-600">{data?.available_slots ?? "-"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Reserved slots</span>
+              <span className="font-medium text-amber-600">{data?.reserved_slots ?? "-"}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Occupied slots</span>
-              <span className="font-medium">{data?.occupied_slots ?? "-"}</span>
+              <span className="font-medium text-red-600">{data?.occupied_slots ?? "-"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Active sessions</span>
+              <span className="font-medium">{data?.active_sessions ?? "-"}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Total sessions</span>
               <span className="font-medium">{data?.total_sessions ?? "-"}</span>
+            </div>
+            <div className="flex items-center justify-between border-t pt-3">
+              <span className="text-muted-foreground font-medium">Total revenue</span>
+              <span className="font-bold text-lg">{data ? formatCurrency(data.total_revenue) : "-"}</span>
             </div>
           </CardContent>
         </Card>

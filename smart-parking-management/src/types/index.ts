@@ -176,6 +176,7 @@ export interface OwnerDashboardOut {
   reserved_slots: number
   total_staff: number
   total_sessions: number
+  active_sessions: number
   total_revenue: number
 }
 
