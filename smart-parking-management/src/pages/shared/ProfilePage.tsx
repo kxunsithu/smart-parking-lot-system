@@ -67,7 +67,10 @@ export function ProfilePage() {
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    values: { name: user?.name ?? "", phone: user?.phone ?? "" },
+    values: {
+      name: user?.name ?? "",
+      phone: user?.phone?.replace(/^\+?959/, "") ?? "",
+    },
   })
 
   const passwordForm = useForm<PasswordFormValues>({ resolver: zodResolver(passwordSchema) })
@@ -75,7 +78,10 @@ export function ProfilePage() {
   const handleUpdateProfile = async (values: ProfileFormValues) => {
     try {
       setIsUpdatingProfile(true)
-      const updated = await authApi.updateProfile(values)
+      const updated = await authApi.updateProfile({
+        ...values,
+        phone: values.phone ? `+959${values.phone.replace(/^\+?959/, "")}` : values.phone,
+      })
       setUser(updated)
       toast.success("Profile updated successfully.")
     } catch (error) {
@@ -271,7 +277,24 @@ export function ProfilePage() {
                 error={profileForm.formState.errors.phone?.message}
                 required
               >
-                <Input id="phone" type="tel" inputMode="tel" {...profileForm.register("phone")} />
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-sm font-medium text-muted-foreground select-none">
+                    +959
+                  </span>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="XXXXXXXXX"
+                    className="rounded-l-none pl-3"
+                    {...profileForm.register("phone")}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/^\+?959/, "").replace(/\D/g, "")
+                      e.target.value = raw
+                      profileForm.setValue("phone", raw, { shouldValidate: true })
+                    }}
+                  />
+                </div>
               </FormField>
               <Button type="submit" disabled={isUpdatingProfile}>
                 {isUpdatingProfile ? <Loader2 className="size-4 animate-spin" /> : null}

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Lock, Mail, User, Phone, Eye, EyeOff, Loader2 } from "lucide-react"
+import { Lock, Mail, User, Eye, EyeOff, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -38,6 +38,7 @@ export default function Register() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -129,15 +130,27 @@ export default function Register() {
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="phone" className="text-sm text-foreground font-bold">{t("profile.phone", "Phone Number")}</Label>
-          <div className="relative">
-            <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <div className="flex">
+            <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-sm font-medium text-muted-foreground select-none">
+              +959
+            </span>
             <Input
               id="phone"
               type="tel"
-              inputMode="tel"
-              placeholder="e.g. +959XXXXXXXXX"
-              className="pl-10"
-              {...register("phone")}
+              inputMode="numeric"
+              placeholder="XXXXXXXXX"
+              className="rounded-l-none pl-3"
+              {...register("phone", {
+                setValueAs: (v: string) => {
+                  const digits = v.replace(/^\+?959/, "").replace(/\D/g, "")
+                  return digits ? `+959${digits}` : ""
+                },
+              })}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/^\+?959/, "").replace(/\D/g, "")
+                e.target.value = raw
+                setValue("phone", raw ? `+959${raw}` : "", { shouldValidate: true })
+              }}
             />
           </div>
           <p className="text-xs text-muted-foreground">Used for digital wallet payments. You can change this later in your profile.</p>

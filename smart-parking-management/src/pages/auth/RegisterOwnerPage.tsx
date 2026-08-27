@@ -39,6 +39,7 @@ export function RegisterOwnerPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<OwnerRegistrationFormValues>({
     resolver: zodResolver(ownerRegistrationSchema),
@@ -122,14 +123,30 @@ export function RegisterOwnerPage() {
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="phone" className="text-sm text-foreground font-bold">Phone Number</Label>
-          <Input
-            id="phone"
-            type="tel"
-            inputMode="tel"
-            placeholder="e.g. +959XXXXXXXXX"
-            {...register("phone")}
-            disabled={submitting}
-          />
+          <div className="flex">
+            <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-sm font-medium text-muted-foreground select-none">
+              +959
+            </span>
+            <Input
+              id="phone"
+              type="tel"
+              inputMode="numeric"
+              placeholder="XXXXXXXXX"
+              className="rounded-l-none pl-3"
+              disabled={submitting}
+              {...register("phone", {
+                setValueAs: (v: string) => {
+                  const digits = v.replace(/^\+?959/, "").replace(/\D/g, "")
+                  return digits ? `+959${digits}` : ""
+                },
+              })}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/^\+?959/, "").replace(/\D/g, "")
+                e.target.value = raw
+                setValue("phone", raw ? `+959${raw}` : "", { shouldValidate: true })
+              }}
+            />
+          </div>
           <p className="text-xs text-muted-foreground">Used for digital wallet payments. You can change this later in your profile.</p>
           {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
         </div>

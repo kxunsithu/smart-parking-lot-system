@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Camera, Mail, Phone, Loader2, Trash2, User, Eye, EyeOff } from "lucide-react"
+import { Camera, Mail, Loader2, Trash2, User, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -50,19 +50,20 @@ export default function Profile() {
     register: registerProfile,
     handleSubmit: handleProfileSubmit,
     reset: resetProfile,
+    setValue: setProfileValue,
     formState: { errors: profileErrors },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     values: {
       name: user?.name ?? "",
-      phone: user?.phone ?? "",
+      phone: user?.phone?.replace(/^\+?959/, "") ?? "",
     },
   })
 
   useEffect(() => {
     resetProfile({
       name: user?.name ?? "",
-      phone: user?.phone ?? "",
+      phone: user?.phone?.replace(/^\+?959/, "") ?? "",
     })
   }, [user?.name, user?.phone, resetProfile])
 
@@ -75,7 +76,7 @@ export default function Profile() {
     try {
       const updated = await authApi.updateProfile({
         name: data.name,
-        phone: data.phone.trim(),
+        phone: data.phone.trim() ? `+959${data.phone.trim().replace(/^\+?959/, "")}` : data.phone.trim(),
       })
       setUser(updated)
       toast.success("Profile updated successfully.")
@@ -271,9 +272,23 @@ export default function Profile() {
 
                   <div>
                     <Label htmlFor="profile-phone">{t("profile.phone", "Phone Number")}</Label>
-                    <div className="relative mt-1">
-                      <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input id="profile-phone" type="tel" inputMode="tel" className="pl-10" {...registerProfile("phone")} />
+                    <div className="flex mt-1">
+                      <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-sm font-medium text-muted-foreground select-none">
+                        +959
+                      </span>
+                      <Input
+                        id="profile-phone"
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="XXXXXXXXX"
+                        className="rounded-l-none pl-3"
+                        {...registerProfile("phone")}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/^\+?959/, "").replace(/\D/g, "")
+                          e.target.value = raw
+                          setProfileValue("phone", raw, { shouldValidate: true })
+                        }}
+                      />
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">Used automatically for digital wallet payments.</p>
                     {profileErrors.phone && (
