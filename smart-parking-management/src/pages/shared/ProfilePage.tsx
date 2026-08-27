@@ -1,22 +1,34 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { Loader2, LogOut, Eye, EyeOff } from "lucide-react"
+import { Camera, Loader2, LogOut, Trash2, Eye, EyeOff } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { FormField } from "@/components/common/FormField"
 import { ConfirmDialog } from "@/components/common/ConfirmDialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { authApi } from "@/api/auth"
 import { getErrorMessage } from "@/api/client"
+import { API_ORIGIN } from "@/api/client"
 import { useAuthStore } from "@/stores/authStore"
 import { useAuth } from "@/hooks/useAuth"
+import { initials } from "@/utils/formatters"
 import { ROLE_LABELS } from "@/utils/navConfig"
 import { strongPassword } from "@/lib/passwordSchema"
+
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+const MAX_SIZE_MB = 5
+
+function getAvatarUrl(path: string | null | undefined): string | undefined {
+  if (!path) return undefined
+  if (path.startsWith("http")) return path
+  return `${API_ORIGIN}${path}`
+}
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -47,6 +59,11 @@ export function ProfilePage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [isRemovingImage, setIsRemovingImage] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const avatarUrl = getAvatarUrl(user?.profile_image)
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -104,17 +121,126 @@ export function ProfilePage() {
     }
   }
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast.error("Only JPEG, PNG, WebP, and GIF images are allowed.")
+      return
+    }
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      toast.error(`Image must be smaller than ${MAX_SIZE_MB} MB.`)
+      return
+    }
+
+    try {
+      setIsUploadingImage(true)
+      const updated = await authApi.uploadProfileImage(file)
+      setUser(updated)
+      toast.success("Profile photo updated successfully.")
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setIsUploadingImage(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
+
+  const handleRemoveImage = async () => {
+    try {
+      setIsRemovingImage(true)
+      const updated = await authApi.deleteProfileImage()
+      setUser(updated)
+      toast.success("Profile photo removed.")
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setIsRemovingImage(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader title="Profile & Settings" description="Manage your personal information and security." />
 
-      {/* User summary card */}
+      {/* Avatar + User summary card */}
       <Card>
         <CardContent className="flex flex-col sm:flex-row items-center gap-6 pt-6">
+          {/* Avatar with hover upload overlay */}
+          <div className="relative group shrink-0">
+            <Avatar className="size-20 ring-2 ring-primary/20">
+              <AvatarImage src={avatarUrl} alt={user?.name ?? "Avatar"} className="object-cover" />
+              <AvatarFallback className="bg-primary/15 text-2xl text-primary font-bold">
+                {initials(user?.name)}
+              </AvatarFallback>
+            </Avatar>
+
+            {/* Camera overlay on hover */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingImage || isRemovingImage}
+              className="absolute inset-0 rounded-full flex items-center justify-center bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer disabled:cursor-not-allowed"
+              aria-label="Change profile photo"
+            >
+              {isUploadingImage ? (
+                <Loader2 className="size-5 text-white animate-spin" />
+              ) : (
+                <Camera className="size-5 text-white" />
+              )}
+            </button>
+
+            <input
+              ref={fileInputRef}
+              id="profile-image-input"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
+
           <div className="flex flex-col gap-1 text-center sm:text-left">
             <p className="text-xl font-bold">{user?.name}</p>
             <p className="text-sm text-muted-foreground">{user?.email}</p>
             <p className="text-sm text-muted-foreground">{role ? ROLE_LABELS[role] : ""}</p>
+          </div>
+
+          {/* Upload / Remove buttons */}
+          <div className="sm:ml-auto flex flex-col gap-2 min-w-[140px]">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingImage || isRemovingImage}
+            >
+              {isUploadingImage ? (
+                <><Loader2 className="size-4 mr-2 animate-spin" />Uploading…</>
+              ) : (
+                <><Camera className="size-4 mr-2" />{avatarUrl ? "Change Photo" : "Upload Photo"}</>
+              )}
+            </Button>
+
+            {avatarUrl && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={handleRemoveImage}
+                disabled={isUploadingImage || isRemovingImage}
+              >
+                {isRemovingImage ? (
+                  <><Loader2 className="size-4 mr-2 animate-spin" />Removing…</>
+                ) : (
+                  <><Trash2 className="size-4 mr-2" />Remove Photo</>
+                )}
+              </Button>
+            )}
+
+            <p className="text-[11px] text-muted-foreground text-center">
+              JPG, PNG, WebP, GIF · Max {MAX_SIZE_MB} MB
+            </p>
           </div>
         </CardContent>
       </Card>

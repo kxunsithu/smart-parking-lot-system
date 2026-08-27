@@ -1,6 +1,10 @@
 """Business logic for authentication: register, login, refresh, logout, password."""
+import os
+import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 
+from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.constants import RoleName
@@ -189,3 +193,72 @@ class AuthService:
     def update_profile(self, user: User, payload: UserUpdate) -> User:
         data = payload.model_dump(exclude_unset=True)
         return self.user_repo.update(user, data)
+
+    def upload_profile_image(self, user: User, file: UploadFile) -> User:
+        allowed_types = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+        if file.content_type not in allowed_types:
+            raise BadRequestException(
+                "Invalid file type.",
+                errors=[{"field": "file", "message": "Only JPEG, PNG, WebP, and GIF images are allowed."}],
+            )
+
+        # 5 MB max size limit
+        max_size = 5 * 1024 * 1024
+        contents = file.file.read()
+        if len(contents) > max_size:
+            raise BadRequestException(
+                "File size too large.",
+                errors=[{"field": "file", "message": "File size must be less than 5 MB."}],
+            )
+
+        # Determine extension
+        ext = os.path.splitext(file.filename or "")[1].lower()
+        if not ext or ext not in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
+            if file.content_type == "image/jpeg":
+                ext = ".jpg"
+            elif file.content_type == "image/png":
+                ext = ".png"
+            elif file.content_type == "image/webp":
+                ext = ".webp"
+            elif file.content_type == "image/gif":
+                ext = ".gif"
+            else:
+                ext = ".jpg"
+
+        upload_dir = Path("uploads/profile_images")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+
+        unique_filename = f"{uuid.uuid4().hex}{ext}"
+        file_path = upload_dir / unique_filename
+
+        with open(file_path, "wb") as f:
+            f.write(contents)
+
+        if user.profile_image:
+            old_relative_path = user.profile_image.lstrip("/")
+            old_file_path = Path(old_relative_path)
+            if old_file_path.exists() and old_file_path.is_file():
+                try:
+                    old_file_path.unlink()
+                except OSError:
+                    pass
+
+        relative_url = f"/uploads/profile_images/{unique_filename}"
+        user.profile_image = relative_url
+        self.db.commit()
+        self.db.refresh(user)
+        return self.user_repo.get_with_role(user.id) or user
+
+    def delete_profile_image(self, user: User) -> User:
+        if user.profile_image:
+            old_relative_path = user.profile_image.lstrip("/")
+            old_file_path = Path(old_relative_path)
+            if old_file_path.exists() and old_file_path.is_file():
+                try:
+                    old_file_path.unlink()
+                except OSError:
+                    pass
+            user.profile_image = None
+            self.db.commit()
+            self.db.refresh(user)
+        return self.user_repo.get_with_role(user.id) or user

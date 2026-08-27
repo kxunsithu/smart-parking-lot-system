@@ -15,6 +15,7 @@ class RoleOut(BaseModel):
 class UserUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=2, max_length=100)
     phone: Optional[str] = Field(default=None, max_length=20)
+    profile_image: Optional[str] = None
     is_active: Optional[bool] = None
 
 
@@ -25,6 +26,7 @@ class UserOut(BaseModel):
     name: str
     email: EmailStr
     phone: Optional[str] = None
+    profile_image: Optional[str] = None
     role_id: int
     role: Optional[RoleOut] = None
     is_active: bool
