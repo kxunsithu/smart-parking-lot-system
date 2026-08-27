@@ -25,11 +25,13 @@ export function WalletTransactionsPage() {
 
   const role = useAuthStore.getState().user?.role?.name
   const isOwner = role === "OWNER"
+  const isAdmin = role === "ADMIN"
 
   const fetchData = async () => {
     try {
       setIsLoading(true)
-      const result = await paymentsApi.list(params)
+      // Admin only needs subscription transactions; session fees belong to owners.
+      const result = await paymentsApi.list(isAdmin ? { ...params, kind: "subscription" } : params)
       setItems(result.data)
       setMeta(result.meta)
     } catch (error) {
@@ -56,7 +58,9 @@ export function WalletTransactionsPage() {
         description={
           isOwner
             ? "Parking fees received into your wallet and your subscription payments."
-            : "All external wallet payments across parking sessions and subscriptions."
+            : isAdmin
+              ? "Subscription payments made by parking owners."
+              : "All external wallet payments across parking sessions and subscriptions."
         }
       />
 

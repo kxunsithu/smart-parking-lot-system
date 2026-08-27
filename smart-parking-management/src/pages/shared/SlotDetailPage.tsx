@@ -17,7 +17,6 @@ import { parkingFloorsApi } from "@/api/parkingFloors"
 import { parkingLotsApi } from "@/api/parkingLots"
 import { parkingSessionsApi } from "@/api/parkingSessions"
 import { SessionCardGrid } from "@/components/sessions/SessionCard"
-import { useAuth } from "@/hooks/useAuth"
 import { slotStatusTone } from "@/utils/statusColors"
 import type { ParkingSlotOut, ParkingFloorOut, ParkingLotOut, ParkingSessionOut } from "@/types"
 
@@ -507,8 +506,6 @@ export function SlotDetailPage() {
 
   const { resolvedTheme, setTheme } = useTheme()
   const isNightMode = resolvedTheme === "dark"
-  const { role } = useAuth()
-  const isAdmin = role === "ADMIN"
 
   const [slot, setSlot] = useState<ParkingSlotOut | null>(null)
   const [floor, setFloor] = useState<ParkingFloorOut | null>(null)
@@ -556,15 +553,13 @@ export function SlotDetailPage() {
           slotsData[f.id] = r.items
         }))
         setSlotsByFloor(slotsData)
-        if (!isAdmin) {
-          const sessionsRes = await parkingSessionsApi.list({ slot_id: id, limit: 100 })
-          setSessions(sessionsRes.items)
-        }
+        const sessionsRes = await parkingSessionsApi.list({ slot_id: id, limit: 100 })
+        setSessions(sessionsRes.items)
       } catch (e) { console.error(e) }
       finally { setIsLoading(false) }
     }
     fetchData()
-  }, [id, isAdmin])
+  }, [id])
 
   if (isLoading) return <LoadingSpinner label="Loading slot details…" />
   if (!slot) return <EmptyState title="Slot not found" description="This slot may have been removed." />
@@ -744,32 +739,30 @@ export function SlotDetailPage() {
       </div>
 
       {/* ── Session History (full list) ── */}
-      {!isAdmin && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold tracking-tight">Session History</h2>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/60">
-                {sessions.length}
-              </span>
-            </div>
-            {activeSessions.length > 0 && (
-              <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/30">
-                {activeSessions.length} active
-              </span>
-            )}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold tracking-tight">Session History</h2>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/60">
+              {sessions.length}
+            </span>
           </div>
-
-          {sessions.length === 0 ? (
-            <EmptyState
-              title="No sessions yet"
-              description="This slot has no parking sessions yet."
-            />
-          ) : (
-            <SessionCardGrid sessions={sortedSessions} />
+          {activeSessions.length > 0 && (
+            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/30">
+              {activeSessions.length} active
+            </span>
           )}
         </div>
-      )}
+
+        {sessions.length === 0 ? (
+          <EmptyState
+            title="No sessions yet"
+            description="This slot has no parking sessions yet."
+          />
+        ) : (
+          <SessionCardGrid sessions={sortedSessions} />
+        )}
+      </div>
     </div>
   )
 }

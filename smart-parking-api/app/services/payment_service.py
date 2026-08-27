@@ -809,7 +809,7 @@ class PaymentService:
     # ─── Transaction list (external-system wallet payments) ──────────────────
 
     def list_payments(
-        self, params: PaginationParams, current_user: User
+        self, params: PaginationParams, current_user: User, kind: str | None = None
     ) -> tuple[list[PaymentListOut], Meta]:
         """List external wallet transaction records.
 
@@ -838,6 +838,11 @@ class PaymentService:
                 .joinedload(ParkingOwner.user),
             )
         )
+
+        if kind == "subscription":
+            stmt = stmt.where(Payment.subscription_id.is_not(None))
+        elif kind == "session":
+            stmt = stmt.where(Payment.subscription_id.is_(None))
 
         if current_user.role.name == RoleName.OWNER.value:
             owner = self.owner_repo.get_by_user_id(current_user.id)

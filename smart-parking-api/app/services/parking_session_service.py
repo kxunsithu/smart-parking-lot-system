@@ -138,9 +138,8 @@ class ParkingSessionService:
     def _assert_can_access_session(self, session: ParkingSession, current_user: User) -> None:
         """Enforce role-based access to a single session (view or finish)."""
         role = current_user.role.name
-        # Sessions are only relevant to Owners, Staff, and Customers — not Admin.
         if role == RoleName.ADMIN.value:
-            raise ForbiddenException("Admins do not have access to parking sessions.")
+            return
 
         if role == RoleName.CUSTOMER.value:
             customer = self._get_customer(current_user)
@@ -238,10 +237,6 @@ class ParkingSessionService:
         plate_number: str | None = None,
         current_user: User | None = None,
     ):
-        # Sessions are only relevant to Owners, Staff, and Customers — not Admin.
-        if current_user and current_user.role.name == RoleName.ADMIN.value:
-            raise ForbiddenException("Admins do not have access to parking sessions.")
-
         stmt = select(ParkingSession).options(*_session_loading_options())
         if status:
             stmt = stmt.where(ParkingSession.status == status)

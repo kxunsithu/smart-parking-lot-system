@@ -194,6 +194,7 @@ export interface PaginationQuery {
   sort_by?: string
   order?: "asc" | "desc"
   search?: string
+  kind?: "subscription" | "session"
 }
 
 // Auth Request Types

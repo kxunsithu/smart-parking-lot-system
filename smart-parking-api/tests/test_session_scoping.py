@@ -116,26 +116,26 @@ def test_owner_and_staff_see_only_their_own_sessions(client, admin_user):
     assert len(cust_a_sessions) == 1
     assert cust_a_sessions[0]["car_id"] == car_a
 
+    # Admin can still see every session
+    admin_sessions = client.get("/api/v1/parking-sessions", headers=admin_headers).json()["data"]
+    assert len(admin_sessions) == 2
+
     # ─── Single-session access control ────────────────────────────────────────
     # Everyone can fetch the session they are entitled to see…
     assert client.get(f"/api/v1/parking-sessions/{session_a}", headers=owner_a_headers).status_code == 200
     assert client.get(f"/api/v1/parking-sessions/{session_a}", headers=staff_a_headers).status_code == 200
     assert client.get(f"/api/v1/parking-sessions/{session_a}", headers=cust_a_headers).status_code == 200
+    assert client.get(f"/api/v1/parking-sessions/{session_b}", headers=admin_headers).status_code == 200
     # …but NOT another lot's/owner's session
     assert client.get(f"/api/v1/parking-sessions/{session_b}", headers=owner_a_headers).status_code == 403
     assert client.get(f"/api/v1/parking-sessions/{session_b}", headers=staff_a_headers).status_code == 403
     assert client.get(f"/api/v1/parking-sessions/{session_b}", headers=cust_a_headers).status_code == 403
     assert client.get(f"/api/v1/parking-sessions/{session_a}", headers=owner_b_headers).status_code == 403
 
-    # Admin does not get session data at all — it is Owner/Staff-related.
-    assert client.get("/api/v1/parking-sessions", headers=admin_headers).status_code == 403
-    assert client.get(f"/api/v1/parking-sessions/{session_b}", headers=admin_headers).status_code == 403
-
     # ─── Finish access control ─────────────────────────────────────────────────
     # Owner/staff/customer cannot finish another owner's/lot's/session's booking.
     assert client.patch(f"/api/v1/parking-sessions/{session_b}/finish", json={}, headers=owner_a_headers).status_code == 403
     assert client.patch(f"/api/v1/parking-sessions/{session_b}/finish", json={}, headers=staff_a_headers).status_code == 403
     assert client.patch(f"/api/v1/parking-sessions/{session_b}/finish", json={}, headers=cust_a_headers).status_code == 403
-    assert client.patch(f"/api/v1/parking-sessions/{session_b}/finish", json={}, headers=admin_headers).status_code == 403
     # But the rightful owner can finish their own session.
     assert client.patch(f"/api/v1/parking-sessions/{session_b}/finish", json={}, headers=cust_b_headers).status_code == 200
