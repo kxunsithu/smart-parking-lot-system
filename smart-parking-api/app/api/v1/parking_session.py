@@ -201,7 +201,7 @@ def get_session(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    session = ParkingSessionService(db).get_by_id(session_id)
+    session = ParkingSessionService(db).get_session_for_user(session_id, current_user)
     return {"success": True, "message": "Parking session fetched successfully.", "data": serialize_session(session)}
 
 

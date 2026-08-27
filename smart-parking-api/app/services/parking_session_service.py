@@ -10,14 +10,19 @@ from app.core.constants import RoleName, SessionStatus, SlotStatus
 from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
 from app.models.car import Car
 from app.models.customer import Customer
+from app.models.parking_floor import ParkingFloor
+from app.models.parking_lot import ParkingLot
 from app.models.parking_session import ParkingSession
+from app.models.parking_slot import ParkingSlot
 from app.models.user import User
 from app.repositories.car_repository import CarRepository
 from app.repositories.customer_repository import CustomerRepository
 from app.repositories.parking_floor_repository import ParkingFloorRepository
 from app.repositories.parking_lot_repository import ParkingLotRepository
+from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.repositories.parking_session_repository import ParkingSessionRepository
 from app.repositories.parking_slot_repository import ParkingSlotRepository
+from app.repositories.parking_staff_repository import ParkingStaffRepository
 from app.schemas.common import PaginationParams, build_meta
 from app.schemas.parking_session import ParkingSessionBook, ParkingSessionFinish, ParkingSessionStart
 
@@ -130,13 +135,36 @@ class ParkingSessionService:
         self.slot_repo = ParkingSlotRepository(db)
         self.car_repo = CarRepository(db)
 
-    def _assert_staff_permission(self, current_user: User) -> None:
-        if current_user.role.name not in (
-            RoleName.ADMIN.value,
-            RoleName.OWNER.value,
-            RoleName.STAFF.value,
-        ):
-            raise ForbiddenException("Only Staff, Owner, or Admin can manage parking sessions.")
+    def _assert_can_access_session(self, session: ParkingSession, current_user: User) -> None:
+        """Enforce role-based access to a single session (view or finish)."""
+        role = current_user.role.name
+        if role == RoleName.ADMIN.value:
+            return
+
+        if role == RoleName.CUSTOMER.value:
+            customer = self._get_customer(current_user)
+            car = self.car_repo.get(session.car_id)
+            if not customer or not car or car.customer_id != customer.id:
+                raise ForbiddenException("You can only access your own parking sessions.")
+            return
+
+        slot = self.slot_repo.get(session.slot_id)
+        floor = ParkingFloorRepository(self.db).get(slot.floor_id) if slot else None
+        lot = ParkingLotRepository(self.db).get(floor.parking_lot_id) if floor else None
+
+        if role == RoleName.OWNER.value:
+            owner = ParkingOwnerRepository(self.db).get_by_user_id(current_user.id)
+            if not owner or not lot or lot.owner_id != owner.id:
+                raise ForbiddenException("You can only access sessions from your own parking lots.")
+            return
+
+        if role == RoleName.STAFF.value:
+            staff = ParkingStaffRepository(self.db).get_by_user_id(current_user.id)
+            if not staff or not floor or floor.parking_lot_id != staff.parking_lot_id:
+                raise ForbiddenException("You can only access sessions in your assigned parking lot.")
+            return
+
+        raise ForbiddenException("You do not have permission to access this parking session.")
 
     def _get_customer(self, current_user: User):
         customer_repo = CustomerRepository(self.db)
@@ -195,6 +223,11 @@ class ParkingSessionService:
             raise NotFoundException("Parking session not found.")
         return session
 
+    def get_session_for_user(self, session_id: int, current_user: User) -> ParkingSession:
+        session = self.get_by_id(session_id)
+        self._assert_can_access_session(session, current_user)
+        return session
+
     def list_sessions(
         self,
         params: PaginationParams,
@@ -225,6 +258,29 @@ class ParkingSessionService:
                 customer_car_ids = [c.id for c in customer_cars]
                 stmt = stmt.where(ParkingSession.car_id.in_(customer_car_ids))
 
+        # Owner sees only sessions from their own parking lots
+        elif current_user and current_user.role.name == RoleName.OWNER.value:
+            owner = ParkingOwnerRepository(self.db).get_by_user_id(current_user.id)
+            if not owner:
+                raise ForbiddenException("Owner profile not found.")
+            stmt = (
+                stmt.join(ParkingSlot, ParkingSession.slot_id == ParkingSlot.id)
+                .join(ParkingFloor, ParkingSlot.floor_id == ParkingFloor.id)
+                .join(ParkingLot, ParkingFloor.parking_lot_id == ParkingLot.id)
+                .where(ParkingLot.owner_id == owner.id)
+            )
+
+        # Staff sees only sessions from their assigned parking lot
+        elif current_user and current_user.role.name == RoleName.STAFF.value:
+            staff = ParkingStaffRepository(self.db).get_by_user_id(current_user.id)
+            if not staff:
+                raise ForbiddenException("Staff profile not found.")
+            stmt = (
+                stmt.join(ParkingSlot, ParkingSession.slot_id == ParkingSlot.id)
+                .join(ParkingFloor, ParkingSlot.floor_id == ParkingFloor.id)
+                .where(ParkingFloor.parking_lot_id == staff.parking_lot_id)
+            )
+
         items, total = self.session_repo.paginate(
             stmt,
             page=params.page,
@@ -239,15 +295,7 @@ class ParkingSessionService:
         self, session_id: int, payload: ParkingSessionFinish, current_user: User
     ) -> ParkingSession:
         session = self.get_by_id(session_id)
-
-        # Allow customers to finish their own sessions
-        if current_user.role.name == RoleName.CUSTOMER.value:
-            customer = self._get_customer(current_user)
-            car = self.car_repo.get(session.car_id)
-            if not customer or not car or car.customer_id != customer.id:
-                raise ForbiddenException("You can only finish your own parking sessions.")
-        else:
-            self._assert_staff_permission(current_user)
+        self._assert_can_access_session(session, current_user)
 
         if session.status != SessionStatus.ACTIVE.value:
             raise BadRequestException("Only ACTIVE sessions can be finished.")
