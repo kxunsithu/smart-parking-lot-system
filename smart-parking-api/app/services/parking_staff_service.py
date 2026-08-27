@@ -129,4 +129,10 @@ class ParkingStaffService:
         if current_user.role.name != RoleName.ADMIN.value:
             owner = self.owner_repo.get_by_user_id(current_user.id)
             self.sub_service.check_subscription_required(owner.id)
-        self.staff_repo.delete(staff)
+        user = staff.user
+        if user:
+            # parking_staff.user_id has ON DELETE CASCADE (and User.staff_profile is
+            # delete-orphan), so removing the user also removes the staff row.
+            self.user_repo.delete(user)
+        else:
+            self.staff_repo.delete(staff)

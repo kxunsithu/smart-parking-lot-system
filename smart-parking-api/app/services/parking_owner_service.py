@@ -9,6 +9,7 @@ from app.models.parking_owner import ParkingOwner
 from app.models.parking_session import ParkingSession
 from app.models.parking_slot import ParkingSlot
 from app.models.parking_staff import ParkingStaff
+from app.models.pending_payment import PendingWalletPayment
 from app.models.user import User
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
 from app.repositories.user_repository import UserRepository
@@ -66,10 +67,21 @@ class ParkingOwnerService:
     def delete_owner(self, owner_id: int) -> None:
         owner = self.get_by_id(owner_id)
 
+        # Drop in-flight wallet payments initiated by this owner's user
+        # (pending_wallet_payments.user_id has no ON DELETE action).
+        self.db.execute(delete(PendingWalletPayment).where(PendingWalletPayment.user_id == owner.user_id))
+
         # Build subqueries for the dependency chain under this owner's parking lots
         lot_ids = select(ParkingLot.id).where(ParkingLot.owner_id == owner_id)
         floor_ids = select(ParkingFloor.id).where(ParkingFloor.parking_lot_id.in_(lot_ids))
         slot_ids = select(ParkingSlot.id).where(ParkingSlot.floor_id.in_(floor_ids))
+        # Materialise now – the staff rows are deleted below, so a later subquery
+        # would resolve to nothing.
+        staff_user_ids = list(
+            self.db.scalars(
+                select(ParkingStaff.user_id).where(ParkingStaff.parking_lot_id.in_(lot_ids))
+            ).all()
+        )
 
         # Delete parking sessions (reference parking_slots)
         self.db.execute(delete(ParkingSession).where(ParkingSession.slot_id.in_(slot_ids)))
@@ -80,8 +92,10 @@ class ParkingOwnerService:
         # Delete parking floors (reference parking_lots)
         self.db.execute(delete(ParkingFloor).where(ParkingFloor.parking_lot_id.in_(lot_ids)))
 
-        # Delete parking staff (reference parking_lots)
+        # Delete parking staff (reference parking_lots) together with their users
         self.db.execute(delete(ParkingStaff).where(ParkingStaff.parking_lot_id.in_(lot_ids)))
+        if staff_user_ids:
+            self.db.execute(delete(User).where(User.id.in_(staff_user_ids)))
 
         # Delete parking lots (reference parking_owners)
         self.db.execute(delete(ParkingLot).where(ParkingLot.owner_id == owner_id))

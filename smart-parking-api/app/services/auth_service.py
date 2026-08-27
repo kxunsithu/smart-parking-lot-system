@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
+from app.config.settings import settings
 from app.core.constants import RoleName
 from app.core.exceptions import BadRequestException, ConflictException, NotFoundException, UnauthorizedException
 from app.core.security import (
@@ -235,7 +236,7 @@ class AuthService:
             f.write(contents)
 
         if user.profile_image:
-            old_relative_path = user.profile_image.lstrip("/")
+            old_relative_path = user.profile_image.replace(settings.WALLET_REDIRECT_BASE_URL, "").lstrip("/")
             old_file_path = Path(old_relative_path)
             if old_file_path.exists() and old_file_path.is_file():
                 try:
@@ -243,15 +244,16 @@ class AuthService:
                 except OSError:
                     pass
 
-        relative_url = f"/uploads/profile_images/{unique_filename}"
-        user.profile_image = relative_url
+        base = settings.WALLET_REDIRECT_BASE_URL.rstrip("/")
+        absolute_url = f"{base}/uploads/profile_images/{unique_filename}"
+        user.profile_image = absolute_url
         self.db.commit()
         self.db.refresh(user)
         return self.user_repo.get_with_role(user.id) or user
 
     def delete_profile_image(self, user: User) -> User:
         if user.profile_image:
-            old_relative_path = user.profile_image.lstrip("/")
+            old_relative_path = user.profile_image.replace(settings.WALLET_REDIRECT_BASE_URL, "").lstrip("/")
             old_file_path = Path(old_relative_path)
             if old_file_path.exists() and old_file_path.is_file():
                 try:
