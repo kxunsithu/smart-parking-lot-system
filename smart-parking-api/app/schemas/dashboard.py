@@ -8,6 +8,8 @@ class AdminDashboardOut(BaseModel):
     total_customers: int
     total_parking_lots: int
     total_revenue: float
+    session_revenue: float
+    subscription_revenue: float
 
 
 class OwnerDashboardOut(BaseModel):

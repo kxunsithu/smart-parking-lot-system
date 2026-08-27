@@ -29,22 +29,43 @@ class DashboardService:
         total_staff = self.db.scalar(select(func.count()).select_from(ParkingStaff)) or 0
         total_customers = self.db.scalar(select(func.count()).select_from(Customer)) or 0
         total_parking_lots = self.db.scalar(select(func.count()).select_from(ParkingLot)) or 0
-        total_revenue = (
+
+        completed = Payment.status == PaymentStatus.COMPLETED.value
+
+        # Revenue from parking session payments (customer → owner wallet)
+        session_revenue = float(
             self.db.scalar(
                 select(func.coalesce(func.sum(Payment.amount), 0)).where(
-                    Payment.status == PaymentStatus.COMPLETED.value
+                    completed,
+                    Payment.session_id.isnot(None),
                 )
             )
             or 0
         )
+
+        # Revenue from subscription payments (owner → platform wallet)
+        subscription_revenue = float(
+            self.db.scalar(
+                select(func.coalesce(func.sum(Payment.amount), 0)).where(
+                    completed,
+                    Payment.subscription_id.isnot(None),
+                )
+            )
+            or 0
+        )
+
+        total_revenue = session_revenue + subscription_revenue
 
         return AdminDashboardOut(
             total_owners=total_owners,
             total_staff=total_staff,
             total_customers=total_customers,
             total_parking_lots=total_parking_lots,
-            total_revenue=float(total_revenue),
+            total_revenue=total_revenue,
+            session_revenue=session_revenue,
+            subscription_revenue=subscription_revenue,
         )
+
 
     def owner_dashboard(self, user_id: int) -> OwnerDashboardOut:
         owner = self.owner_repo.get_by_user_id(user_id)

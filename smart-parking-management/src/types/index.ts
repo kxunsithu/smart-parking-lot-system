@@ -166,6 +166,8 @@ export interface AdminDashboardOut {
   total_customers: number
   total_parking_lots: number
   total_revenue: number
+  session_revenue: number
+  subscription_revenue: number
 }
 
 export interface OwnerDashboardOut {

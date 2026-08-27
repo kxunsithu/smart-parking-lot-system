@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Session Booking Rules</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0f1e;
+      font-family: 'Inter', sans-serif;
+      color: #e2e8f0;
+      padding: 40px 24px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    /* ── Title ─────────────────────────────────────── */
+    .title-block {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .title-block h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #38bdf8, #818cf8, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+    .title-block p {
+      color: #64748b;
+      margin-top: 8px;
+      font-size: 0.95rem;
+    }
+    .accent-line {
+      height: 3px;
+      width: 80px;
+      margin: 12px auto 0;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      border-radius: 99px;
+    }
+
+    /* ── Card ──────────────────────────────────────── */
+    .card {
+      background: #111827;
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      border: 1px solid #1e293b;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .card.blue::before  { background: linear-gradient(90deg, #38bdf8, #818cf8); }
+    .card.orange::before { background: linear-gradient(90deg, #fb923c, #f59e0b); }
+    .card.red::before   { background: linear-gradient(90deg, #f87171, #fb923c); }
+    .card.green::before { background: linear-gradient(90deg, #4ade80, #22d3ee); }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .card-icon {
+      font-size: 1.5rem;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+    }
+    .card.blue  .card-icon { background: #0c1a2e; }
+    .card.orange .card-icon { background: #1c1008; }
+    .card.red   .card-icon { background: #1c0808; }
+    .card.green .card-icon { background: #071c10; }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+    .card.blue  .card-title { color: #38bdf8; }
+    .card.orange .card-title { color: #fb923c; }
+    .card.red   .card-title { color: #f87171; }
+    .card.green .card-title { color: #4ade80; }
+
+    /* ── Rules list ────────────────────────────────── */
+    .rule { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+    .badge {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 99px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .badge.ok  { background: #14532d; color: #4ade80; }
+    .badge.err { background: #450a0a; color: #f87171; }
+
+    /* ── Section 1: Time Timeline ──────────────────── */
+    .time-timeline {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-top: 20px;
+      background: #0d1b2a;
+      border-radius: 12px;
+      padding: 20px 24px;
+    }
+    .tl-point {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .tl-dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 2px solid;
+    }
+    .tl-dot.now   { border-color: #94a3b8; background: #475569; }
+    .tl-dot.start { border-color: #4ade80; background: #4ade80; }
+    .tl-dot.end   { border-color: #38bdf8; background: #38bdf8; }
+    .tl-label { font-size: 0.72rem; color: #94a3b8; text-align: center; }
+    .tl-label strong { display: block; font-size: 0.78rem; }
+    .tl-label.ok strong { color: #4ade80; }
+    .tl-label.blue strong { color: #38bdf8; }
+    .tl-arrow {
+      flex: 1;
+      height: 2px;
+      background: linear-gradient(90deg, #334155, #38bdf8);
+      position: relative;
+      margin: 0 4px;
+      align-self: center;
+    }
+    .tl-arrow::after {
+      content: '›';
+      position: absolute;
+      right: -6px;
+      top: -10px;
+      color: #38bdf8;
+      font-size: 1.1rem;
+    }
+    .tl-zone-label {
+      font-size: 0.72rem;
+      color: #38bdf8;
+      text-align: center;
+      flex: 1;
+      margin-top: -6px;
+    }
+
+    /* ── Section 2: Car conflict ───────────────────── */
+    .booking-bars { margin-top: 16px; }
+    .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .bar-label { font-size: 0.78rem; color: #94a3b8; width: 120px; flex-shrink: 0; }
+    .bar-track { flex: 1; background: #1e293b; border-radius: 6px; height: 30px; position: relative; overflow: visible; }
+    .bar-fill {
+      position: absolute;
+      height: 100%;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .bar-fill.ok { background: linear-gradient(90deg, #14532d88, #4ade8088); border: 1px solid #4ade80; color: #4ade80; }
+    .bar-fill.err {
+      background: repeating-linear-gradient(45deg, #450a0a, #450a0a 4px, #5c1010 4px, #5c1010 8px);
+      border: 1px solid #f87171;
+      color: #f87171;
+    }
+    .bar-time { position: absolute; bottom: -18px; font-size: 0.68rem; color: #64748b; }
+    .bar-time.left { left: 0; }
+    .bar-time.right { right: 0; }
+    .verdict {
+      font-size: 0.78rem;
+      padding: 2px 10px;
+      border-radius: 99px;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+    .verdict.ok  { background: #14532d; color: #4ade80; }
+    .verdict.err { background: #450a0a; color: #f87171; }
+
+    /* ── Section 3: Buffer timeline ────────────────── */
+    .buffer-timeline {
+      margin-top: 20px;
+      background: #0d1b2a;
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .bt-track {
+      display: flex;
+      height: 38px;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .bt-seg {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .bt-seg.free-l { flex: 2; background: #14532d44; border: 1px solid #4ade8044; color: #4ade80; }
+    .bt-seg.buf-l  { flex: 1.2; background: #450a0a88; border: 1px solid #f8717188; color: #f87171; }
+    .bt-seg.active { flex: 1.5; background: linear-gradient(90deg, #1e3a5f, #1e40af); border: 1px solid #60a5fa; color: #93c5fd; font-weight: 700; }
+    .bt-seg.buf-r  { flex: 1.2; background: #450a0a88; border: 1px solid #f8717188; color: #f87171; }
+    .bt-seg.free-r { flex: 2; background: #14532d44; border: 1px solid #4ade8044; color: #4ade80; }
+
+    .bt-times {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #64748b;
+      padding: 0 2px;
+      margin-bottom: 20px;
+    }
+    .bt-times span { color: #94a3b8; font-weight: 600; }
+
+    .examples-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .ex-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.78rem;
+    }
+    .ex-time { font-family: 'JetBrains Mono', monospace; color: #e2e8f0; }
+    .ex-verdict { font-size: 0.72rem; font-weight: 700; margin-left: auto; }
+    .ex-verdict.ok  { color: #4ade80; }
+    .ex-verdict.err { color: #f87171; }
+
+    /* ── Section 4: Fee formula ────────────────────── */
+    .formula-box {
+      background: #0d2b1a;
+      border: 1px solid #4ade8033;
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin: 16px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #4ade80;
+      text-align: center;
+    }
+    .fee-examples {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .fee-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .fee-card h4 {
+      font-size: 0.72rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .fee-calc {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      line-height: 1.7;
+    }
+    .fee-calc .result {
+      color: #4ade80;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    /* ── Footer note ────────────────────────────────── */
+    .footer-note {
+      margin-top: 32px;
+      padding: 16px 20px;
+      background: #111827;
+      border-radius: 10px;
+      border-left: 3px solid #818cf8;
+      font-size: 0.82rem;
+      color: #94a3b8;
+    }
+    .footer-note strong { color: #818cf8; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ── Title ── -->
+  <div class="title-block">
+    <h1>Session Booking Rules</h1>
+    <div class="accent-line"></div>
+    <p>All rules enforced automatically by the backend when a customer books a parking slot</p>
+  </div>
+
+  <!-- ── Section 1: Time Validation ── -->
+  <div class="card blue">
+    <div class="card-header">
+      <div class="card-icon">🕐</div>
+      <div class="card-title">1. Time Validation</div>
+    </div>
+    <div class="rule">
+      <span class="badge ok">✓ RULE</span>
+      <span><strong>Start time</strong> must be in the <strong style="color:#4ade80">future</strong> (cannot book a past time)</span>
+    </div>
+    <div class="rule">
+      <span class="badge ok">✓ RULE</span>
+      <span><strong>End time</strong> must be <strong style="color:#38bdf8">after</strong> Start time</span>
+    </div>
+
+    <div class="time-timeline">
+      <div class="tl-point">
+        <div class="tl-dot now"></div>
+        <div class="tl-label"><strong>NOW</strong>current</div>
+      </div>
+      <div class="tl-arrow"></div>
+      <div class="tl-zone-label">must be after NOW ↓</div>
+      <div class="tl-arrow"></div>
+      <div class="tl-point">
+        <div class="tl-dot start"></div>
+        <div class="tl-label ok"><strong>START</strong>future ✓</div>
+      </div>
+      <div class="tl-arrow"></div>
+      <div class="tl-zone-label">must come after ↓</div>
+      <div class="tl-arrow"></div>
+      <div class="tl-point">
+        <div class="tl-dot end"></div>
+        <div class="tl-label blue"><strong>END</strong>after start ✓</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 2: Car Conflict ── -->
+  <div class="card orange">
+    <div class="card-header">
+      <div class="card-icon">🚗</div>
+      <div class="card-title">2. Car Conflict Check — No Overlapping Bookings</div>
+    </div>
+    <p style="font-size:0.85rem;color:#94a3b8;margin-bottom:16px">The same car cannot have two bookings that overlap in time.</p>
+
+    <div class="booking-bars">
+      <!-- Existing booking -->
+      <div class="bar-row">
+        <div class="bar-label" style="color:#94a3b8;font-size:0.75rem">Existing Active<br>Booking</div>
+        <div class="bar-track" style="height:34px">
+          <div class="bar-fill ok" style="left:20%;width:40%">10:00 – 14:00</div>
+          <div class="bar-time left">08:00</div>
+          <div class="bar-time right">18:00</div>
+        </div>
+        <div class="verdict ok">✓ ACTIVE</div>
+      </div>
+
+      <!-- Rejected overlap -->
+      <div class="bar-row" style="margin-top:28px">
+        <div class="bar-label" style="color:#94a3b8;font-size:0.75rem">New Booking<br>Attempt</div>
+        <div class="bar-track" style="height:34px">
+          <div class="bar-fill err" style="left:33%;width:33%">12:00 – 16:00</div>
+        </div>
+        <div class="verdict err">❌ REJECTED</div>
+      </div>
+
+      <!-- Accepted no overlap -->
+      <div class="bar-row" style="margin-top:28px">
+        <div class="bar-label" style="color:#94a3b8;font-size:0.75rem">Another Booking<br>Attempt</div>
+        <div class="bar-track" style="height:34px">
+          <div class="bar-fill ok" style="left:60%;width:28%">15:00 – 18:00&nbsp;(different slot)</div>
+        </div>
+        <div class="verdict ok">✓ OK</div>
+      </div>
+    </div>
+
+    <p style="margin-top:32px;font-size:0.78rem;color:#64748b;font-style:italic">
+      * Pending payments (not yet confirmed) also count as conflicts for the same car.
+    </p>
+  </div>
+
+  <!-- ── Section 3: Slot 2-Hour Buffer ── -->
+  <div class="card red">
+    <div class="card-header">
+      <div class="card-icon">⏱️</div>
+      <div class="card-title">3. Slot Buffer Rule — 2-Hour Gap Required</div>
+    </div>
+    <p style="font-size:0.85rem;color:#94a3b8;margin-bottom:16px">
+      After any booking on a slot, <strong style="color:#f87171">2 hours must pass</strong> before the next booking can start. Same gap required before a booking begins.
+    </p>
+
+    <div class="buffer-timeline">
+      <div class="bt-track">
+        <div class="bt-seg free-l">✅ OK Zone</div>
+        <div class="bt-seg buf-l">❌ -2hr Buffer</div>
+        <div class="bt-seg active">ACTIVE BOOKING<br><small>10:00 – 12:00</small></div>
+        <div class="bt-seg buf-r">❌ +2hr Buffer</div>
+        <div class="bt-seg free-r">✅ OK Zone</div>
+      </div>
+      <div class="bt-times">
+        <span>≤ 08:00</span>
+        <span>08:00</span>
+        <span>10:00</span>
+        <span>12:00</span>
+        <span>14:00</span>
+        <span>≥ 14:00</span>
+      </div>
+
+      <div class="examples-grid">
+        <div class="ex-item">
+          <span>New booking ends at</span>
+          <span class="ex-time">08:30 → 11:00</span>
+          <span class="ex-verdict err">❌ REJECTED</span>
+        </div>
+        <div class="ex-item">
+          <span>New booking starts at</span>
+          <span class="ex-time">12:30</span>
+          <span class="ex-verdict err">❌ REJECTED</span>
+        </div>
+        <div class="ex-item">
+          <span>New booking ends at or before</span>
+          <span class="ex-time">07:59</span>
+          <span class="ex-verdict ok">✅ OK</span>
+        </div>
+        <div class="ex-item">
+          <span>New booking starts at or after</span>
+          <span class="ex-time">14:01</span>
+          <span class="ex-verdict ok">✅ OK</span>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top:14px;font-size:0.78rem;color:#64748b;font-style:italic">
+      * Pending (unconfirmed) payments on the same slot also trigger the 2-hour buffer check.
+    </p>
+  </div>
+
+  <!-- ── Section 4: Fee Calculation ── -->
+  <div class="card green">
+    <div class="card-header">
+      <div class="card-icon">💰</div>
+      <div class="card-title">4. Fee Calculation</div>
+    </div>
+    <p style="font-size:0.85rem;color:#94a3b8;margin-bottom:4px">
+      Duration is measured in minutes and rounded <strong>up</strong> to the nearest minute (ceiling). Rate comes from the parking lot; falls back to system default if not set.
+    </p>
+
+    <div class="formula-box">
+      Fee = ⌈ duration_minutes ⌉ ÷ 60 × rate_per_hour
+    </div>
+
+    <div class="fee-examples">
+      <div class="fee-card">
+        <h4>Example 1 — Exact hours</h4>
+        <div class="fee-calc">
+          Duration: 90 min<br>
+          Rate: 1,000 MMK/hr<br>
+          = 90 ÷ 60 × 1,000<br>
+          <span class="result">= 1,500 MMK</span>
+        </div>
+      </div>
+      <div class="fee-card">
+        <h4>Example 2 — Fractional (round up)</h4>
+        <div class="fee-calc">
+          Duration: 61 min → ⌈61⌉ = 62 min<br>
+          Rate: 1,000 MMK/hr<br>
+          = 62 ÷ 60 × 1,000<br>
+          <span class="result">≈ 1,033 MMK</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Footer ── -->
+  <div class="footer-note">
+    <strong>Source:</strong> All rules above are enforced in
+    <code style="background:#1e293b;padding:2px 6px;border-radius:4px;font-size:0.8rem">
+      smart-parking-api/app/services/payment_service.py → initiate_session_payment_v2()
+    </code>
+    — lines 437–606.
+  </div>
+
+</div>
+</body>
+</html>

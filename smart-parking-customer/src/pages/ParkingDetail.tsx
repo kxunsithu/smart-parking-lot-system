@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom"
 import {
   ArrowLeft, MapPin, RotateCw, CheckCircle2, Loader2,
   CalendarDays, ChevronRight, Filter, Search, Layers, RotateCcw, Wallet,
+  Clock, Car, ShieldAlert, Calculator, Info,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,7 +33,7 @@ import { findCarSessionOverlap } from "@/lib/sessionSchedule"
 
 import { useLanguage } from "@/lib/i18n"
 
-type BookingStep = "select" | "schedule" | "pay" | "success"
+type BookingStep = "rules" | "select" | "schedule" | "pay" | "success"
 
 function toLocalDatetimeValue(date: Date): string {
   // Returns "YYYY-MM-DDTHH:MM" for datetime-local input
@@ -100,7 +101,7 @@ export default function ParkingDetail() {
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadingFloors, setLoadingFloors] = useState(true)
-  const [step, setStep] = useState<BookingStep>("select")
+  const [step, setStep] = useState<BookingStep>("rules")
 
   // Slot filters
   const [selectedFloorId, setSelectedFloorId] = useState<string>("all")
@@ -500,27 +501,111 @@ export default function ParkingDetail() {
             {/* Step indicator */}
             <div className="flex items-center gap-2 mb-4">
               {(() => {
-                const steps: BookingStep[] = ["select", "schedule", "pay", "success"]
+                const steps: BookingStep[] = ["rules", "select", "schedule", "pay", "success"]
+                const stepLabels = ["Rules", "Slot", "Schedule", "Pay", "Done"]
                 const stepIndex = steps.indexOf(step)
                 return steps.map((s, i) => (
-                  <div key={s} className="flex items-center gap-2">
+                  <div key={s} className="flex items-center gap-1">
                     <div
-                      className={`w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold transition-colors ${step === s
-                        ? "bg-primary text-primary-foreground"
-                        : i < stepIndex
-                          ? "bg-green-500 text-white"
-                          : "bg-muted text-muted-foreground"
-                        }`}
+                      className={`w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold transition-colors ${
+                        step === s
+                          ? "bg-primary text-primary-foreground"
+                          : i < stepIndex
+                            ? "bg-green-500 text-white"
+                            : "bg-muted text-muted-foreground"
+                      }`}
                     >
                       {i + 1}
                     </div>
                     {i < steps.length - 1 && (
-                      <div className={`h-0.5 w-4 ${stepIndex > i ? "bg-green-500" : "bg-muted"}`} />
+                      <div className={`h-0.5 w-3 ${stepIndex > i ? "bg-green-500" : "bg-muted"}`} />
                     )}
                   </div>
                 ))
               })()}
             </div>
+
+            {/* ── Step 0: Booking Rules ─── */}
+            {step === "rules" && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2">
+                    <Info className="h-5 w-5 text-primary" />
+                    {t("parking.booking_rules_title", "Booking Rules")}
+                  </CardTitle>
+                  <CardDescription>
+                    {t("parking.booking_rules_desc", "Please read these rules before booking a parking slot.")}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+
+                  {/* Rule 1: Time */}
+                  <div className="flex gap-3 p-3 rounded-lg border border-border bg-muted/30">
+                    <Clock className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{t("parking.rule_time_title", "Future Time Only")}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {t("parking.rule_time_desc", "Start time must be in the future. End time must be after start time.")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Rule 2: Car conflict */}
+                  <div className="flex gap-3 p-3 rounded-lg border border-border bg-muted/30">
+                    <Car className="h-5 w-5 text-orange-500 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{t("parking.rule_car_title", "No Overlapping Car Sessions")}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {t("parking.rule_car_desc", "The same car cannot have two bookings that overlap in time. Check your active sessions first.")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Rule 3: 2-hr buffer */}
+                  <div className="flex gap-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
+                    <ShieldAlert className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{t("parking.rule_buffer_title", "2-Hour Slot Gap Required")}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {t("parking.rule_buffer_desc", "Each parking slot requires a 2-hour gap before and after any existing booking.")}
+                      </p>
+                      <div className="mt-2 flex gap-1 flex-wrap">
+                        <span className="text-xs font-mono bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/30 px-2 py-0.5 rounded">
+                          ✓ {t("parking.rule_buffer_ok", "OK: Start ≥ 2 hrs after previous end")}
+                        </span>
+                        <span className="text-xs font-mono bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 px-2 py-0.5 rounded">
+                          ✗ {t("parking.rule_buffer_fail", "Fail: Less than 2 hrs gap")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rule 4: Fee */}
+                  <div className="flex gap-3 p-3 rounded-lg border border-border bg-muted/30">
+                    <Calculator className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{t("parking.rule_fee_title", "Fee Calculation")}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {t("parking.rule_fee_desc", "Fee = ⌈duration in minutes⌉ ÷ 60 × hourly rate. Duration is always rounded up to the nearest minute.")}
+                      </p>
+                      <p className="text-xs font-mono text-primary mt-1.5 bg-primary/10 px-2 py-1 rounded">
+                        {lot.rate_per_hour != null
+                          ? `${t("parking.rule_fee_example", "e.g. 90 min ×")} ${lot.rate_per_hour.toLocaleString()} MMK/hr = ${(lot.rate_per_hour * 1.5).toLocaleString()} MMK`
+                          : t("parking.rule_fee_formula", "Fee = ⌈mins⌉ ÷ 60 × rate_per_hour")}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    className="w-full mt-2"
+                    onClick={() => setStep("select")}
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    {t("parking.rules_understood", "I Understand — Start Booking")}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
             {/* ── Step 1: Select ─── */}
             {step === "select" && (
