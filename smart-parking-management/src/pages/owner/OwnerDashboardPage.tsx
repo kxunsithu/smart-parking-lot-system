@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { CreditCard, ParkingSquare, Timer, UserCog, Warehouse, CheckCircle2, Car } from "lucide-react"
+import { CreditCard, ParkingSquare, Timer, UserCog, Warehouse, Car } from "lucide-react"
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 import { PageHeader } from "@/components/common/PageHeader"
 import { StatCard } from "@/components/common/StatCard"
