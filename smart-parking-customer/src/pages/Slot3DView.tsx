@@ -12,13 +12,12 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   ArrowLeft, AlertCircle, Sun, Moon, Maximize2, Minimize2,
-  RotateCw, Layers, Hash, MapPin, ParkingSquare, Car, Navigation2,
+  RotateCw, Layers, Hash, MapPin, ParkingSquare, Car, Navigation2, Clock,
 } from "lucide-react"
 import { trackParkingSlot, type ParkingTrackTarget } from "@/lib/parkingTrack"
 import { parkingSlotsApi } from "@/api/parkingSlots"
 import { parkingFloorsApi } from "@/api/parkingFloors"
 import { parkingLotsApi } from "@/api/parkingLots"
-import { parkingSessionsApi } from "@/api/parkingSessions"
 import type { ParkingSlotOut } from "@/api/types"
 import type { ParkingFloorOut } from "@/api/parkingFloors"
 import type { ParkingLotOut } from "@/api/types"
@@ -546,20 +545,9 @@ export default function Slot3DView() {
         setFloor(floorData)
         const lotData = await parkingLotsApi.get(floorData.parking_lot_id)
         setLot(lotData)
-        const [floorsData, sessionsData] = await Promise.all([
-          parkingFloorsApi.list({ parking_lot_id: lotData.id, limit: 100 }),
-          parkingSessionsApi.list({ limit: 1000 }).catch(() => []),
-        ])
+        const floorsData = await parkingFloorsApi.list({ parking_lot_id: lotData.id, limit: 100 })
         const safeFloors = Array.isArray(floorsData) ? floorsData : []
         setFloors(safeFloors)
-        // Build reserved set from active/pending sessions
-        const safeSessions = Array.isArray(sessionsData) ? sessionsData : []
-        const activeIds = new Set<number>(
-          safeSessions
-            .filter((s) => s.status === "ACTIVE")
-            .map((s) => s.slot_id)
-        )
-        setReservedSlotIds(activeIds)
         const slotsData: Record<number, ParkingSlotOut[]> = {}
         await Promise.all(safeFloors.map(async (f) => {
           const r = await parkingSlotsApi.list({ floor_id: f.id, limit: 100 })
@@ -643,15 +631,15 @@ export default function Slot3DView() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
           <div className="lg:col-span-1 space-y-4">
-            <div className={`rounded border p-4 space-y-3 ${isAvailable ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5"}`}>
+            <div className={`rounded border p-4 space-y-3 ${isAvailable ? "border-emerald-500/30 bg-emerald-500/5" : isReserved ? "border-amber-500/30 bg-amber-500/5" : "border-red-500/30 bg-red-500/5"}`}>
               <div className="flex items-center gap-3">
-                <div className={`size-12 rounded flex items-center justify-center ${isAvailable ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"}`}>
-                  {isAvailable ? <ParkingSquare className="size-6" /> : <Car className="size-6" />}
+                <div className={`size-12 rounded flex items-center justify-center ${isAvailable ? "bg-emerald-500/10 text-emerald-500" : isReserved ? "bg-amber-500/10 text-amber-500" : "bg-red-500/10 text-red-500"}`}>
+                  {isAvailable ? <ParkingSquare className="size-6" /> : isReserved ? <Clock className="size-6" /> : <Car className="size-6" />}
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Current Status</p>
-                  <p className={`text-lg font-bold leading-tight ${isAvailable ? "text-emerald-500" : "text-red-500"}`}>
-                    {isAvailable ? "Available" : "Occupied"}
+                  <p className={`text-lg font-bold leading-tight ${isAvailable ? "text-emerald-500" : isReserved ? "text-amber-500" : "text-red-500"}`}>
+                    {isAvailable ? "Available" : isReserved ? "Reserved" : "Occupied"}
                   </p>
                 </div>
               </div>
@@ -664,9 +652,14 @@ export default function Slot3DView() {
                   Book This Slot
                 </Button>
               )}
-              {!isAvailable && lot && floor && (
+              {!isAvailable && !isReserved && lot && floor && (
                 <p className="text-[11px] text-amber-600 text-center leading-snug">
                   Currently occupied — pick a future start time when booking.
+                </p>
+              )}
+              {isReserved && lot && floor && (
+                <p className="text-[11px] text-amber-600 text-center leading-snug">
+                  Reserved — you can still book a different time slot.
                 </p>
               )}
               {lot && floor && (

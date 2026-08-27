@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   ArrowLeft, AlertCircle, Sun, Moon, Maximize2, Minimize2,
-  RotateCw, Layers, Hash, MapPin, ParkingSquare, Car
+  RotateCw, Layers, Hash, MapPin, ParkingSquare, Car, Timer
 } from "lucide-react"
 import { parkingSlotsApi } from "@/api/parkingSlots"
 import { parkingFloorsApi } from "@/api/parkingFloors"
@@ -565,6 +565,7 @@ export function SlotDetailPage() {
   if (!slot) return <EmptyState title="Slot not found" description="This slot may have been removed." />
 
   const isAvailable = slot.status === "AVAILABLE"
+  const isReserved = slot.status === "RESERVED"
   // PENDING session status is eliminated in the new booking flow;
   // sessions are only created as ACTIVE after payment is confirmed.
   const activeSessions = sessions.filter(s => s.status === "ACTIVE")
@@ -574,9 +575,9 @@ export function SlotDetailPage() {
     if (aActive !== bActive) return aActive - bActive
     return new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
   })
-  // Build reserved set from sessions of this slot for 3D view
+  // Build reserved set from slot status for 3D view
   const reservedSlotIds = new Set<number>(
-    activeSessions.map(s => s.slot_id)
+    isReserved ? [slot.id] : []
   )
 
   return (
@@ -622,24 +623,26 @@ export function SlotDetailPage() {
           {/* Status Hero Card */}
           <div className={`rounded border p-5 space-y-4 transition-colors ${isAvailable
             ? "border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5"
-            : "border-red-500/30 bg-gradient-to-br from-red-500/10 to-red-500/5"
+            : isReserved
+              ? "border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-amber-500/5"
+              : "border-red-500/30 bg-gradient-to-br from-red-500/10 to-red-500/5"
             }`}>
             <div className="flex items-center gap-3">
-              <div className={`size-12 rounded flex items-center justify-center shadow-sm ${isAvailable ? "bg-emerald-500/20 text-emerald-500" : "bg-red-500/20 text-red-500"
+              <div className={`size-12 rounded flex items-center justify-center shadow-sm ${isAvailable ? "bg-emerald-500/20 text-emerald-500" : isReserved ? "bg-amber-500/20 text-amber-500" : "bg-red-500/20 text-red-500"
                 }`}>
-                {isAvailable ? <ParkingSquare className="size-6" /> : <Car className="size-6" />}
+                {isAvailable ? <ParkingSquare className="size-6" /> : isReserved ? <Timer className="size-6" /> : <Car className="size-6" />}
               </div>
               <div>
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Status</p>
-                <p className={`text-lg font-bold leading-tight ${isAvailable ? "text-emerald-500" : "text-red-500"}`}>
-                  {isAvailable ? "Available" : "Occupied"}
+                <p className={`text-lg font-bold leading-tight ${isAvailable ? "text-emerald-500" : isReserved ? "text-amber-500" : "text-red-500"}`}>
+                  {isAvailable ? "Available" : isReserved ? "Reserved" : "Occupied"}
                 </p>
               </div>
             </div>
-            <div className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded ${isAvailable ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"
+            <div className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded ${isAvailable ? "bg-emerald-500/10 text-emerald-600" : isReserved ? "bg-amber-500/10 text-amber-600" : "bg-red-500/10 text-red-600"
               }`}>
-              <span className={`size-2 rounded-full animate-pulse ${isAvailable ? "bg-emerald-500" : "bg-red-500"}`} />
-              {isAvailable ? "Ready to accept cars" : `${activeSessions.length} active session${activeSessions.length !== 1 ? "s" : ""}`}
+              <span className={`size-2 rounded-full animate-pulse ${isAvailable ? "bg-emerald-500" : isReserved ? "bg-amber-500" : "bg-red-500"}`} />
+              {isAvailable ? "Ready to accept cars" : isReserved ? "Booked — awaiting arrival" : `${activeSessions.length} active session${activeSessions.length !== 1 ? "s" : ""}`}
             </div>
           </div>
 
@@ -727,7 +730,7 @@ export function SlotDetailPage() {
             {/* Top-right slot badge HUD */}
             <div className={`absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded text-xs font-semibold backdrop-blur-md border ${isNightMode ? "bg-slate-950/80 border-slate-700 text-slate-100" : "bg-white/90 border-slate-200 text-slate-800"
               }`}>
-              <span className={`size-2 rounded-full ${isAvailable ? "bg-emerald-500" : "bg-red-500"}`} />
+              <span className={`size-2 rounded-full ${isAvailable ? "bg-emerald-500" : isReserved ? "bg-amber-500" : "bg-red-500"}`} />
               {slot.slot_number}
               {slot.section ? ` · Section - ${slot.section}` : ""}
             </div>
