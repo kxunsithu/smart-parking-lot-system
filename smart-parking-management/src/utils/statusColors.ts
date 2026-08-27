@@ -3,6 +3,7 @@ export type BadgeTone = "success" | "warning" | "danger" | "info" | "neutral"
 const SLOT_STATUS_TONE: Record<string, BadgeTone> = {
   AVAILABLE: "success",
   OCCUPIED: "danger",
+  RESERVED: "warning",
 }
 
 const SESSION_STATUS_TONE: Record<string, BadgeTone> = {

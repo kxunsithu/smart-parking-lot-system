@@ -65,7 +65,7 @@ export interface ParkingLotOut {
   created_at: string
 }
 
-export type SlotStatus = "AVAILABLE" | "OCCUPIED"
+export type SlotStatus = "AVAILABLE" | "OCCUPIED" | "RESERVED"
 
 export interface ParkingSlotOut {
   id: number

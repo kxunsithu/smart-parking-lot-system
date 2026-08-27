@@ -11,7 +11,7 @@ import type { OwnerDashboardOut } from "@/types"
 import { formatCurrency } from "@/utils/formatters"
 import { getErrorMessage } from "@/api/client"
 
-const CHART_COLORS = ["var(--color-chart-1)", "var(--color-chart-2)"]
+const CHART_COLORS = ["var(--color-chart-1)", "var(--color-chart-4)", "var(--color-chart-2)"]
 
 export function OwnerDashboardPage() {
   const [data, setData] = useState<OwnerDashboardOut | null>(null)
@@ -37,6 +37,7 @@ export function OwnerDashboardPage() {
   const slotData = data
     ? [
         { name: "Available", value: data.available_slots },
+        { name: "Reserved", value: data.reserved_slots },
         { name: "Occupied", value: data.occupied_slots },
       ]
     : []

@@ -381,10 +381,10 @@ export function SlotsBoardPage() {
 
                                   {/* Status Label */}
                                   <span
-                                    className={`text-[9px] font-semibold uppercase tracking-wide ${slot.status === "AVAILABLE" ? "text-emerald-600" : "text-red-600"
+                                    className={`text-[9px] font-semibold uppercase tracking-wide ${slot.status === "AVAILABLE" ? "text-emerald-600" : slot.status === "RESERVED" ? "text-amber-600" : "text-red-600"
                                       }`}
                                   >
-                                    {slot.status === "AVAILABLE" ? "Free" : "Taken"}
+                                    {slot.status === "AVAILABLE" ? "Free" : slot.status === "RESERVED" ? "Reserved" : "Taken"}
                                   </span>
 
                                   {/* Physical Car Presence Quick Toggle Button */}
@@ -392,16 +392,16 @@ export function SlotsBoardPage() {
                                     onClick={() =>
                                       handleUpdateStatus(
                                         slot.id,
-                                        slot.status === "AVAILABLE" ? "OCCUPIED" : "AVAILABLE"
+                                        slot.status === "AVAILABLE" || slot.status === "RESERVED" ? "OCCUPIED" : "AVAILABLE"
                                       )
                                     }
                                     disabled={isUpdating}
-                                    className={`w-full mt-1 py-1 px-1.5 rounded text-[10px] font-bold transition-all border flex items-center justify-center gap-1 ${slot.status === "AVAILABLE"
+                                    className={`w-full mt-1 py-1 px-1.5 rounded text-[10px] font-bold transition-all border flex items-center justify-center gap-1 ${slot.status === "AVAILABLE" || slot.status === "RESERVED"
                                       ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-400"
                                       : "bg-red-500/10 border-red-500/30 text-red-700 hover:bg-red-500/20 dark:text-red-400"
                                       }`}
                                     title={
-                                      slot.status === "AVAILABLE"
+                                      slot.status === "AVAILABLE" || slot.status === "RESERVED"
                                         ? "Click to mark car physically parked (OCCUPIED)"
                                         : "Click to mark slot physically empty (AVAILABLE)"
                                     }

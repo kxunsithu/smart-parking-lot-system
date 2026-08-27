@@ -126,6 +126,8 @@ class ParkingSlotService:
         return self.slot_repo.update(slot, data)
 
     def update_status(self, slot_id: int, status: SlotStatus, current_user: User) -> ParkingSlot:
+        if status == SlotStatus.RESERVED:
+            raise BadRequestException("Cannot manually set slot status to RESERVED.")
         slot = self.get_by_id(slot_id)
         self._assert_can_update_status(slot, current_user)
         slot.status = status.value

@@ -22,7 +22,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.config.settings import settings
-from app.core.constants import PaymentStatus, RoleName, SessionStatus, SubscriptionStatus
+from app.core.constants import PaymentStatus, RoleName, SessionStatus, SlotStatus, SubscriptionStatus
 from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
 from app.models.car import Car
 from app.models.customer import Customer
@@ -232,6 +232,10 @@ class PaymentService:
             self.db.add(new_session)
             self.db.flush()
             payment.session_id = new_session.id
+
+            slot = self.db.get(ParkingSlot, pending.pending_slot_id)
+            if slot and slot.status == SlotStatus.AVAILABLE.value:
+                slot.status = SlotStatus.RESERVED.value
         elif pending.session_id is not None:
             # Case 2 (legacy): existing PENDING session → ACTIVE (backward compat)
             session = self.db.get(ParkingSession, pending.session_id)

@@ -390,13 +390,15 @@ function FloorSection({
                         key={slot.id}
                         className={`group relative flex flex-col gap-1 rounded border p-2.5 transition-all cursor-default ${slot.status === "AVAILABLE"
                           ? "border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10"
-                          : "border-red-500/30 bg-red-500/5 hover:bg-red-500/10"
+                          : slot.status === "RESERVED"
+                            ? "border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10"
+                            : "border-red-500/30 bg-red-500/5 hover:bg-red-500/10"
                           }`}
                       >
                         {/* Status dot + slot number */}
                         <div className="flex items-center gap-1.5">
                           <span
-                            className={`size-2 rounded-full shrink-0 ${slot.status === "AVAILABLE" ? "bg-emerald-500" : "bg-red-500"
+                            className={`size-2 rounded-full shrink-0 ${slot.status === "AVAILABLE" ? "bg-emerald-500" : slot.status === "RESERVED" ? "bg-amber-500" : "bg-red-500"
                               }`}
                           />
                           <span className="text-xs font-bold text-foreground truncate leading-none">{slot.slot_number}</span>
@@ -404,10 +406,10 @@ function FloorSection({
 
                         {/* Status text */}
                         <span
-                          className={`text-[9px] font-semibold uppercase tracking-wide ${slot.status === "AVAILABLE" ? "text-emerald-600" : "text-red-600"
+                          className={`text-[9px] font-semibold uppercase tracking-wide ${slot.status === "AVAILABLE" ? "text-emerald-600" : slot.status === "RESERVED" ? "text-amber-600" : "text-red-600"
                             }`}
                         >
-                          {slot.status === "AVAILABLE" ? "Free" : "Taken"}
+                          {slot.status === "AVAILABLE" ? "Free" : slot.status === "RESERVED" ? "Reserved" : "Taken"}
                         </span>
 
                         {/* View details button — shows on hover */}
@@ -415,7 +417,9 @@ function FloorSection({
                           onClick={() => navigate(`/slots/${slot.id}`)}
                           className={`w-full mt-0.5 rounded py-1 text-[10px] font-semibold transition-all opacity-0 group-hover:opacity-100 border ${slot.status === "AVAILABLE"
                             ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/20"
-                            : "bg-red-500/10 border-red-500/30 text-red-700 hover:bg-red-500/20"
+                            : slot.status === "RESERVED"
+                              ? "bg-amber-500/10 border-amber-500/30 text-amber-700 hover:bg-amber-500/20"
+                              : "bg-red-500/10 border-red-500/30 text-red-700 hover:bg-red-500/20"
                             }`}
                         >
                           View Details

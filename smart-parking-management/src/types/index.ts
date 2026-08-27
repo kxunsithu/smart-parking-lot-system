@@ -2,7 +2,7 @@
 
 export type RoleName = "ADMIN" | "OWNER" | "STAFF" | "CUSTOMER"
 
-export type SlotStatus = "AVAILABLE" | "OCCUPIED"
+export type SlotStatus = "AVAILABLE" | "OCCUPIED" | "RESERVED"
 
 export type SessionStatus = "PENDING" | "ACTIVE" | "FINISHED"
 
@@ -173,6 +173,7 @@ export interface OwnerDashboardOut {
   total_floors: number
   available_slots: number
   occupied_slots: number
+  reserved_slots: number
   total_staff: number
   total_sessions: number
   total_revenue: number
@@ -182,6 +183,7 @@ export interface StaffDashboardOut {
   parking_lot_id: number
   available_slots: number
   occupied_slots: number
+  reserved_slots: number
   active_sessions: number
 }
 

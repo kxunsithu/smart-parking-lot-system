@@ -12,6 +12,7 @@ class RoleName(str, Enum):
 class SlotStatus(str, Enum):
     AVAILABLE = "AVAILABLE"
     OCCUPIED = "OCCUPIED"
+    RESERVED = "RESERVED"
 
 
 class SessionStatus(str, Enum):

@@ -83,6 +83,7 @@ class DashboardService:
         )
         available_slots = sum(1 for s in slots if s.status == SlotStatus.AVAILABLE.value)
         occupied_slots = sum(1 for s in slots if s.status == SlotStatus.OCCUPIED.value)
+        reserved_slots = sum(1 for s in slots if s.status == SlotStatus.RESERVED.value)
 
         total_staff = (
             self.db.scalar(
@@ -131,6 +132,7 @@ class DashboardService:
             total_floors=total_floors,
             available_slots=available_slots,
             occupied_slots=occupied_slots,
+            reserved_slots=reserved_slots,
             total_staff=total_staff,
             total_sessions=total_sessions,
             total_revenue=float(total_revenue),
@@ -160,6 +162,7 @@ class DashboardService:
 
         available_slots = sum(1 for s in slots if s.status == SlotStatus.AVAILABLE.value)
         occupied_slots = sum(1 for s in slots if s.status == SlotStatus.OCCUPIED.value)
+        reserved_slots = sum(1 for s in slots if s.status == SlotStatus.RESERVED.value)
 
         active_sessions = (
             self.db.scalar(
@@ -178,5 +181,6 @@ class DashboardService:
             parking_lot_id=staff.parking_lot_id,
             available_slots=available_slots,
             occupied_slots=occupied_slots,
+            reserved_slots=reserved_slots,
             active_sessions=active_sessions,
         )

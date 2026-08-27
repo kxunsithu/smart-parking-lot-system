@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, Suspense } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useSearchParams } from "react-router-dom"
 import { Canvas, useThree, useFrame } from "@react-three/fiber"
 import { OrbitControls, Text, Box } from "@react-three/drei"
 import * as THREE from "three"
@@ -188,39 +188,40 @@ function ParkingSlot3D({
   isReserved?: boolean
 }) {
   const isOccupied = slot.status === "OCCUPIED"
+  const isSlotReserved = isReserved || slot.status === "RESERVED"
   const lw = 0.18
   const lh = 0.08
 
   // Red = Occupied (car present), Amber = Reserved (session active, no car yet), Green = Available
   const padColor = isOccupied
     ? (isNightMode ? "#dc2626" : "#ef4444")
-    : isReserved
+    : isSlotReserved
       ? (isNightMode ? "#d97706" : "#f59e0b")
       : (isNightMode ? "#059669" : "#10b981")
 
   const padEmissive = isOccupied
     ? (isNightMode ? "#b91c1c" : "#dc2626")
-    : isReserved
+    : isSlotReserved
       ? (isNightMode ? "#f59e0b" : "#d97706")
       : (isNightMode ? "#10b981" : "#10b981")
 
   const padEmissiveIntensity = isNightMode
-    ? (isOccupied ? 0.1 : isReserved ? 0.6 : 0.35)
-    : (isOccupied ? 0.1 : isReserved ? 0.4 : 0.1)
+    ? (isOccupied ? 0.1 : isSlotReserved ? 0.6 : 0.35)
+    : (isOccupied ? 0.1 : isSlotReserved ? 0.4 : 0.1)
 
   const padOpacity = isNightMode
-    ? (isOccupied ? 0.5 : isReserved ? 0.55 : 0.35)
-    : (isOccupied ? 0.3 : isReserved ? 0.45 : 0.28)
+    ? (isOccupied ? 0.5 : isSlotReserved ? 0.55 : 0.35)
+    : (isOccupied ? 0.3 : isSlotReserved ? 0.45 : 0.28)
 
   const frameEmissive = isHighlighted
     ? "#f59e0b"
-    : isReserved
+    : isSlotReserved
       ? "#fbbf24"
       : isNightMode
         ? "#38bdf8"
         : "#ffffff"
 
-  const frameEmissiveIntensity = isHighlighted ? 0.8 : isReserved ? 0.5 : isNightMode ? 0.5 : 0.08
+  const frameEmissiveIntensity = isHighlighted ? 0.8 : isSlotReserved ? 0.5 : isNightMode ? 0.5 : 0.08
 
   return (
     <group
@@ -283,7 +284,7 @@ function ParkingSlot3D({
         <Text
           position={[0, 0.35, 0]}
           fontSize={0.6}
-          color={isHighlighted ? "#fbbf24" : isReserved ? "#fbbf24" : isNightMode ? "#f8fafc" : "#ffffff"}
+          color={isHighlighted ? "#fbbf24" : isSlotReserved ? "#fbbf24" : isNightMode ? "#f8fafc" : "#ffffff"}
           anchorX="center"
           anchorY="middle"
           fontWeight="bold"
@@ -585,6 +586,7 @@ export default function Slot3DView() {
   )
 
   const isAvailable = slot.status === "AVAILABLE"
+  const isReserved = slot.status === "RESERVED"
   const floorName = floor?.floor_name || `Floor ${floor?.id}`
 
   const handleTrackSlot = () => {
@@ -612,7 +614,7 @@ export default function Slot3DView() {
                 <ArrowLeft className="size-4" />
               </Button>
               <h1 className="text-lg font-semibold">Slot {slot.slot_number}</h1>
-              <Badge variant={isAvailable ? "default" : "secondary"} className="text-xs">
+              <Badge variant={isAvailable ? "default" : isReserved ? "outline" : "secondary"} className={`text-xs ${isReserved ? "border-amber-500/50 text-amber-600" : ""}`}>
                 {slot.status}
               </Badge>
             </div>

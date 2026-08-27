@@ -14,7 +14,6 @@ import {
 import { parkingLotsApi } from "@/api/parkingLots"
 import { parkingFloorsApi } from "@/api/parkingFloors"
 import { parkingSlotsApi } from "@/api/parkingSlots"
-import { parkingSessionsApi } from "@/api/parkingSessions"
 import type { ParkingLotOut } from "@/api/types"
 import type { ParkingFloorOut } from "@/api/parkingFloors"
 import type { ParkingSlotOut } from "@/api/types"
@@ -542,7 +541,7 @@ export default function Lot3DView() {
   const [lot, setLot] = useState<ParkingLotOut | null>(null)
   const [floors, setFloors] = useState<ParkingFloorOut[]>([])
   const [slotsByFloor, setSlotsByFloor] = useState<Record<number, ParkingSlotOut[]>>({})
-  const [reservedSlotIds, setReservedSlotIds] = useState<Set<number>>(new Set())
+  const [reservedSlotIds] = useState<Set<number>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
   const [webGLError, setWebGLError] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -584,22 +583,13 @@ export default function Lot3DView() {
     const fetchData = async () => {
       if (!Number.isFinite(lotId)) return
       try {
-        const [lotData, floorsData, sessionsData] = await Promise.all([
+        const [lotData, floorsData] = await Promise.all([
           parkingLotsApi.get(lotId),
           parkingFloorsApi.list({ parking_lot_id: lotId, limit: 100 }),
-          parkingSessionsApi.list({ limit: 1000 }).catch(() => []),
         ])
         setLot(lotData)
         const safeFloors = Array.isArray(floorsData) ? floorsData : []
         setFloors(safeFloors)
-        // Build set of slot IDs with active/pending sessions
-        const safeSessions = Array.isArray(sessionsData) ? sessionsData : []
-        const activeIds = new Set<number>(
-          safeSessions
-            .filter((s) => s.status === "ACTIVE")
-            .map((s) => s.slot_id)
-        )
-        setReservedSlotIds(activeIds)
         const slotsData: Record<number, ParkingSlotOut[]> = {}
         await Promise.all(
           safeFloors.map(async (floor) => {
@@ -616,8 +606,8 @@ export default function Lot3DView() {
 
   const allSlots = Object.values(slotsByFloor).flat()
   const occupiedCount = allSlots.filter((s) => s.status === "OCCUPIED").length
-  const reservedCount = allSlots.filter((s) => s.status !== "OCCUPIED" && reservedSlotIds.has(s.id)).length
-  const availableCount = allSlots.filter((s) => s.status === "AVAILABLE" && !reservedSlotIds.has(s.id)).length
+  const reservedCount = allSlots.filter((s) => s.status === "RESERVED").length
+  const availableCount = allSlots.filter((s) => s.status === "AVAILABLE").length
 
   if (isLoading) return (
     <div className="min-h-screen bg-background">
@@ -786,8 +776,8 @@ export default function Lot3DView() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {floors.map((floor, index) => {
               const fSlots = slotsByFloor[floor.id] || []
-              const avail = fSlots.filter((s) => s.status === "AVAILABLE" && !reservedSlotIds.has(s.id)).length
-              const res = fSlots.filter((s) => s.status !== "OCCUPIED" && reservedSlotIds.has(s.id)).length
+              const avail = fSlots.filter((s) => s.status === "AVAILABLE").length
+              const res = fSlots.filter((s) => s.status === "RESERVED").length
               const occ = fSlots.filter((s) => s.status === "OCCUPIED").length
               return (
                 <div key={floor.id} className="rounded border p-4 space-y-3 hover:shadow-md transition-shadow">

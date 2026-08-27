@@ -1111,6 +1111,9 @@ function FloorSection({
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium border border-emerald-500/20">
                 {filteredSlots.filter((s) => s.status === "AVAILABLE").length} Available
               </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 font-medium border border-amber-500/20">
+                {filteredSlots.filter((s) => s.status === "RESERVED").length} Reserved
+              </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 font-medium border border-red-500/20">
                 {filteredSlots.filter((s) => s.status === "OCCUPIED").length} Occupied
               </span>
@@ -1132,6 +1135,7 @@ function FloorSection({
             {sortedSections.map((section) => {
               const sectionSlots = sectionMap[section]
               const available = sectionSlots.filter((s) => s.status === "AVAILABLE").length
+              const reserved = sectionSlots.filter((s) => s.status === "RESERVED").length
               const occupied = sectionSlots.filter((s) => s.status === "OCCUPIED").length
 
               return (
@@ -1151,6 +1155,11 @@ function FloorSection({
                           {available} {t("parking.free", "free")}
                         </span>
                       )}
+                      {reserved > 0 && (
+                        <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                          {reserved} reserved
+                        </span>
+                      )}
                       {occupied > 0 && (
                         <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-600 border border-red-500/20">
                           {occupied} {t("parking.occupied", "taken")}
@@ -1164,6 +1173,7 @@ function FloorSection({
                     {sectionSlots.map((slot) => {
                       const isSelected = selectedSlot === slot.id
                       const isAvailable = slot.status === "AVAILABLE"
+                      const isReserved = slot.status === "RESERVED"
                       const canSelect = !disabled
 
                       return (
@@ -1176,13 +1186,15 @@ function FloorSection({
                             ? "border-primary bg-primary/10 ring-2 ring-primary/30 shadow-sm cursor-pointer"
                             : isAvailable
                               ? "border-emerald-500/30 bg-emerald-500/5 cursor-pointer hover:bg-emerald-500/10"
-                              : "border-amber-500/30 bg-amber-500/5 cursor-pointer hover:bg-amber-500/10"
+                              : isReserved
+                                ? "border-amber-500/30 bg-amber-500/5 cursor-pointer hover:bg-amber-500/10"
+                                : "border-red-500/30 bg-red-500/5 cursor-pointer hover:bg-red-500/10"
                             }`}
                         >
                           <div className="flex items-center gap-1.5 justify-between">
                             <div className="flex items-center gap-1.5 min-w-0">
                               <span
-                                className={`size-2 rounded-full shrink-0 ${isAvailable ? "bg-emerald-500" : "bg-amber-500"}`}
+                                className={`size-2 rounded-full shrink-0 ${isAvailable ? "bg-emerald-500" : isReserved ? "bg-amber-500" : "bg-red-500"}`}
                               />
                               <span className="text-xs font-bold text-foreground truncate leading-none">
                                 {slot.slot_number}
@@ -1192,10 +1204,10 @@ function FloorSection({
                           </div>
 
                           <span
-                            className={`text-[9px] font-semibold uppercase tracking-wide ${isAvailable ? "text-emerald-600" : "text-amber-600"
+                            className={`text-[9px] font-semibold uppercase tracking-wide ${isAvailable ? "text-emerald-600" : isReserved ? "text-amber-600" : "text-red-600"
                               }`}
                           >
-                            {isAvailable ? t("parking.available", "Free") : t("parking.occupied", "Taken now")}
+                            {isAvailable ? t("parking.available", "Free") : isReserved ? "Reserved" : t("parking.occupied", "Taken now")}
                           </span>
 
                           <div className="flex gap-1 mt-0.5">
@@ -1207,7 +1219,9 @@ function FloorSection({
                               }}
                               className={`flex-1 rounded py-1 text-[10px] font-semibold transition-all border ${isAvailable
                                 ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                                : "bg-amber-500/10 border-amber-500/30 text-amber-700 hover:bg-amber-500/20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                                : isReserved
+                                  ? "bg-amber-500/10 border-amber-500/30 text-amber-700 hover:bg-amber-500/20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                                  : "bg-red-500/10 border-red-500/30 text-red-700 hover:bg-red-500/20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                                 }`}
                             >
                               {t("parking.view_3d", "3D View")}

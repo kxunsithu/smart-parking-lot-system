@@ -20,11 +20,20 @@ done < .env
 
 echo ">>> Using DATABASE_URL: ${DATABASE_URL%%@*}@***"
 
-# 3. Drop and recreate the schema
-./venv/bin/python -m scripts.reset_db
+# 3. Determine Python & Alembic executables (venv for local, plain for Docker)
+if [ -x "./venv/bin/python" ]; then
+    PYTHON="./venv/bin/python"
+    ALEMBIC="./venv/bin/alembic"
+else
+    PYTHON="python"
+    ALEMBIC="alembic"
+fi
 
-# 4. Apply all Alembic migrations
-./venv/bin/alembic upgrade head
+# 4. Drop and recreate the schema
+$PYTHON -m scripts.reset_db
 
-# 5. Seed default data
-./venv/bin/python -m scripts.seed
+# 5. Apply all Alembic migrations
+$ALEMBIC upgrade head
+
+# 6. Seed default data
+$PYTHON -m scripts.seed

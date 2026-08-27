@@ -10,7 +10,7 @@ import type { StaffDashboardOut } from "@/types"
 import { dashboardApi } from "@/api/dashboard"
 import { getErrorMessage } from "@/api/client"
 
-const CHART_COLORS = ["var(--color-chart-1)", "var(--color-chart-2)"]
+const CHART_COLORS = ["var(--color-chart-1)", "var(--color-chart-4)", "var(--color-chart-2)"]
 
 export function StaffDashboardPage() {
   const [data, setData] = useState<StaffDashboardOut | null>(null)
@@ -36,6 +36,7 @@ export function StaffDashboardPage() {
   const slotData = data
     ? [
         { name: "Available", value: data.available_slots },
+        { name: "Reserved", value: data.reserved_slots },
         { name: "Occupied", value: data.occupied_slots },
       ]
     : []
@@ -52,6 +53,7 @@ export function StaffDashboardPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:col-span-2 lg:grid-cols-1">
             <StatCard label="Available Slots" value={data.available_slots} icon={CheckCircle2} />
+            <StatCard label="Reserved Slots" value={data.reserved_slots} icon={Timer} />
             <StatCard label="Occupied Slots" value={data.occupied_slots} icon={Car} />
             <StatCard label="Active Sessions" value={data.active_sessions} icon={Timer} />
           </div>
