@@ -236,7 +236,14 @@ class AuthService:
             f.write(contents)
 
         if user.profile_image:
-            old_relative_path = user.profile_image.replace(settings.WALLET_REDIRECT_BASE_URL, "").lstrip("/")
+            # Strip any absolute URL prefix to get the relative path for file deletion
+            old_path = user.profile_image
+            if old_path.startswith("http"):
+                # Legacy: stored as absolute URL – extract the path portion
+                from urllib.parse import urlparse
+                old_relative_path = urlparse(old_path).path.lstrip("/")
+            else:
+                old_relative_path = old_path.lstrip("/")
             old_file_path = Path(old_relative_path)
             if old_file_path.exists() and old_file_path.is_file():
                 try:
@@ -244,16 +251,21 @@ class AuthService:
                 except OSError:
                     pass
 
-        base = settings.WALLET_REDIRECT_BASE_URL.rstrip("/")
-        absolute_url = f"{base}/uploads/profile_images/{unique_filename}"
-        user.profile_image = absolute_url
+        # Store as a relative path so the URL resolves correctly in any environment
+        relative_url = f"/uploads/profile_images/{unique_filename}"
+        user.profile_image = relative_url
         self.db.commit()
         self.db.refresh(user)
         return self.user_repo.get_with_role(user.id) or user
 
     def delete_profile_image(self, user: User) -> User:
         if user.profile_image:
-            old_relative_path = user.profile_image.replace(settings.WALLET_REDIRECT_BASE_URL, "").lstrip("/")
+            old_path = user.profile_image
+            if old_path.startswith("http"):
+                from urllib.parse import urlparse
+                old_relative_path = urlparse(old_path).path.lstrip("/")
+            else:
+                old_relative_path = old_path.lstrip("/")
             old_file_path = Path(old_relative_path)
             if old_file_path.exists() and old_file_path.is_file():
                 try:
