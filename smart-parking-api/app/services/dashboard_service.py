@@ -122,12 +122,11 @@ class DashboardService:
         # Revenue = total amount received by this owner's wallet account from
         # completed parking session payments (excludes subscription fees the
         # owner pays to the platform).
-        owner_account_ids = [
-            a.id
-            for a in self.db.scalars(
+        owner_account_ids = list(
+            self.db.scalars(
                 select(WalletAccount.id).where(WalletAccount.owner_id == owner.id)
             ).all()
-        ]
+        )
 
         total_revenue = (
             self.db.scalar(
