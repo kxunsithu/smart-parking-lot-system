@@ -3,7 +3,15 @@ import { useAuthStore } from "@/stores/authStore"
 import type { ApiErrorBody } from "@/types"
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1"
-export const API_ORIGIN = API_BASE_URL.replace("/api/v1", "")
+// VITE_API_ORIGIN should be set to the bare API server origin (e.g. https://api.example.com)
+// when VITE_API_BASE_URL is a relative path (like "/api/v1" in Vercel deployments).
+// Falls back to deriving from API_BASE_URL when it is an absolute URL.
+const _derivedOrigin = API_BASE_URL.replace(/\/api\/v1$/, "")
+export const API_ORIGIN: string =
+  import.meta.env.VITE_API_ORIGIN ??
+  (_derivedOrigin.startsWith("http")
+    ? _derivedOrigin
+    : (typeof window !== "undefined" ? window.location.origin : ""))
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
