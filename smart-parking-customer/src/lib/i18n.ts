@@ -166,6 +166,24 @@ export const translations: Record<Language, Record<string, string>> = {
     "parking.track": "Track",
     "parking.section": "Section",
     "parking.no_slots": "No parking slots found.",
+    "parking.wallet_phone_profile_hint": "This number from your profile will be charged automatically.",
+
+    // Booking Rules step
+    "parking.booking_rules_title": "Booking Rules",
+    "parking.booking_rules_desc": "Please read these rules before booking a parking slot.",
+    "parking.rule_time_title": "Future Time Only",
+    "parking.rule_time_desc": "Start time must be in the future. End time must be after start time.",
+    "parking.rule_car_title": "No Overlapping Car Sessions",
+    "parking.rule_car_desc": "The same car cannot have two bookings that overlap in time. Check your active sessions first.",
+    "parking.rule_buffer_title": "2-Hour Slot Gap Required",
+    "parking.rule_buffer_desc": "Each parking slot requires a 2-hour gap before and after any existing booking.",
+    "parking.rule_buffer_ok": "OK: Start ≥ 2 hrs after previous end",
+    "parking.rule_buffer_fail": "Fail: Less than 2 hrs gap",
+    "parking.rule_fee_title": "Fee Calculation",
+    "parking.rule_fee_desc": "Fee = ⌈duration in minutes⌉ ÷ 60 × hourly rate. Duration is always rounded up to the nearest minute.",
+    "parking.rule_fee_example": "e.g. 90 min ×",
+    "parking.rule_fee_formula": "Fee = ⌈mins⌉ ÷ 60 × rate_per_hour",
+    "parking.rules_understood": "I Understand — Start Booking",
 
     // Auth
     "auth.login_title": "Welcome Back",
@@ -423,6 +441,24 @@ export const translations: Record<Language, Record<string, string>> = {
     "parking.track": "လမ်းညွှန်",
     "parking.section": "အပိုင်း",
     "parking.no_slots": "ရပ်နားနေရာ မတွေ့ပါ။",
+    "parking.wallet_phone_profile_hint": "သင့်ပရိုဖိုင်ရှိ ဖုန်းနံပါတ်ကို အလိုအလျောက် ကောက်ခံမည်ဖြစ်ပါသည်။",
+
+    // Booking Rules step (မြန်မာဘာသာ)
+    "parking.booking_rules_title": "ဘွတ်ကင် စည်းကမ်းများ",
+    "parking.booking_rules_desc": "ယာဉ်ရပ်နားရန် ဘွတ်ကင်ပြုလုပ်မတိုင်မီ ဤ စည်းကမ်းများကို ကြည့်ရှုပါ။",
+    "parking.rule_time_title": "အနာဂတ်ချိန်သာ ဘွတ်ကင်ပြုလုပ်နိုင်သည်",
+    "parking.rule_time_desc": "စတင်ချိန်သည် လက်ရှိ အချိန်ထက် ရှေ့ဖြစ်ရမည်။ ပြီးဆုံးချိန်သည် စတင်ချိန်ထက် နောက်ကျရမည်။",
+    "parking.rule_car_title": "တစ်ချိန်တည်း ချိန်ကျ ဘွတ်ကင် မပြုလုပ်ရ",
+    "parking.rule_car_desc": "တစ်စီးတည်းသော ယာဉ်အတွက် ချိန်ကျနေသော ဘွတ်ကင် ၂ ခု ပြုလုပ်၍ မရပါ။ လက်ရှိ ဘွတ်ကင်များ ကြည့်ရှုပြီးမှ ပြုလုပ်ပါ။",
+    "parking.rule_buffer_title": "2 နာရီ ကြားချိန် လိုအပ်သည်",
+    "parking.rule_buffer_desc": "ယာဉ်ရပ်နားနေရာ တစ်ခုတွင် ဘွတ်ကင် ရှိပါက ထိုဘွတ်ကင် မစတင်မီ 2 နာရီနှင့် ပြီးဆုံးပြီး 2 နာရီ အတွင်း အခြား ဘွတ်ကင် ပြုလုပ်၍ မရပါ။",
+    "parking.rule_buffer_ok": "ရသည် - ယခင် ဘွတ်ကင် ပြီးဆုံးချိန်မှ 2 နာရီ အပြည့် ကြာပြီးမှ",
+    "parking.rule_buffer_fail": "မရပါ - 2 နာရီ ကြားချိန် မပြည့်ပါ",
+    "parking.rule_fee_title": "ကျသင့်ငွေ တွက်ချက်မှု",
+    "parking.rule_fee_desc": "ကျသင့်ငွေ = ⌈ ကြာမြင့်ချိန် မိနစ် ⌉ ÷ 60 × တစ်နာရီ နှုန်းထား (မိနစ်တိုင်း အပေါ်သို့ Round up)",
+    "parking.rule_fee_example": "ဥပမာ - 90 မိနစ် ×",
+    "parking.rule_fee_formula": "ကျသင့်ငွေ = ⌈မိနစ်⌉ ÷ 60 × တစ်နာရီ နှုန်းထား",
+    "parking.rules_understood": "နားလည်ပါသည် — ဘွတ်ကင် စတင်မည်",
 
     // Auth
     "auth.login_title": "ကြိုဆိုပါသည်",

@@ -117,7 +117,7 @@ export function AdminDashboardPage() {
                       <Cell key={index} fill={REVENUE_COLORS[index % REVENUE_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Tooltip formatter={(value) => typeof value === "number" ? formatCurrency(value) : value} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
