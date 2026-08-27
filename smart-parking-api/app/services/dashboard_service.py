@@ -60,8 +60,10 @@ class DashboardService:
                 total_floors=0,
                 available_slots=0,
                 occupied_slots=0,
+                reserved_slots=0,
                 total_staff=0,
                 total_sessions=0,
+                active_sessions=0,
                 total_revenue=0.0,
             )
 
