@@ -90,14 +90,14 @@ function FloatingOrbs() {
 /* ─── Parking Lot Card ───────────────────────────────────────────── */
 function LotCard({ lot, onBook }: { lot: ParkingLotOut; onBook: () => void }) {
   return (
-    <div className="group relative bg-card/80 backdrop-blur-md border border-border/80 rounded-2xl overflow-hidden hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between">
+    <div className="group relative bg-card/80 backdrop-blur-md border border-border/80 rounded overflow-hidden hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between">
       {/* Color accent bar */}
       <div className="h-1.5 w-full bg-gradient-to-r from-primary via-amber-400 to-amber-500 opacity-90 group-hover:opacity-100 transition-opacity" />
 
       <div className="p-6 space-y-4">
         {/* Top bar with icon & status */}
         <div className="flex items-start justify-between gap-3">
-          <div className="size-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground text-primary transition-all duration-300 shadow-xs">
+          <div className="size-12 rounded bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground text-primary transition-all duration-300 shadow-xs">
             <ParkingCircle className="size-6 transition-transform group-hover:scale-110" />
           </div>
           <span
@@ -149,7 +149,7 @@ function LotCard({ lot, onBook }: { lot: ParkingLotOut; onBook: () => void }) {
           </div>
           <Button
             size="sm"
-            className="rounded-xl gap-1.5 font-semibold text-xs px-4 shadow-sm group-hover:shadow-md transition-all cursor-pointer"
+            className="rounded gap-1.5 font-semibold text-xs px-4 shadow-sm group-hover:shadow-md transition-all cursor-pointer"
             disabled={!lot.is_active}
             onClick={onBook}
           >
@@ -295,7 +295,7 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button
                   size="lg"
-                  className="w-full sm:w-auto text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/25 hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all gap-2.5 cursor-pointer font-bold"
+                  className="w-full sm:w-auto text-base px-8 py-6 rounded shadow-lg shadow-primary/25 hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all gap-2.5 cursor-pointer font-bold"
                   onClick={() => navigate("/dashboard")}
                 >
                   <ParkingCircle className="size-5" />
@@ -304,7 +304,7 @@ export default function Home() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="w-full sm:w-auto text-base px-8 py-6 rounded-2xl border-border/80 hover:bg-muted/60 transition-all gap-2.5 cursor-pointer font-bold"
+                  className="w-full sm:w-auto text-base px-8 py-6 rounded border-border/80 hover:bg-muted/60 transition-all gap-2.5 cursor-pointer font-bold"
                   onClick={() => navigate("/cars")}
                 >
                   <Car className="size-5" />
@@ -315,7 +315,7 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button
                   size="lg"
-                  className="w-full sm:w-auto text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/25 hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all gap-2.5 cursor-pointer font-bold"
+                  className="w-full sm:w-auto text-base px-8 py-6 rounded shadow-lg shadow-primary/25 hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all gap-2.5 cursor-pointer font-bold"
                   onClick={() => navigate("/register")}
                 >
                   {t("home.create_account", "Create Account")}
@@ -324,7 +324,7 @@ export default function Home() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="w-full sm:w-auto text-base px-8 py-6 rounded-2xl border-border/80 hover:bg-muted/60 transition-all gap-2.5 cursor-pointer font-bold"
+                  className="w-full sm:w-auto text-base px-8 py-6 rounded border-border/80 hover:bg-muted/60 transition-all gap-2.5 cursor-pointer font-bold"
                   onClick={() => navigate("/login")}
                 >
                   <ParkingCircle className="size-5" />
@@ -360,7 +360,7 @@ export default function Home() {
             </div>
             <Button
               variant="outline"
-              className="self-start sm:self-auto rounded-xl gap-2 cursor-pointer border-border/80 hover:bg-muted/60"
+              className="self-start sm:self-auto rounded gap-2 cursor-pointer border-border/80 hover:bg-muted/60"
               onClick={() => navigate(isAuthenticated ? "/dashboard" : "/login")}
             >
               {t("common.all", "View all lots")}
@@ -371,7 +371,7 @@ export default function Home() {
           {lotsLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-64 bg-card/60 rounded-2xl animate-pulse border border-border/80" />
+                <div key={i} className="h-64 bg-card/60 rounded animate-pulse border border-border/80" />
               ))}
             </div>
           ) : lots.length > 0 ? (
@@ -385,7 +385,7 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 border border-dashed border-border/80 rounded-2xl bg-card/40">
+            <div className="text-center py-16 border border-dashed border-border/80 rounded bg-card/40">
               <ParkingCircle className="size-12 mx-auto text-muted-foreground/40 mb-3" />
               <p className="text-muted-foreground font-medium">No parking lots available right now.</p>
             </div>
@@ -405,9 +405,9 @@ export default function Home() {
             {features.map(({ icon: Icon, title, desc, color, bg }) => (
               <div
                 key={title}
-                className="group p-6 rounded-2xl border border-border/80 bg-card/70 backdrop-blur-md hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 space-y-3"
+                className="group p-6 rounded border border-border/80 bg-card/70 backdrop-blur-md hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 space-y-3"
               >
-                <div className={`size-12 rounded-2xl border ${bg} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-xs`}>
+                <div className={`size-12 rounded border ${bg} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-xs`}>
                   <Icon className={`size-6 ${color}`} />
                 </div>
                 <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors">{title}</h3>

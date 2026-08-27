@@ -199,7 +199,7 @@ export function OwnerWalletPage() {
             <div className="flex items-center justify-between gap-4 flex-wrap">
               {/* Logo & Header Info */}
               <div className="flex items-center gap-4">
-                <div className="size-14 rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md shrink-0">
+                <div className="size-14 rounded bg-gradient-to-br from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md shrink-0">
                   <Wallet className="size-7" />
                 </div>
                 <div>
@@ -244,7 +244,7 @@ export function OwnerWalletPage() {
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Account Name */}
-              <div className="rounded-lg border p-4 space-y-1 bg-card">
+              <div className="rounded border p-4 space-y-1 bg-card">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                   <UserCheck className="size-3.5 text-indigo-500" />
                   Account Holder
@@ -255,7 +255,7 @@ export function OwnerWalletPage() {
               </div>
 
               {/* External System Name */}
-              <div className="rounded-lg border p-4 space-y-1 bg-card">
+              <div className="rounded border p-4 space-y-1 bg-card">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                   <Building2 className="size-3.5 text-purple-500" />
                   External System
@@ -266,7 +266,7 @@ export function OwnerWalletPage() {
               </div>
 
               {/* Wallet Phone */}
-              <div className="rounded-lg border p-4 space-y-1 bg-card">
+              <div className="rounded border p-4 space-y-1 bg-card">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                   <Phone className="size-3.5 text-emerald-500" />
                   Wallet Phone
@@ -275,7 +275,7 @@ export function OwnerWalletPage() {
               </div>
 
               {/* System Link */}
-              <div className="rounded-lg border p-4 space-y-1 bg-card">
+              <div className="rounded border p-4 space-y-1 bg-card">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                   <ExternalLink className="size-3.5 text-blue-500" />
                   External System Link
@@ -298,7 +298,7 @@ export function OwnerWalletPage() {
 
             {/* Additional details row: API key & Connected since */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              <div className="rounded-lg border p-4 space-y-1 bg-muted/20">
+              <div className="rounded border p-4 space-y-1 bg-muted/20">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                   <KeyRound className="size-3.5" />
                   API Key
@@ -308,7 +308,7 @@ export function OwnerWalletPage() {
                 </p>
               </div>
 
-              <div className="rounded-lg border p-4 space-y-1 bg-muted/20">
+              <div className="rounded border p-4 space-y-1 bg-muted/20">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                   <ShieldCheck className="size-3.5" />
                   Connected Since
@@ -327,7 +327,7 @@ export function OwnerWalletPage() {
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="size-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-4">
+            <div className="size-14 rounded bg-indigo-500/10 flex items-center justify-center mb-4">
               <Wallet className="size-7 text-indigo-500" />
             </div>
             <h2 className="text-lg font-semibold">No wallet account connected</h2>
@@ -384,7 +384,7 @@ export function OwnerWalletPage() {
             )}
 
             {resolved && resolvedKey === formApiKey.trim() && (
-              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              <div className="rounded border bg-muted/30 p-3 space-y-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Connected wallet account</p>
                 <div className="flex justify-between text-sm gap-4">
                   <span className="text-muted-foreground">External System Name</span>

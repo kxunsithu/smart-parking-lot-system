@@ -411,7 +411,7 @@ export function OwnerSubscriptionPage() {
             ) : history.length === 0 ? (
               <EmptyState title="No subscription history" description="Your past subscriptions will appear here." />
             ) : (
-              <div className="rounded-lg border border-border bg-card overflow-x-auto">
+              <div className="rounded border border-border bg-card overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>

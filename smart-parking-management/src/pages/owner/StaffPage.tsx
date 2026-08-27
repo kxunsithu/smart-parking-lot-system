@@ -251,7 +251,7 @@ export function StaffPage() {
               }
             />
           ) : (
-            <div className="rounded-lg border border-border bg-card overflow-x-auto">
+            <div className="rounded border border-border bg-card overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>

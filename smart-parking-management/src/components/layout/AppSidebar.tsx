@@ -129,7 +129,7 @@ export function AppSidebar({ role, onNavigate, collapsible = true }: AppSidebarP
           onClick={handleLogout}
           title={!expanded ? "Log out" : undefined}
           className={cn(
-            "flex items-center gap-2.5 w-full py-2.5 text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-md transition-colors duration-150",
+            "flex items-center gap-2.5 w-full py-2.5 text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded transition-colors duration-150",
             expanded ? "px-4" : "justify-center px-0",
           )}
         >

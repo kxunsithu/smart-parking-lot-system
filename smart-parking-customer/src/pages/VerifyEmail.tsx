@@ -170,7 +170,7 @@ export default function VerifyEmail() {
 
       <div
         className={cn(
-          "flex items-center gap-2 mb-6 px-4 py-3 rounded-lg",
+          "flex items-center gap-2 mb-6 px-4 py-3 rounded",
           isUsed === true || timeLeft <= 0
             ? "bg-red-50 border border-red-200"
             : "bg-muted/40 border border-border"
@@ -232,7 +232,7 @@ export default function VerifyEmail() {
         </div>
       </form>
 
-      <div className="rounded-lg border border-border bg-muted/40 p-3.5 text-xs text-muted-foreground space-y-1 mt-6">
+      <div className="rounded border border-border bg-muted/40 p-3.5 text-xs text-muted-foreground space-y-1 mt-6">
         <div className="flex items-center gap-1.5 font-semibold text-foreground">
           <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
           {t("auth.why_verify", "Why verify your email?")}

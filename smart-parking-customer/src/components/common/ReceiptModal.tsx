@@ -202,7 +202,7 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div className="bg-card border border-border rounded-lg w-full max-w-sm shadow-2xl">
+      <div className="bg-card border border-border rounded w-full max-w-sm shadow-2xl">
         {/* Header */}
         <div className="flex items-start justify-between p-5 border-b border-border">
           <div>

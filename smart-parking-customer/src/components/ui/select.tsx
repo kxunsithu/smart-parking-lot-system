@@ -78,7 +78,7 @@ export function Select({
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-xl border border-border bg-card px-3.5 py-2 text-sm text-foreground shadow-2xs transition-all hover:bg-card/90 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer font-medium",
+          "flex h-10 w-full items-center justify-between rounded border border-border bg-card px-3.5 py-2 text-sm text-foreground shadow-2xs transition-all hover:bg-card/90 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer font-medium",
           className,
           isOpen && "ring-2 ring-primary/30 border-primary"
         )}
@@ -90,7 +90,7 @@ export function Select({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full z-50 mt-1.5 max-h-60 w-full overflow-auto rounded-xl border border-border bg-card p-1.5 shadow-xl shadow-black/10 backdrop-blur-xl animate-in fade-in-0 zoom-in-95">
+        <div className="absolute left-0 top-full z-50 mt-1.5 max-h-60 w-full overflow-auto rounded border border-border bg-card p-1.5 shadow-xl shadow-black/10 backdrop-blur-xl animate-in fade-in-0 zoom-in-95">
           {options.map((opt) => {
             const isSelected = String(opt.value) === String(value)
             return (
@@ -100,7 +100,7 @@ export function Select({
                 disabled={opt.disabled}
                 onClick={() => handleSelect(opt.value)}
                 className={cn(
-                  "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer select-none text-left mb-0.5 last:mb-0",
+                  "flex w-full items-center justify-between rounded px-3 py-2 text-sm font-medium transition-colors cursor-pointer select-none text-left mb-0.5 last:mb-0",
                   isSelected
                     ? "bg-primary text-primary-foreground font-semibold"
                     : "text-foreground hover:bg-primary/15 hover:text-primary active:bg-primary/20",

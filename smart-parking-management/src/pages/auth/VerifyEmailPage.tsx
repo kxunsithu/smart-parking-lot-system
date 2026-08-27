@@ -167,7 +167,7 @@ export function VerifyEmailPage() {
 
       <div
         className={cn(
-          "flex items-center gap-2 mb-6 px-4 py-3 rounded-lg",
+          "flex items-center gap-2 mb-6 px-4 py-3 rounded",
           isUsed === true || timeLeftExpired
             ? "bg-red-50 border border-red-200"
             : "bg-muted/40 border border-border"

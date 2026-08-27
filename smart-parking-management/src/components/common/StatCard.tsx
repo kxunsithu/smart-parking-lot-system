@@ -17,7 +17,7 @@ export function StatCard({ label, value, icon: Icon, hint, className }: StatCard
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-semibold text-muted-foreground">{label}</span>
           {Icon ? (
-            <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+            <div className="p-2 rounded bg-primary/10 text-primary shrink-0">
               <Icon className="size-4" />
             </div>
           ) : null}

@@ -63,7 +63,7 @@ export default function Navbar() {
             onClick={() => navigate(isAuthenticated ? "/dashboard" : "/")}
             className="flex items-center gap-2.5 group cursor-pointer text-left"
           >
-            <div className="size-9 rounded-xl bg-primary flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+            <div className="size-9 rounded bg-primary flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
               <Car className="size-5 text-primary-foreground" />
             </div>
             <div>

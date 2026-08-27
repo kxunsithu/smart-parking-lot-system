@@ -93,7 +93,7 @@ export default function Cars() {
         {cars.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4">
+              <div className="size-16 rounded bg-primary/10 flex items-center justify-center text-primary mb-4">
                 <CarIcon className="h-8 w-8" />
               </div>
               <h3 className="font-semibold text-lg mb-1">{t("cars.no_cars", "No vehicles registered yet.")}</h3>
@@ -114,7 +114,7 @@ export default function Cars() {
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <div className="size-10 rounded bg-primary/10 flex items-center justify-center shrink-0">
                         <CarIcon className="size-5 text-primary" />
                       </div>
                       <div>
@@ -127,7 +127,7 @@ export default function Cars() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0 space-y-4">
-                  <div className="space-y-2 text-sm bg-muted/30 rounded-lg p-3 border border-border/40">
+                  <div className="space-y-2 text-sm bg-muted/30 rounded p-3 border border-border/40">
                     {car.brand && (
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-xs text-muted-foreground shrink-0">{t("cars.brand", "Brand / Model")}</span>

@@ -71,7 +71,7 @@ export function OTPInput({ value, onChange, length = 6, disabled = false }: OTPI
           onKeyDown={(e) => handleKeyDown(index, e)}
           onPaste={handlePaste}
           disabled={disabled}
-          className="w-12 h-14 text-center text-xl font-bold rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+          className="w-12 h-14 text-center text-xl font-bold rounded border bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
         />
       ))}
     </div>

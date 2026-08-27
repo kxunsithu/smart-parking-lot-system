@@ -9,7 +9,7 @@ export function LanguageToggle() {
     <Button
       variant="outline"
       size="sm"
-      className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md border border-border bg-background/80 hover:bg-accent hover:text-accent-foreground transition-all shadow-xs"
+      className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded border border-border bg-background/80 hover:bg-accent hover:text-accent-foreground transition-all shadow-xs"
       aria-label="Toggle language"
       onClick={toggleLanguage}
     >
