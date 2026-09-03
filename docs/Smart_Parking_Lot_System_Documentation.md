@@ -1731,7 +1731,7 @@ On **"Confirm Booking"**:
 
 ### 3.3.1.8 About Us Page
 
-![About Us Page — /about](../screenshot/customer/track.png)
+![About Us Page — /about](../screenshot/customer/3.3.1.8.png)
 
 **What it shows:**
 
