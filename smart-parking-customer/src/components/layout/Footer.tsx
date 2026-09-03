@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import { Car } from "lucide-react"
 import { LanguageToggle } from "@/components/theme/LanguageToggle"
 import { ThemeToggle } from "@/components/theme/ThemeToggle"
@@ -15,9 +16,12 @@ export default function Footer() {
             <p className="text-[10px] text-muted-foreground">Myanmar Parking System</p>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground text-center">
-          © {new Date().getFullYear()} Smart Parking Lot Management System. Built for Myanmar.
-        </p>
+        <div className="flex flex-col sm:flex-row items-center gap-4 text-xs text-muted-foreground text-center">
+          <p>© {new Date().getFullYear()} Smart Parking Lot Management System. Built for Myanmar.</p>
+          <Link to="/about" className="hover:text-primary transition-colors font-medium underline-offset-4 hover:underline">
+            About Us
+          </Link>
+        </div>
         <div className="flex items-center gap-2">
           <LanguageToggle />
           <ThemeToggle />

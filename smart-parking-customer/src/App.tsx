@@ -14,6 +14,7 @@ import ParkingDetail from "@/pages/ParkingDetail"
 import Lot3DView from "@/pages/Lot3DView"
 import Slot3DView from "@/pages/Slot3DView"
 import WalletPaymentResult from "@/pages/WalletPaymentResult"
+import AboutUs from "@/pages/AboutUs"
 import { useAuthStore } from "@/store/authStore"
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -50,6 +51,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/about" element={<AboutUs />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
