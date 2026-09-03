@@ -1485,19 +1485,18 @@ sequenceDiagram
 
 ## 3.1 Architecture Overview
 
-
 The system follows a **layered architecture** on the backend, separating concerns cleanly across four layers:
 
 ```
 HTTP Request
     ↓
-API Layer (app/api/v1/*.py)       — Route definitions, request parsing, auth dependency injection
+API Layer (app/api/v1/*.py)            — Route definitions, request parsing, auth dependency injection
     ↓
-Service Layer (app/services/*.py) — Business logic, validation rules, orchestration
+Service Layer (app/services/*.py)      — Business logic, validation rules, orchestration
     ↓
 Repository Layer (app/repositories/*.py) — Database queries, pagination helpers
     ↓
-Model Layer (app/models/*.py)    — SQLAlchemy ORM class definitions (table schema)
+Model Layer (app/models/*.py)          — SQLAlchemy ORM class definitions (table schema)
     ↓
 Database (PostgreSQL)
 ```
@@ -1530,7 +1529,7 @@ smart-parking-api/
 │   ├── services/        # Business logic services (19 service files)
 │   └── utils/           # Utility helpers
 ├── migrations/          # Alembic migration files
-├── scripts/             # Seed script (roles + admin account)
+├── scripts/             # Seed script (roles, packages, users, lots)
 ├── tests/               # Pytest test suite
 ├── table-design.sql     # Reference SQL DDL
 └── requirements.txt
@@ -1552,7 +1551,7 @@ The `ParkingSessionService.book_session()` method enforces:
 4. Start time must be in the future; end time must be after start time.
 5. No scheduling conflict with the same car (active or pending sessions).
 6. No scheduling conflict with the same slot (with a mandatory **2-hour buffer gap** before and after existing bookings).
-7. Fee = `ceil(duration_minutes) / 60 × rate_per_hour`.
+7. Fee = `ceil(duration_minutes / 60) × rate_per_hour`.
 
 The session is created in `PENDING` state and transitions to `ACTIVE` only upon successful wallet payment confirmation.
 
@@ -1568,59 +1567,522 @@ Before an owner can create a new parking lot, `ParkingLotService` checks the own
 
 ---
 
-## 3.3 Management Frontend Implementation (`smart-parking-management`)
+## 3.3 System Implementation Walkthrough
 
-The management portal serves three distinct user roles from a single React application, routing users to role-specific pages after login.
+This section provides a visual walkthrough of the running system. Each sub-section corresponds to a distinct role or user flow. A **screenshot placeholder** (`📸`) marks where an actual system screenshot should be inserted once the system is running.
 
-### Page Matrix
-
-| Role | Dashboard | Lots | Staff | Sessions | Subscriptions | Wallet | Admin-Only |
-|---|---|---|---|---|---|---|---|
-| **Admin** | ✅ | View All | — | — | View All | Platform Account | Owners, Users, Packages, Payments |
-| **Owner** | ✅ | Own Lots + Floors + Slots | Own Staff | Own Sessions | Own Subscription | Own Account | — |
-| **Staff** | ✅ | — | — | Own Lot Sessions | — | — | Slot Board |
-
-### Key Components
-
-- **`AppSidebar`** — Dynamically renders navigation links based on the authenticated user's role, configured in `utils/navConfig.ts`.
-- **`ProtectedRoute`** — Guards routes with both authentication checks and an `allowedRoles` allow-list.
-- **`LotDetailPage` (Owner)** — A tabbed page for managing floors, slots within each floor, and staff assigned to the lot — all within a single, rich interface.
-- **`SlotsBoardPage` (Staff)** — Displays all slots in a grid grouped by floor, with real-time status badges (`AVAILABLE` / `OCCUPIED`) and controls to mark vehicle entry/exit and finish sessions.
-- **`SubscriptionPage` (Owner)** — Allows the owner to browse packages, initiate a subscription, and complete the two-phase wallet payment (initiate → confirm with OTP) entirely from the UI.
-- **`WalletPage` (Owner / Admin)** — Manages the wallet account credentials (name, phone, API key) used to receive parking session and subscription payments.
+> [!NOTE]
+> To capture screenshots: run `docker-compose up` locally (or access the cloud deployment), navigate to each page, and embed the image file in place of the placeholder comment.
 
 ---
 
-## 3.4 Customer Frontend Implementation (`smart-parking-customer`)
+## 3.3.1 Customer Application (`smart-parking-customer`)
 
-The customer app provides a streamlined experience focused on discovery, booking, and payment.
+The Customer App is a standalone React web application (port `3000` locally). It is the primary touchpoint for end-users who register, browse parking lots, book a slot, and pay via digital wallet.
 
-### Key Pages
+---
 
-| Page | Path | Description |
+### 3.3.1.1 Register Page
+
+📸 *[Insert screenshot: Customer Register Page — `/register`]*
+
+**How it works:**
+
+The Register page displays a multi-field form:
+- **Full Name**, **Email Address**, **Password**, **Confirm Password**
+
+When the customer clicks **"Register"**:
+1. Client-side validation runs via **React Hook Form + Zod**.
+2. A `POST /api/v1/auth/register` request is sent.
+3. On success, the customer is redirected to the Email Verification page and an OTP is dispatched to their inbox.
+
+> All seed accounts use the password: **`asdffdsa`**
+
+---
+
+### 3.3.1.2 Email Verification Page
+
+📸 *[Insert screenshot: Email Verification Page — `/verify-email`]*
+
+**How it works:**
+
+After registration, the customer must verify their email before logging in:
+- **6-digit OTP input** — Code received via email.
+- **Countdown timer** — 10-minute validity window.
+- **"Resend OTP" button** — Active after the timer expires.
+
+On valid OTP submission, `User.is_verified` is set to `true`, JWT tokens are generated, and the customer is redirected to the Dashboard.
+
+---
+
+### 3.3.1.3 Login Page
+
+📸 *[Insert screenshot: Customer Login Page — `/login`]*
+
+**How it works:**
+
+The Login page accepts **Email** and **Password**. On success:
+1. The backend verifies credentials and checks `is_verified = true` and `is_active = true`.
+2. JWT access and refresh tokens are returned and persisted in **Zustand** (`localStorage`).
+3. The customer is redirected to the Dashboard.
+
+**Seed customer credentials (password: `asdffdsa`):**
+
+| Email | Registered Cars |
+|---|---|
+| `khunsithuaung35@gmail.com` | Toyota Silver, Nissan Black |
+| `nainglin.customer@gmail.com` | Honda White, Suzuki Red |
+| `phyowai.customer@gmail.com` | Mitsubishi Black, Toyota Gold, Honda Silver |
+
+---
+
+### 3.3.1.4 Customer Dashboard
+
+📸 *[Insert screenshot: Customer Dashboard — `/dashboard`]*
+
+**What it shows:**
+
+- **Active Session Card** — If parked, shows slot number, lot name, start time, elapsed duration, and a "Finish Session" shortcut.
+- **Quick Action Buttons** — Browse Lots, My Cars, My Sessions.
+- **Recent Sessions** — Compact history list.
+
+If no active session exists, a prompt is shown to browse and book a lot.
+
+---
+
+### 3.3.1.5 Browse Parking Lots
+
+📸 *[Insert screenshot: Parking Lots List — `/parking`]*
+
+**What it shows:**
+
+All **active** and **publicly visible** parking lots. Each card displays:
+- Lot Name, Type (PUBLIC / PRIVATE), Hourly Rate, Available Slots count
+
+Clicking a card navigates to the Lot Detail page.
+
+---
+
+### 3.3.1.6 Parking Lot Detail & Slot Availability
+
+📸 *[Insert screenshot: Parking Lot Detail Page — `/parking/:id`]*
+
+**What it shows:**
+
+- **Lot header** — Name, type, hourly rate, embedded Google Maps frame.
+- **Floor Tabs** — One tab per floor. Clicking a tab switches the slot grid.
+- **Slot Grid** — Color-coded cards:
+  - 🟢 **Green** = `AVAILABLE` (clickable → opens Booking Dialog)
+  - 🔴 **Red** = `OCCUPIED` (not bookable)
+- **"3D View" button** — Switches to the interactive Three.js 3D layout.
+
+---
+
+### 3.3.1.7 Booking Dialog
+
+📸 *[Insert screenshot: Booking Dialog modal]*
+
+**How it works:**
+
+Clicking an AVAILABLE slot opens a modal with:
+- Slot info (read-only), **Select Vehicle** dropdown, **Start / End Date-Time** pickers, **Estimated Fee** (auto-calculated in real time).
+
+On **"Confirm Booking"**:
+1. System checks for car and slot conflicts (including the 2-hour buffer gap rule).
+2. A `PENDING` parking session is created.
+3. The payment modal opens immediately.
+
+---
+
+### 3.3.1.8 Wallet Payment — Initiate
+
+📸 *[Insert screenshot: Wallet Payment Initiation Modal]*
+
+**How it works:**
+
+A payment modal shows the **amount due** and a **wallet phone number** input. On **"Pay Now"**:
+1. System calls the external wallet API.
+2. Wallet sends an OTP SMS to the customer's phone.
+3. The modal transitions to the OTP confirmation step.
+
+---
+
+### 3.3.1.9 Wallet Payment — OTP Confirmation
+
+📸 *[Insert screenshot: OTP & PIN Confirmation Modal]*
+
+**How it works:**
+
+The confirmation modal requests the **OTP** (received via SMS) and the customer's **wallet PIN**. On **"Confirm Payment"**:
+1. System forwards OTP + PIN to the wallet gateway.
+2. Gateway validates and deducts the amount.
+3. Session status: `PENDING → ACTIVE`; Slot status: `AVAILABLE → OCCUPIED`.
+4. Customer sees a success message and is redirected to Sessions.
+
+---
+
+### 3.3.1.10 3D Parking Layout View
+
+📸 *[Insert screenshot: 3D Parking Lot View — `/parking/:id/3d`]*
+
+**What it shows:**
+
+An interactive Three.js 3D floor map. Each slot is rendered as a coloured block:
+- 🟢 Green = Available, 🔴 Red = Occupied
+
+The customer can rotate/pan the scene (mouse drag or touch), click a slot block to view details and book, or switch back to the 2D grid.
+
+---
+
+### 3.3.1.11 My Cars (Vehicle Management)
+
+📸 *[Insert screenshot: My Cars Page — `/cars`]*
+
+**What it shows:**
+
+All registered vehicles. Each card shows **Plate Number**, **Brand**, **Color**.
+
+Actions available:
+- **Add** a new car (plate must be globally unique).
+- **Edit** brand or color.
+- **Delete** a car (blocked if it has active/pending sessions).
+
+---
+
+### 3.3.1.12 My Sessions (Session History)
+
+📸 *[Insert screenshot: My Sessions Page — `/sessions`]*
+
+**What it shows:**
+
+All personal parking sessions. Each entry shows Lot, Slot, Start/End, Duration, Fee, and a **Status Badge** (`PENDING` / `ACTIVE` / `FINISHED`).
+
+Actions available:
+- Filter by status.
+- Click a session to view full details and payment reference.
+- **Finish** an `ACTIVE` session (releases the slot).
+
+---
+
+### 3.3.1.13 Profile Page
+
+📸 *[Insert screenshot: Customer Profile Page — `/profile`]*
+
+**What it shows:**
+
+- **Update Profile** — Edit name and phone number.
+- **Change Password** — Requires current password before updating.
+- **Account Info** — Registered email (read-only) and join date.
+
+---
+
+## 3.3.2 Management Portal — Admin Role (`smart-parking-management`)
+
+The Management Portal (port `3001` locally) is a shared React application. After login, the sidebar and pages adapt to the authenticated role.
+
+---
+
+### 3.3.2.1 Admin Login
+
+📸 *[Insert screenshot: Management Portal Login Page]*
+
+**How to log in:**
+
+The login form (shared across Admin, Owner, and Staff roles) accepts **Email** and **Password**. The system reads the role from the JWT and redirects to the appropriate dashboard.
+
+**Admin seed credentials:**
+
+| Email | Password |
+|---|---|
+| `khunsithu350@gmail.com` | `asdffdsa` |
+
+---
+
+### 3.3.2.2 Admin Dashboard
+
+📸 *[Insert screenshot: Admin Dashboard]*
+
+**What it shows:**
+
+Platform-wide summary cards and charts:
+- Total Users, Total Owners, Total Parking Lots, Active Sessions
+- Revenue chart (bar/line) showing payment volume over time
+- Subscription count (active vs. expired)
+
+---
+
+### 3.3.2.3 User Management
+
+📸 *[Insert screenshot: Admin — All Users Table]*
+
+**What it shows:**
+
+A searchable, paginated table with columns: Name, Email, Role, Status (Active/Inactive), Verified, Joined Date.
+
+Actions:
+- Search/filter by role.
+- **Activate / Deactivate** user — Toggles `is_active`; deactivated users cannot log in.
+
+---
+
+### 3.3.2.4 Parking Owner Management
+
+📸 *[Insert screenshot: Admin — Parking Owners Table]*
+
+**What it shows:**
+
+All registered parking owners with: Owner Name, Company Name, Email, Subscription Status, Account Status.
+
+Actions:
+- View subscription details (package tier, expiry).
+- **Deactivate** an owner account.
+
+---
+
+### 3.3.2.5 Subscription Package Management
+
+📸 *[Insert screenshot: Admin — Subscription Packages]*
+
+**What it shows:**
+
+All tiered subscription packages with: Name, Price, Duration (days), Max Lots, Max Staff, Status (Active/Inactive).
+
+Actions:
+- **Create** a new package.
+- **Edit** existing package details.
+- **Toggle status** — Inactive packages are hidden from the owner marketplace.
+
+**Seed packages:**
+
+| Package | Price (MMK/month) | Max Lots | Max Staff |
+|---|---|---|---|
+| Basic | 9,900 | 1 | 5 |
+| Pro | 24,900 | 3 | 20 |
+| Enterprise | 49,900 | 10 | 999 |
+
+---
+
+### 3.3.2.6 All Parking Lots (Read-Only)
+
+📸 *[Insert screenshot: Admin — All Parking Lots Overview]*
+
+**What it shows:**
+
+A read-only platform-wide table of all lots: Lot Name, Owner / Company, Type, Rate/Hour, Total Slots, Active Status.
+
+The Admin cannot modify lot settings — that is the owner's responsibility.
+
+---
+
+### 3.3.2.7 Payments Overview
+
+📸 *[Insert screenshot: Admin — Payments Table]*
+
+**What it shows:**
+
+A complete payment audit log: Reference (`PP-XXXXXX`), User, Type (Session / Subscription), Amount, Status, Paid At.
+
+Filterable by `PENDING`, `COMPLETED`, or `FAILED`.
+
+---
+
+### 3.3.2.8 Platform Wallet Account
+
+📸 *[Insert screenshot: Admin — Platform Wallet Account Settings]*
+
+**What it shows:**
+
+Configuration form for the Admin's platform-level wallet (receives subscription fees from owners):
+- Wallet Name, Wallet Phone Number, API Key
+
+This account is separate from each owner's individual wallet (which receives session fees from customers).
+
+---
+
+## 3.3.3 Management Portal — Owner Role
+
+After logging in as an Owner, the sidebar shows: Dashboard, My Lots, Subscriptions, Wallet, Staff, Sessions.
+
+**Owner seed credentials (company-name email format, password: `asdffdsa`):**
+
+| Email | Company | Package |
 |---|---|---|
-| Register | `/register` | Multi-field registration form with validation |
-| Verify Email | `/verify-email` | OTP input with countdown timer and resend |
-| Dashboard | `/dashboard` | Active session card, quick links, nearby lots |
-| Parking Detail | `/parking/:id` | Lot info, floor tabs, slot grid with availability, booking dialog |
-| 3D Lot View | `/parking/:id/3d` | Interactive Three.js-powered 3D floor view |
-| 3D Slot View | `/slots/:id` | 3D visualisation of a specific slot |
-| Cars | `/cars` | CRUD interface for managing registered vehicles |
-| Sessions | `/sessions` | History of all parking sessions with status and fee |
-| Profile | `/profile` | Update name, phone; change password |
-| Payment Result | `/wallet-payment/result` | Callback landing page after external wallet redirect |
-
-### Booking Flow (UI)
-1. Customer navigates to a parking lot's detail page.
-2. Selects a floor tab, then clicks an `AVAILABLE` slot.
-3. A booking dialog opens where the customer picks their car, sets start/end times, and previews the estimated fee.
-4. On confirm, the customer is prompted to initiate wallet payment (enter wallet phone or use default).
-5. The wallet service sends an OTP to the customer's phone; the UI shows an OTP input form.
-6. On OTP + PIN confirmation, the session becomes `ACTIVE` and the slot shows as `OCCUPIED`.
+| `kst.parking@gmail.com` | KST Parking Co., Ltd. | Pro |
+| `tw.premiumparking@gmail.com` | TW Premium Parking | Enterprise |
+| `akk.smartparking@gmail.com` | AKK Smart Parking | Pro |
+| `ma.parkingsolutions@gmail.com` | MA Parking Solutions | Basic |
 
 ---
 
-## 3.5 Deployment
+### 3.3.3.1 Owner Dashboard
+
+📸 *[Insert screenshot: Owner Dashboard]*
+
+**What it shows:**
+
+- Active Sessions across all owned lots
+- Today's Revenue total
+- Slot Occupancy Rate (%)
+- Subscription status: package tier, expiry date, remaining lot/staff quota
+
+---
+
+### 3.3.3.2 Subscription Purchase
+
+📸 *[Insert screenshot: Owner — Subscription Packages Marketplace]*
+
+**How it works:**
+
+Available packages are shown as cards. To purchase:
+1. Click **"Subscribe"** on the desired package.
+2. Enter wallet phone number in the payment dialog.
+3. Wallet sends an OTP; enter OTP + wallet PIN.
+4. On success: subscription becomes `ACTIVE`, lot/staff quotas unlocked.
+
+---
+
+### 3.3.3.3 Create & Manage Parking Lots
+
+📸 *[Insert screenshot: Owner — My Lots List]*
+
+**What it shows:**
+
+All owned lots: Name, Type, Rate/Hour, Total Slots, Active Status.
+
+Actions:
+- **Create** a new lot (blocked if `max_lots` subscription limit reached).
+- **Edit** lot name, rate, map URL, or toggle active/inactive.
+
+---
+
+### 3.3.3.4 Lot Detail — Floors & Slots Management
+
+📸 *[Insert screenshot: Owner — Lot Detail with Floors and Slots Tabs]*
+
+**What it shows:**
+
+A tabbed interface per lot:
+
+**Floors tab:**
+- Lists all floors. Actions: add, edit, or delete a floor (deletion cascades to slots).
+
+**Slots tab (per floor):**
+- Grid of slots with slot number, section, and status.
+- Actions: add a new slot (slot number + section + optional GPS), edit, or delete a slot (blocked if session is active).
+
+---
+
+### 3.3.3.5 Staff Management
+
+📸 *[Insert screenshot: Owner — Staff List for a Lot]*
+
+**What it shows:**
+
+Staff assigned to each lot. Actions:
+- **Invite** staff by entering their email (user must already exist with `STAFF` role; `max_staff` limit enforced).
+- **Remove** staff (unlinks from lot; user account remains).
+
+---
+
+### 3.3.3.6 Sessions & Revenue
+
+📸 *[Insert screenshot: Owner — Sessions Overview]*
+
+**What it shows:**
+
+All sessions across owned lots: Customer, Car Plate, Lot, Slot, Start/End, Duration, Fee, Status.
+
+The **Revenue Summary** tab shows:
+- Total revenue by lot
+- Revenue trend chart (daily/monthly)
+- Average session duration
+
+---
+
+### 3.3.3.7 Owner Wallet Account
+
+📸 *[Insert screenshot: Owner — Wallet Account Settings]*
+
+**What it shows:**
+
+Configuration for the owner's wallet (receives customer session payments):
+- Wallet Name, Wallet Phone Number, API Key
+
+Separate from the Admin's platform wallet (which receives owner subscription payments).
+
+---
+
+## 3.3.4 Management Portal — Staff Role
+
+After logging in as Staff, the sidebar shows only: Dashboard, Slot Board, Sessions.
+
+**Staff seed credentials (password: `asdffdsa`):**
+
+| Email | Assigned Lot |
+|---|---|
+| `khunsithu2003@gmail.com` | Yangon Central Parking |
+| `zawlin.staff@gmail.com` | Sule Square Parking |
+| `susuhtwe.staff@gmail.com` | Junction Square Parking |
+| `kyawkyaw.staff@gmail.com` | Junction City Parking |
+
+---
+
+### 3.3.4.1 Staff Dashboard
+
+📸 *[Insert screenshot: Staff Dashboard]*
+
+**What it shows:**
+
+Focused operational summary for the assigned lot:
+- Active Sessions count, Available Slots count
+- Quick link to Slot Board
+
+---
+
+### 3.3.4.2 Slot Board
+
+📸 *[Insert screenshot: Staff — Slot Board Grid View]*
+
+**What it shows:**
+
+- **Floor Tabs** — One tab per floor of the assigned lot.
+- **Slot Grid** — Color-coded:
+  - 🟢 Green = `AVAILABLE`
+  - 🔴 Red = `OCCUPIED` (shows car plate on hover)
+- **Search by Plate Number** — Highlights the matching slot and shows session details.
+
+---
+
+### 3.3.4.3 Finish an Active Session
+
+📸 *[Insert screenshot: Staff — Session Detail with Finish Button]*
+
+**How it works:**
+
+1. Hover over an occupied slot on the Slot Board → session popover appears.
+2. Click **"View Session"** → session detail page opens.
+3. Click **"Finish Session"** → system calculates final fee (`ceil(actual_hours) × rate_per_hour`).
+4. Slot changes back to 🟢 `AVAILABLE`.
+5. Receipt with final fee is displayed.
+
+---
+
+### 3.3.4.4 Sessions List (Staff View)
+
+📸 *[Insert screenshot: Staff — Sessions List]*
+
+**What it shows:**
+
+All sessions for the assigned lot, filterable by status:
+- **PENDING** — Booked, payment not yet confirmed
+- **ACTIVE** — Payment confirmed, vehicle currently parked
+- **FINISHED** — Session completed, slot released
+
+Clicking any session opens full session details; active sessions show the Finish action.
+
+---
+
+## 3.4 Deployment
 
 The system is containerised for consistent environment parity between development and production.
 
