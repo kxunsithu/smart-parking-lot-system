@@ -81,43 +81,148 @@ SEED_USERS = [
         "phone": "+959000000001",
         "is_verified": True,
     },
-    # ── Owners ───────────────────────────────────────────────────────────────
+    # ── Owners (20) ── emails follow company-name format ─────────────────────
     {
         "name": "Khun Si Thu",
-        "email": "khunsithuaung50@gmail.com",
+        "email": "kst.parking@gmail.com",
         "role": RoleName.OWNER.value,
-        "phone": "+959000000002",
+        "phone": "+959600000001",
         "is_verified": True,
     },
     {
         "name": "Myo Aung",
-        "email": "myoaung.owner@gmail.com",
+        "email": "ma.parkingsolutions@gmail.com",
         "role": RoleName.OWNER.value,
-        "phone": "+959111000010",
+        "phone": "+959600000002",
         "is_verified": True,
     },
     {
         "name": "Thida Win",
-        "email": "thidawin.owner@gmail.com",
+        "email": "tw.premiumparking@gmail.com",
         "role": RoleName.OWNER.value,
-        "phone": "+959222000020",
+        "phone": "+959600000003",
         "is_verified": True,
     },
     {
         "name": "Aung Ko Ko",
-        "email": "aungkoko.owner@gmail.com",
+        "email": "akk.smartparking@gmail.com",
         "role": RoleName.OWNER.value,
-        "phone": "+959444000040",
+        "phone": "+959600000004",
         "is_verified": True,
     },
     {
         "name": "Htet Htet Swe",
-        "email": "htethetswe.owner@gmail.com",
+        "email": "hhs.parkingmgmt@gmail.com",
         "role": RoleName.OWNER.value,
-        "phone": "+959555000050",
+        "phone": "+959600000005",
         "is_verified": True,
     },
-    # ── Staff ─────────────────────────────────────────────────────────────────
+    {
+        "name": "Zaw Min",
+        "email": "zm.cityparking@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959600000006",
+        "is_verified": True,
+    },
+    {
+        "name": "Nilar Kyaw",
+        "email": "nk.parkinggroup@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959600000007",
+        "is_verified": True,
+    },
+    {
+        "name": "Kyaw Zin Thant",
+        "email": "kzt.autopark@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959600000008",
+        "is_verified": True,
+    },
+    {
+        "name": "Su Myat Noe",
+        "email": "smn.parkinghub@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959600000009",
+        "is_verified": True,
+    },
+    {
+        "name": "Wai Yan Oo",
+        "email": "wyo.parkgo@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959600000010",
+        "is_verified": True,
+    },
+    {
+        "name": "Phyo Min Tun",
+        "email": "pmt.parking@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959600000011",
+        "is_verified": True,
+    },
+    {
+        "name": "Ei Ei Phyu",
+        "email": "eep.lotmgmt@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959600000012",
+        "is_verified": True,
+    },
+    {
+        "name": "Htun Htun Oo",
+        "email": "hho.parkingworld@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959600000013",
+        "is_verified": True,
+    },
+    {
+        "name": "Mie Mie Khin",
+        "email": "mmk.urbanparking@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959600000014",
+        "is_verified": True,
+    },
+    {
+        "name": "Nay Oo",
+        "email": "no.expresspark@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959600000015",
+        "is_verified": True,
+    },
+    {
+        "name": "Thin Thin Aye",
+        "email": "tta.parkingplus@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959600000016",
+        "is_verified": True,
+    },
+    {
+        "name": "Kyaw Htet",
+        "email": "kh.securelots@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959600000017",
+        "is_verified": True,
+    },
+    {
+        "name": "Aye Aye Win",
+        "email": "aaw.parkingco@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959600000018",
+        "is_verified": True,
+    },
+    {
+        "name": "Mg Mg Lwin",
+        "email": "mml.smartpark@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959600000019",
+        "is_verified": True,
+    },
+    {
+        "name": "Sandar Oo",
+        "email": "so.premiumlots@gmail.com",
+        "role": RoleName.OWNER.value,
+        "phone": "+959600000020",
+        "is_verified": True,
+    },
+    # ── Staff (20) ────────────────────────────────────────────────────────────
     {
         "name": "Khun Si Thu (Staff)",
         "email": "khunsithu2003@gmail.com",
@@ -129,115 +234,143 @@ SEED_USERS = [
         "name": "Zaw Lin",
         "email": "zawlin.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959111000011",
+        "phone": "+959700000001",
         "is_verified": True,
     },
     {
         "name": "Su Su Htwe",
         "email": "susuhtwe.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959222000021",
+        "phone": "+959700000002",
         "is_verified": True,
     },
     {
         "name": "Kyaw Kyaw",
         "email": "kyawkyaw.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959222000022",
+        "phone": "+959700000003",
         "is_verified": True,
     },
     {
         "name": "Aye Myat Mon",
         "email": "ayemyatmon.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959111000012",
+        "phone": "+959700000004",
         "is_verified": True,
     },
     {
         "name": "Nay Lin Htun",
         "email": "naylinhtun.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959444000041",
+        "phone": "+959700000005",
         "is_verified": True,
     },
     {
         "name": "Moe Moe Khin",
         "email": "moemoe.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959444000042",
+        "phone": "+959700000006",
         "is_verified": True,
     },
     {
         "name": "Ye Naing",
         "email": "yenaing.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959555000051",
+        "phone": "+959700000007",
         "is_verified": True,
     },
     {
         "name": "Thin Zar Aung",
         "email": "thinzar.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959555000052",
+        "phone": "+959700000008",
         "is_verified": True,
     },
     {
         "name": "Kyaw Zin Oo",
         "email": "kyawzin.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959555000053",
+        "phone": "+959700000009",
         "is_verified": True,
     },
     {
         "name": "Min Thant",
         "email": "minthant.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959555000054",
+        "phone": "+959700000010",
         "is_verified": True,
     },
     {
         "name": "Ei Ei Thaw",
         "email": "eieithaw.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959555000055",
+        "phone": "+959700000011",
         "is_verified": True,
     },
     {
         "name": "Kaung Htet",
         "email": "kaunghtet.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959555000056",
+        "phone": "+959700000012",
         "is_verified": True,
     },
     {
         "name": "Nilar Aye",
         "email": "nilaraye.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959555000057",
+        "phone": "+959700000013",
         "is_verified": True,
     },
     {
         "name": "Win Ko",
         "email": "winko.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959555000058",
+        "phone": "+959700000014",
         "is_verified": True,
     },
     {
         "name": "Hlaing Min",
         "email": "hlaingmin.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959555000059",
+        "phone": "+959700000015",
         "is_verified": True,
     },
     {
         "name": "May Thet",
         "email": "maythet.staff@gmail.com",
         "role": RoleName.STAFF.value,
-        "phone": "+959555000060",
+        "phone": "+959700000016",
         "is_verified": True,
     },
-    # ── Customers ────────────────────────────────────────────────────────────
+    {
+        "name": "Thant Zin",
+        "email": "thantzin.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959700000017",
+        "is_verified": True,
+    },
+    {
+        "name": "May Wai",
+        "email": "maywai.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959700000018",
+        "is_verified": True,
+    },
+    {
+        "name": "Zin Ko Ko",
+        "email": "zinkoko.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959700000019",
+        "is_verified": True,
+    },
+    {
+        "name": "Pyae Sone",
+        "email": "pyaesone.staff@gmail.com",
+        "role": RoleName.STAFF.value,
+        "phone": "+959700000020",
+        "is_verified": True,
+    },
+    # ── Customers (20) ───────────────────────────────────────────────────────
     {
         "name": "Khun Si Thu (Customer)",
         "email": "khunsithuaung35@gmail.com",
@@ -249,42 +382,133 @@ SEED_USERS = [
         "name": "Naing Lin",
         "email": "nainglin.customer@gmail.com",
         "role": RoleName.CUSTOMER.value,
-        "phone": "+959333000030",
+        "phone": "+959800000001",
         "is_verified": True,
     },
     {
         "name": "Wai Phyo",
         "email": "waiphyo.customer@gmail.com",
         "role": RoleName.CUSTOMER.value,
-        "phone": "+959333000031",
+        "phone": "+959800000002",
         "is_verified": True,
     },
     {
         "name": "Zin Mar Oo",
         "email": "zinmar.customer@gmail.com",
         "role": RoleName.CUSTOMER.value,
-        "phone": "+959333000032",
+        "phone": "+959800000003",
         "is_verified": True,
     },
     {
         "name": "Phyo Wai Kyaw",
         "email": "phyowai.customer@gmail.com",
         "role": RoleName.CUSTOMER.value,
-        "phone": "+959333000033",
+        "phone": "+959800000004",
         "is_verified": True,
     },
     {
         "name": "Chan Myae Aung",
         "email": "chanmyae.customer@gmail.com",
         "role": RoleName.CUSTOMER.value,
-        "phone": "+959333000034",
+        "phone": "+959800000005",
         "is_verified": True,
     },
     {
         "name": "Ei Phyu Sin",
         "email": "eiphyu.customer@gmail.com",
         "role": RoleName.CUSTOMER.value,
-        "phone": "+959333000035",
+        "phone": "+959800000006",
+        "is_verified": True,
+    },
+    {
+        "name": "Aye Aye Khin",
+        "email": "ayeaye.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959800000007",
+        "is_verified": True,
+    },
+    {
+        "name": "Mg Htun",
+        "email": "mghtun.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959800000008",
+        "is_verified": True,
+    },
+    {
+        "name": "Moe Pwint",
+        "email": "moepwint.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959800000009",
+        "is_verified": True,
+    },
+    {
+        "name": "Ko Kyaw",
+        "email": "kokyaw.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959800000010",
+        "is_verified": True,
+    },
+    {
+        "name": "Ma Thandar",
+        "email": "mathandar.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959800000011",
+        "is_verified": True,
+    },
+    {
+        "name": "Win Myat",
+        "email": "winmyat.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959800000012",
+        "is_verified": True,
+    },
+    {
+        "name": "Nanda Aung",
+        "email": "nandaaung.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959800000013",
+        "is_verified": True,
+    },
+    {
+        "name": "Thet Mon",
+        "email": "thetmon.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959800000014",
+        "is_verified": True,
+    },
+    {
+        "name": "Kyaw Thu",
+        "email": "kyawthu.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959800000015",
+        "is_verified": True,
+    },
+    {
+        "name": "Su Yadanar",
+        "email": "suyadanar.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959800000016",
+        "is_verified": True,
+    },
+    {
+        "name": "Aung Aung",
+        "email": "aungaung.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959800000017",
+        "is_verified": True,
+    },
+    {
+        "name": "Khin Moe",
+        "email": "khinmoe.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959800000018",
+        "is_verified": True,
+    },
+    {
+        "name": "Min Zaw",
+        "email": "minzaw.customer@gmail.com",
+        "role": RoleName.CUSTOMER.value,
+        "phone": "+959800000019",
         "is_verified": True,
     },
 ]
@@ -294,24 +518,84 @@ SEED_USERS = [
 # ---------------------------------------------------------------------------
 
 OWNER_PROFILES = {
-    "khunsithuaung50@gmail.com": {
+    "kst.parking@gmail.com": {
         "company_name": "KST Parking Co., Ltd.",
         "package": "Pro",
     },
-    "myoaung.owner@gmail.com": {
+    "ma.parkingsolutions@gmail.com": {
         "company_name": "MA Parking Solutions",
         "package": "Basic",
     },
-    "thidawin.owner@gmail.com": {
+    "tw.premiumparking@gmail.com": {
         "company_name": "TW Premium Parking",
         "package": "Enterprise",
     },
-    "aungkoko.owner@gmail.com": {
+    "akk.smartparking@gmail.com": {
         "company_name": "AKK Smart Parking",
         "package": "Pro",
     },
-    "htethetswe.owner@gmail.com": {
+    "hhs.parkingmgmt@gmail.com": {
         "company_name": "HHS Parking Management",
+        "package": "Basic",
+    },
+    "zm.cityparking@gmail.com": {
+        "company_name": "ZM City Parking",
+        "package": "Basic",
+    },
+    "nk.parkinggroup@gmail.com": {
+        "company_name": "NK Parking Group",
+        "package": "Pro",
+    },
+    "kzt.autopark@gmail.com": {
+        "company_name": "KZT Auto Park",
+        "package": "Basic",
+    },
+    "smn.parkinghub@gmail.com": {
+        "company_name": "SMN Parking Hub",
+        "package": "Enterprise",
+    },
+    "wyo.parkgo@gmail.com": {
+        "company_name": "WYO Park & Go",
+        "package": "Pro",
+    },
+    "pmt.parking@gmail.com": {
+        "company_name": "PMT Parking Services",
+        "package": "Basic",
+    },
+    "eep.lotmgmt@gmail.com": {
+        "company_name": "EEP Lot Management",
+        "package": "Basic",
+    },
+    "hho.parkingworld@gmail.com": {
+        "company_name": "HHO Parking World",
+        "package": "Enterprise",
+    },
+    "mmk.urbanparking@gmail.com": {
+        "company_name": "MMK Urban Parking",
+        "package": "Pro",
+    },
+    "no.expresspark@gmail.com": {
+        "company_name": "NO Express Parking",
+        "package": "Basic",
+    },
+    "tta.parkingplus@gmail.com": {
+        "company_name": "TTA Parking Plus",
+        "package": "Pro",
+    },
+    "kh.securelots@gmail.com": {
+        "company_name": "KH Secure Lots",
+        "package": "Basic",
+    },
+    "aaw.parkingco@gmail.com": {
+        "company_name": "AAW Parking Co.",
+        "package": "Enterprise",
+    },
+    "mml.smartpark@gmail.com": {
+        "company_name": "MML Smart Park",
+        "package": "Pro",
+    },
+    "so.premiumlots@gmail.com": {
+        "company_name": "SO Premium Lots",
         "package": "Basic",
     },
 }
@@ -332,7 +616,7 @@ OWNER_PROFILES = {
 PARKING_LOTS = [
     # ── 1. Yangon Central Parking (near Sule Pagoda, Downtown) ────────────
     {
-        "owner_email": "khunsithuaung50@gmail.com",
+        "owner_email": "kst.parking@gmail.com",
         "name": "Yangon Central Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.77410,96.15940&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -367,7 +651,7 @@ PARKING_LOTS = [
 
     # ── 2. Bogyoke Market Parking (Pabedan Tsp) ───────────────────────────
     {
-        "owner_email": "khunsithuaung50@gmail.com",
+        "owner_email": "kst.parking@gmail.com",
         "name": "Bogyoke Market Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.78210,96.15430&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -393,7 +677,7 @@ PARKING_LOTS = [
 
     # ── 3. Sule Square Parking (Kyauktada Tsp) ───────────────────────────
     {
-        "owner_email": "myoaung.owner@gmail.com",
+        "owner_email": "ma.parkingsolutions@gmail.com",
         "name": "Sule Square Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.77690,96.15890&z=15&output=embed",
         "type": LotType.PRIVATE.value,
@@ -428,7 +712,7 @@ PARKING_LOTS = [
 
     # ── 4. Junction Square Parking (Mayangone Tsp) ───────────────────────
     {
-        "owner_email": "thidawin.owner@gmail.com",
+        "owner_email": "tw.premiumparking@gmail.com",
         "name": "Junction Square Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.83150,96.13450&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -478,7 +762,7 @@ PARKING_LOTS = [
 
     # ── 5. Junction City Parking (Pabedan Tsp — near Bogyoke) ────────────
     {
-        "owner_email": "thidawin.owner@gmail.com",
+        "owner_email": "tw.premiumparking@gmail.com",
         "name": "Junction City Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.79020,96.14520&z=15&output=embed",
         "type": LotType.PRIVATE.value,
@@ -521,7 +805,7 @@ PARKING_LOTS = [
 
     # ── 6. Thaketa Township Parking (Thaketa Tsp) ─────────────────────────
     {
-        "owner_email": "aungkoko.owner@gmail.com",
+        "owner_email": "akk.smartparking@gmail.com",
         "name": "Thaketa Township Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.80250,96.19380&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -549,7 +833,7 @@ PARKING_LOTS = [
 
     # ── 7. Insein Road Parking (Insein Tsp) ───────────────────────────────
     {
-        "owner_email": "aungkoko.owner@gmail.com",
+        "owner_email": "akk.smartparking@gmail.com",
         "name": "Insein Road Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.87450,96.09820&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -584,7 +868,7 @@ PARKING_LOTS = [
 
     # ── 8. Tamwe Market Parking (Tamwe Tsp) ───────────────────────────────
     {
-        "owner_email": "htethetswe.owner@gmail.com",
+        "owner_email": "hhs.parkingmgmt@gmail.com",
         "name": "Tamwe Market Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.82640,96.17120&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -610,7 +894,7 @@ PARKING_LOTS = [
 
     # ── 9. Kamayut Depot Parking (Kamayut Tsp) ────────────────────────────
     {
-        "owner_email": "htethetswe.owner@gmail.com",
+        "owner_email": "hhs.parkingmgmt@gmail.com",
         "name": "Kamayut Depot Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.83710,96.13250&z=15&output=embed",
         "type": LotType.PRIVATE.value,
@@ -649,7 +933,7 @@ PARKING_LOTS = [
 
     # ── 10. Dagon Centre Parking (Dagon Tsp) ──────────────────────────────
     {
-        "owner_email": "myoaung.owner@gmail.com",
+        "owner_email": "ma.parkingsolutions@gmail.com",
         "name": "Dagon Centre Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.77040,96.17590&z=15&output=embed",
         "type": LotType.PRIVATE.value,
@@ -688,7 +972,7 @@ PARKING_LOTS = [
 
     # ── 11. Yankin Market Parking (Yankin Tsp) ────────────────────────────
     {
-        "owner_email": "khunsithuaung50@gmail.com",
+        "owner_email": "kst.parking@gmail.com",
         "name": "Yankin Market Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.82960,96.16340&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -733,7 +1017,7 @@ PARKING_LOTS = [
 
     # ── 12. Hledan Centre Parking (Kamayut Tsp) ───────────────────────────
     {
-        "owner_email": "htethetswe.owner@gmail.com",
+        "owner_email": "hhs.parkingmgmt@gmail.com",
         "name": "Hledan Centre Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.82080,96.13060&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -778,7 +1062,7 @@ PARKING_LOTS = [
 
     # ── 13. Myanmar Plaza Parking (Yankin Tsp) ───────────────────────────
     {
-        "owner_email": "thidawin.owner@gmail.com",
+        "owner_email": "tw.premiumparking@gmail.com",
         "name": "Myanmar Plaza Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.82850,96.15570&z=15&output=embed",
         "type": LotType.PRIVATE.value,
@@ -821,7 +1105,7 @@ PARKING_LOTS = [
 
     # ── 14. Times City Parking (Kamayut Tsp) ─────────────────────────────
     {
-        "owner_email": "aungkoko.owner@gmail.com",
+        "owner_email": "akk.smartparking@gmail.com",
         "name": "Times City Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.80950,96.13020&z=15&output=embed",
         "type": LotType.PRIVATE.value,
@@ -853,7 +1137,7 @@ PARKING_LOTS = [
 
     # ── 15. St. John City Mall Parking (Lanmadaw Tsp) ────────────────────
     {
-        "owner_email": "khunsithuaung50@gmail.com",
+        "owner_email": "kst.parking@gmail.com",
         "name": "St. John City Mall Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.78010,96.14150&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -884,7 +1168,7 @@ PARKING_LOTS = [
 
     # ── 16. Ocean Supercenter Parking (South Okkalapa Tsp) ────────────────
     {
-        "owner_email": "myoaung.owner@gmail.com",
+        "owner_email": "ma.parkingsolutions@gmail.com",
         "name": "Ocean Supercenter Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.85300,96.18500&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -908,7 +1192,7 @@ PARKING_LOTS = [
 
     # ── 17. Hlaing Riverfront Parking (Hlaing Tsp) ─────────────────────────
     {
-        "owner_email": "aungkoko.owner@gmail.com",
+        "owner_email": "akk.smartparking@gmail.com",
         "name": "Hlaing Riverfront Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.84500,96.11500&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -937,7 +1221,7 @@ PARKING_LOTS = [
 
     # ── 18. North Dagon Plaza Parking (North Dagon Tsp) ───────────────────
     {
-        "owner_email": "htethetswe.owner@gmail.com",
+        "owner_email": "hhs.parkingmgmt@gmail.com",
         "name": "North Dagon Plaza Parking",
         "google_map_url": "https://maps.google.com/maps?q=16.87200,96.18500&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -953,6 +1237,169 @@ PARKING_LOTS = [
                     {"slot_number": "G-A03", "section": "A", "latitude": 16.87203, "longitude": 96.18503},
                     {"slot_number": "G-B01", "section": "B", "latitude": 16.87204, "longitude": 96.18504},
                     {"slot_number": "G-B02", "section": "B", "latitude": 16.87205, "longitude": 96.18505},
+                ],
+            },
+        ],
+    },
+
+    # ── 19. Sanpya Market Parking (Botahtaung Tsp) ──────────────────────
+    {
+        "owner_email": "zm.cityparking@gmail.com",
+        "name": "Sanpya Market Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.76800,96.17200&z=15&output=embed",
+        "type": LotType.PUBLIC.value,
+        "is_active": True,
+        "rate_per_hour": 450.0,
+        "staff_emails": ["thantzin.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.76801, "longitude": 96.17201},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.76802, "longitude": 96.17202},
+                    {"slot_number": "G-A03", "section": "A", "latitude": 16.76803, "longitude": 96.17203},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.76804, "longitude": 96.17204},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.76805, "longitude": 96.17205},
+                    {"slot_number": "G-B03", "section": "B", "latitude": 16.76806, "longitude": 96.17206},
+                ],
+            },
+        ],
+    },
+
+    # ── 20. Nilar Junction Parking (Sanchaung Tsp) ─────────────────────
+    {
+        "owner_email": "nk.parkinggroup@gmail.com",
+        "name": "Nilar Junction Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.82300,96.13900&z=15&output=embed",
+        "type": LotType.PRIVATE.value,
+        "is_active": True,
+        "rate_per_hour": 700.0,
+        "staff_emails": ["maywai.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Basement (B1)",
+                "slots": [
+                    {"slot_number": "B1-A01", "section": "A", "latitude": 16.82301, "longitude": 96.13901},
+                    {"slot_number": "B1-A02", "section": "A", "latitude": 16.82302, "longitude": 96.13902},
+                    {"slot_number": "B1-A03", "section": "A", "latitude": 16.82303, "longitude": 96.13903},
+                    {"slot_number": "B1-B01", "section": "B", "latitude": 16.82304, "longitude": 96.13904},
+                    {"slot_number": "B1-B02", "section": "B", "latitude": 16.82305, "longitude": 96.13905},
+                ],
+            },
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.82311, "longitude": 96.13901},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.82312, "longitude": 96.13902},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.82313, "longitude": 96.13903},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.82314, "longitude": 96.13904},
+                ],
+            },
+        ],
+    },
+
+    # ── 21. East Dagon Township Parking (East Dagon Tsp) ────────────────
+    {
+        "owner_email": "kzt.autopark@gmail.com",
+        "name": "East Dagon Township Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.83600,96.21200&z=15&output=embed",
+        "type": LotType.PUBLIC.value,
+        "is_active": True,
+        "rate_per_hour": 350.0,
+        "staff_emails": ["zinkoko.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.83601, "longitude": 96.21201},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.83602, "longitude": 96.21202},
+                    {"slot_number": "G-A03", "section": "A", "latitude": 16.83603, "longitude": 96.21203},
+                    {"slot_number": "G-A04", "section": "A", "latitude": 16.83604, "longitude": 96.21204},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.83605, "longitude": 96.21205},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.83606, "longitude": 96.21206},
+                    {"slot_number": "G-B03", "section": "B", "latitude": 16.83607, "longitude": 96.21207},
+                ],
+            },
+        ],
+    },
+
+    # ── 22. Shwe Gone Daing Parking (Bahan Tsp) ────────────────────────
+    {
+        "owner_email": "smn.parkinghub@gmail.com",
+        "name": "Shwe Gone Daing Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.79800,96.16400&z=15&output=embed",
+        "type": LotType.PRIVATE.value,
+        "is_active": True,
+        "rate_per_hour": 900.0,
+        "staff_emails": ["pyaesone.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Basement 1 (B1)",
+                "slots": [
+                    {"slot_number": "B1-A01", "section": "A", "latitude": 16.79801, "longitude": 96.16401},
+                    {"slot_number": "B1-A02", "section": "A", "latitude": 16.79802, "longitude": 96.16402},
+                    {"slot_number": "B1-A03", "section": "A", "latitude": 16.79803, "longitude": 96.16403},
+                    {"slot_number": "B1-B01", "section": "B", "latitude": 16.79804, "longitude": 96.16404},
+                    {"slot_number": "B1-B02", "section": "B", "latitude": 16.79805, "longitude": 96.16405},
+                    {"slot_number": "B1-VIP01", "section": "VIP", "latitude": 16.79806, "longitude": 96.16406},
+                ],
+            },
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.79811, "longitude": 96.16401},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.79812, "longitude": 96.16402},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.79813, "longitude": 96.16403},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.79814, "longitude": 96.16404},
+                ],
+            },
+        ],
+    },
+
+    # ── 23. Bago Road Express Parking (Mingalataungnyunt Tsp) ───────────
+    {
+        "owner_email": "wyo.parkgo@gmail.com",
+        "name": "Bago Road Express Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.81500,96.18900&z=15&output=embed",
+        "type": LotType.PUBLIC.value,
+        "is_active": True,
+        "rate_per_hour": 500.0,
+        "staff_emails": [],
+        "floors": [
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.81501, "longitude": 96.18901},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.81502, "longitude": 96.18902},
+                    {"slot_number": "G-A03", "section": "A", "latitude": 16.81503, "longitude": 96.18903},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.81504, "longitude": 96.18904},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.81505, "longitude": 96.18905},
+                    {"slot_number": "G-B03", "section": "B", "latitude": 16.81506, "longitude": 96.18906},
+                    {"slot_number": "G-C01", "section": "C", "latitude": 16.81507, "longitude": 96.18907},
+                    {"slot_number": "G-C02", "section": "C", "latitude": 16.81508, "longitude": 96.18908},
+                ],
+            },
+        ],
+    },
+
+    # ── 24. Kyimyindaing Ferry Parking (Kyimyindaing Tsp) ───────────────
+    {
+        "owner_email": "pmt.parking@gmail.com",
+        "name": "Kyimyindaing Ferry Parking",
+        "google_map_url": "https://maps.google.com/maps?q=16.77900,96.12400&z=15&output=embed",
+        "type": LotType.PUBLIC.value,
+        "is_active": True,
+        "rate_per_hour": 400.0,
+        "staff_emails": [],
+        "floors": [
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.77901, "longitude": 96.12401},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.77902, "longitude": 96.12402},
+                    {"slot_number": "G-A03", "section": "A", "latitude": 16.77903, "longitude": 96.12403},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.77904, "longitude": 96.12404},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.77905, "longitude": 96.12405},
                 ],
             },
         ],
@@ -990,6 +1437,54 @@ CUSTOMER_CARS = {
     ],
     "eiphyu.customer@gmail.com": [
         {"plate_number": "8H-9999", "brand": "Toyota", "color": "Pearl White"},
+    ],
+    "ayeaye.customer@gmail.com": [
+        {"plate_number": "9J-1010", "brand": "Honda", "color": "Blue"},
+        {"plate_number": "9J-2020", "brand": "Yamaha", "color": "Red"},
+    ],
+    "mghtun.customer@gmail.com": [
+        {"plate_number": "0K-3030", "brand": "Toyota", "color": "White"},
+    ],
+    "moepwint.customer@gmail.com": [
+        {"plate_number": "1L-4040", "brand": "Suzuki", "color": "Silver"},
+        {"plate_number": "1L-5050", "brand": "Mazda", "color": "Black"},
+    ],
+    "kokyaw.customer@gmail.com": [
+        {"plate_number": "2M-6060", "brand": "Mitsubishi", "color": "Grey"},
+        {"plate_number": "2M-7070", "brand": "Toyota", "color": "Blue"},
+    ],
+    "mathandar.customer@gmail.com": [
+        {"plate_number": "3N-8080", "brand": "Hyundai", "color": "White"},
+    ],
+    "winmyat.customer@gmail.com": [
+        {"plate_number": "4P-9090", "brand": "Kia", "color": "Silver"},
+        {"plate_number": "4P-0101", "brand": "Honda", "color": "Black"},
+    ],
+    "nandaaung.customer@gmail.com": [
+        {"plate_number": "5Q-1111", "brand": "Toyota", "color": "Gold"},
+    ],
+    "thetmon.customer@gmail.com": [
+        {"plate_number": "6R-2222", "brand": "Suzuki", "color": "Red"},
+        {"plate_number": "6R-3333", "brand": "Toyota", "color": "White"},
+        {"plate_number": "6R-4444", "brand": "Mazda", "color": "Blue"},
+    ],
+    "kyawthu.customer@gmail.com": [
+        {"plate_number": "7S-5555", "brand": "Nissan", "color": "Black"},
+    ],
+    "suyadanar.customer@gmail.com": [
+        {"plate_number": "8T-6666", "brand": "Honda", "color": "Pearl White"},
+        {"plate_number": "8T-7777", "brand": "Hyundai", "color": "Grey"},
+    ],
+    "aungaung.customer@gmail.com": [
+        {"plate_number": "9U-8888", "brand": "Toyota", "color": "Silver"},
+        {"plate_number": "9U-9999", "brand": "Mitsubishi", "color": "White"},
+    ],
+    "khinmoe.customer@gmail.com": [
+        {"plate_number": "0V-1234", "brand": "Kia", "color": "Red"},
+    ],
+    "minzaw.customer@gmail.com": [
+        {"plate_number": "1W-5678", "brand": "Toyota", "color": "Blue"},
+        {"plate_number": "1W-9012", "brand": "Suzuki", "color": "Silver"},
     ],
 }
 
@@ -1278,61 +1773,99 @@ def seed() -> None:
         print("  [ADMIN]")
         print("    khunsithu350@gmail.com")
         print()
-        print("  [OWNERS]")
-        print("    khunsithuaung50@gmail.com   →  KST Parking Co., Ltd.   (Pro)")
-        print("    myoaung.owner@gmail.com     →  MA Parking Solutions    (Basic)")
-        print("    thidawin.owner@gmail.com    →  TW Premium Parking      (Enterprise)")
-        print("    aungkoko.owner@gmail.com    →  AKK Smart Parking       (Pro)")
-        print("    htethetswe.owner@gmail.com  →  HHS Parking Management  (Basic)")
+        print("  [OWNERS]  (20 accounts — emails follow company-name format)")
+        print("    kst.parking@gmail.com        →  KST Parking Co., Ltd.    (Pro)")
+        print("    ma.parkingsolutions@gmail.com→  MA Parking Solutions     (Basic)")
+        print("    tw.premiumparking@gmail.com  →  TW Premium Parking       (Enterprise)")
+        print("    akk.smartparking@gmail.com   →  AKK Smart Parking        (Pro)")
+        print("    hhs.parkingmgmt@gmail.com    →  HHS Parking Management   (Basic)")
+        print("    zm.cityparking@gmail.com     →  ZM City Parking          (Basic)")
+        print("    nk.parkinggroup@gmail.com    →  NK Parking Group         (Pro)")
+        print("    kzt.autopark@gmail.com       →  KZT Auto Park            (Basic)")
+        print("    smn.parkinghub@gmail.com     →  SMN Parking Hub          (Enterprise)")
+        print("    wyo.parkgo@gmail.com         →  WYO Park & Go            (Pro)")
+        print("    pmt.parking@gmail.com        →  PMT Parking Services     (Basic)")
+        print("    eep.lotmgmt@gmail.com        →  EEP Lot Management       (Basic)")
+        print("    hho.parkingworld@gmail.com   →  HHO Parking World        (Enterprise)")
+        print("    mmk.urbanparking@gmail.com   →  MMK Urban Parking        (Pro)")
+        print("    no.expresspark@gmail.com     →  NO Express Parking       (Basic)")
+        print("    tta.parkingplus@gmail.com    →  TTA Parking Plus         (Pro)")
+        print("    kh.securelots@gmail.com      →  KH Secure Lots           (Basic)")
+        print("    aaw.parkingco@gmail.com      →  AAW Parking Co.          (Enterprise)")
+        print("    mml.smartpark@gmail.com      →  MML Smart Park           (Pro)")
+        print("    so.premiumlots@gmail.com     →  SO Premium Lots          (Basic)")
         print()
-        print("  [STAFF]")
-        print("    khunsithu2003@gmail.com     →  Yangon Central Parking")
-        print("    zawlin.staff@gmail.com      →  Sule Square Parking")
-        print("    susuhtwe.staff@gmail.com    →  Junction Square Parking")
-        print("    kyawkyaw.staff@gmail.com    →  Junction City Parking")
-        print("    ayemyatmon.staff@gmail.com  →  Bogyoke Market Parking")
-        print("    naylinhtun.staff@gmail.com  →  Thaketa Township Parking")
-        print("    moemoe.staff@gmail.com      →  Insein Road Parking")
-        print("    yenaing.staff@gmail.com     →  Tamwe Market Parking")
-        print("    thinzar.staff@gmail.com     →  Kamayut Depot Parking")
-        print("    kyawzin.staff@gmail.com     →  Dagon Centre Parking")
-        print("    minthant.staff@gmail.com    →  Hledan Centre Parking")
-        print("    eieithaw.staff@gmail.com    →  Myanmar Plaza Parking")
-        print("    kaunghtet.staff@gmail.com   →  Times City Parking")
-        print("    nilaraye.staff@gmail.com    →  St. John City Mall Parking")
-        print("    winko.staff@gmail.com       →  Ocean Supercenter Parking")
-        print("    hlaingmin.staff@gmail.com   →  Hlaing Riverfront Parking")
-        print("    maythet.staff@gmail.com     →  North Dagon Plaza Parking")
+        print("  [STAFF]  (20 accounts)")
+        print("    khunsithu2003@gmail.com      →  Yangon Central Parking")
+        print("    zawlin.staff@gmail.com       →  Sule Square Parking")
+        print("    susuhtwe.staff@gmail.com     →  Junction Square Parking")
+        print("    kyawkyaw.staff@gmail.com     →  Junction City Parking")
+        print("    ayemyatmon.staff@gmail.com   →  Bogyoke Market Parking")
+        print("    naylinhtun.staff@gmail.com   →  Thaketa Township Parking")
+        print("    moemoe.staff@gmail.com       →  Insein Road Parking")
+        print("    yenaing.staff@gmail.com      →  Tamwe Market Parking")
+        print("    thinzar.staff@gmail.com      →  Kamayut Depot Parking")
+        print("    kyawzin.staff@gmail.com      →  Dagon Centre Parking")
+        print("    minthant.staff@gmail.com     →  Hledan Centre Parking")
+        print("    eieithaw.staff@gmail.com     →  Myanmar Plaza Parking")
+        print("    kaunghtet.staff@gmail.com    →  Times City Parking")
+        print("    nilaraye.staff@gmail.com     →  St. John City Mall Parking")
+        print("    winko.staff@gmail.com        →  Ocean Supercenter Parking")
+        print("    hlaingmin.staff@gmail.com    →  Hlaing Riverfront Parking")
+        print("    maythet.staff@gmail.com      →  North Dagon Plaza Parking")
+        print("    thantzin.staff@gmail.com     →  Sanpya Market Parking")
+        print("    maywai.staff@gmail.com       →  Nilar Junction Parking")
+        print("    zinkoko.staff@gmail.com      →  East Dagon Township Parking")
+        print("    pyaesone.staff@gmail.com     →  Shwe Gone Daing Parking")
         print()
-        print("  [CUSTOMERS]")
-        print("    khunsithuaung35@gmail.com   →  2 cars (Toyota Silver, Nissan Black)")
-        print("    nainglin.customer@gmail.com →  2 cars (Honda White, Suzuki Red)")
-        print("    waiphyo.customer@gmail.com  →  2 cars (Mazda Blue, Toyota White)")
-        print("    zinmar.customer@gmail.com   →  1 car  (Hyundai Grey)")
-        print("    phyowai.customer@gmail.com  →  3 cars (Mitsubishi, Toyota, Honda)")
-        print("    chanmyae.customer@gmail.com →  2 cars (Suzuki White, Kia Red)")
-        print("    eiphyu.customer@gmail.com   →  1 car  (Toyota Pearl White)")
+        print("  [CUSTOMERS]  (20 accounts)")
+        print("    khunsithuaung35@gmail.com    →  2 cars (Toyota Silver, Nissan Black)")
+        print("    nainglin.customer@gmail.com  →  2 cars (Honda White, Suzuki Red)")
+        print("    waiphyo.customer@gmail.com   →  2 cars (Mazda Blue, Toyota White)")
+        print("    zinmar.customer@gmail.com    →  1 car  (Hyundai Grey)")
+        print("    phyowai.customer@gmail.com   →  3 cars (Mitsubishi, Toyota, Honda)")
+        print("    chanmyae.customer@gmail.com  →  2 cars (Suzuki White, Kia Red)")
+        print("    eiphyu.customer@gmail.com    →  1 car  (Toyota Pearl White)")
+        print("    ayeaye.customer@gmail.com    →  2 cars (Honda Blue, Yamaha Red)")
+        print("    mghtun.customer@gmail.com    →  1 car  (Toyota White)")
+        print("    moepwint.customer@gmail.com  →  2 cars (Suzuki Silver, Mazda Black)")
+        print("    kokyaw.customer@gmail.com    →  2 cars (Mitsubishi Grey, Toyota Blue)")
+        print("    mathandar.customer@gmail.com →  1 car  (Hyundai White)")
+        print("    winmyat.customer@gmail.com   →  2 cars (Kia Silver, Honda Black)")
+        print("    nandaaung.customer@gmail.com →  1 car  (Toyota Gold)")
+        print("    thetmon.customer@gmail.com   →  3 cars (Suzuki Red, Toyota White, Mazda Blue)")
+        print("    kyawthu.customer@gmail.com   →  1 car  (Nissan Black)")
+        print("    suyadanar.customer@gmail.com →  2 cars (Honda Pearl White, Hyundai Grey)")
+        print("    aungaung.customer@gmail.com  →  2 cars (Toyota Silver, Mitsubishi White)")
+        print("    khinmoe.customer@gmail.com   →  1 car  (Kia Red)")
+        print("    minzaw.customer@gmail.com    →  2 cars (Toyota Blue, Suzuki Silver)")
         print()
-        print("  Parking Lots (Yangon, Myanmar)")
+        print("  Parking Lots (Yangon, Myanmar)  — 24 lots")
         print("  ──────────────────────────────────────────────────────────────────")
-        print("   1. Yangon Central Parking     16.7741, 96.1594   500 MMK/hr  [KST]")
-        print("   2. Bogyoke Market Parking     16.7821, 96.1543   600 MMK/hr  [KST]")
-        print("   3. Sule Square Parking        16.7769, 96.1589   800 MMK/hr  [MA]")
-        print("   4. Junction Square Parking    16.8315, 96.1345   700 MMK/hr  [TW]")
-        print("   5. Junction City Parking      16.7902, 96.1452  1000 MMK/hr  [TW]")
-        print("   6. Thaketa Township Parking   16.8025, 96.1938   400 MMK/hr  [AKK]")
-        print("   7. Insein Road Parking        16.8745, 96.0982   350 MMK/hr  [AKK]")
-        print("   8. Tamwe Market Parking       16.8264, 96.1712   450 MMK/hr  [HHS]")
-        print("   9. Kamayut Depot Parking      16.8371, 96.1325   550 MMK/hr  [HHS]")
-        print("  10. Dagon Centre Parking       16.7704, 96.1759   650 MMK/hr  [MA]")
-        print("  11. Yankin Market Parking      16.8296, 96.1634   500 MMK/hr  [KST]")
-        print("  12. Hledan Centre Parking      16.8208, 96.1306   600 MMK/hr  [HHS]")
-        print("  13. Myanmar Plaza Parking      16.8285, 96.1557  1200 MMK/hr  [TW]")
-        print("  14. Times City Parking         16.8095, 96.1302  1000 MMK/hr  [AKK]")
-        print("  15. St. John City Mall Parking 16.7801, 96.1415   750 MMK/hr  [KST]")
-        print("  16. Ocean Supercenter Parking  16.8530, 96.1850   500 MMK/hr  [MA]")
-        print("  17. Hlaing Riverfront Parking  16.8450, 96.1150   600 MMK/hr  [AKK]")
-        print("  18. North Dagon Plaza Parking  16.8720, 96.1850   400 MMK/hr  [HHS]")
+        print("   1. Yangon Central Parking          16.7741, 96.1594   500/hr  [KST]")
+        print("   2. Bogyoke Market Parking          16.7821, 96.1543   600/hr  [KST]")
+        print("   3. Sule Square Parking             16.7769, 96.1589   800/hr  [MA]")
+        print("   4. Junction Square Parking         16.8315, 96.1345   700/hr  [TW]")
+        print("   5. Junction City Parking           16.7902, 96.1452  1000/hr  [TW]")
+        print("   6. Thaketa Township Parking        16.8025, 96.1938   400/hr  [AKK]")
+        print("   7. Insein Road Parking             16.8745, 96.0982   350/hr  [AKK]")
+        print("   8. Tamwe Market Parking            16.8264, 96.1712   450/hr  [HHS]")
+        print("   9. Kamayut Depot Parking           16.8371, 96.1325   550/hr  [HHS]")
+        print("  10. Dagon Centre Parking            16.7704, 96.1759   650/hr  [MA]")
+        print("  11. Yankin Market Parking           16.8296, 96.1634   500/hr  [KST]")
+        print("  12. Hledan Centre Parking           16.8208, 96.1306   600/hr  [HHS]")
+        print("  13. Myanmar Plaza Parking           16.8285, 96.1557  1200/hr  [TW]")
+        print("  14. Times City Parking              16.8095, 96.1302  1000/hr  [AKK]")
+        print("  15. St. John City Mall Parking      16.7801, 96.1415   750/hr  [KST]")
+        print("  16. Ocean Supercenter Parking       16.8530, 96.1850   500/hr  [MA]")
+        print("  17. Hlaing Riverfront Parking       16.8450, 96.1150   600/hr  [AKK]")
+        print("  18. North Dagon Plaza Parking       16.8720, 96.1850   400/hr  [HHS]")
+        print("  19. Sanpya Market Parking           16.7680, 96.1720   450/hr  [ZM]")
+        print("  20. Nilar Junction Parking          16.8230, 96.1390   700/hr  [NK]")
+        print("  21. East Dagon Township Parking     16.8360, 96.2120   350/hr  [KZT]")
+        print("  22. Shwe Gone Daing Parking         16.7980, 96.1640   900/hr  [SMN]")
+        print("  23. Bago Road Express Parking       16.8150, 96.1890   500/hr  [WYO]")
+        print("  24. Kyimyindaing Ferry Parking      16.7790, 96.1240   400/hr  [PMT]")
         print("=" * 70)
         print()
 
