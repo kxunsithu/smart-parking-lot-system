@@ -1,10 +1,8 @@
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import {
-  Car,
   Users,
   Target,
   Lightbulb,
-  Mail,
   Sparkles,
   MapPin,
   GraduationCap,
@@ -14,7 +12,6 @@ import {
   TestTube2,
   FileText,
   ShieldCheck,
-  Globe,
 } from "lucide-react"
 import Navbar from "@/components/layout/Navbar"
 import Footer from "@/components/layout/Footer"
@@ -56,42 +53,10 @@ function FloatingOrbs() {
   )
 }
 
-/* ─── Animated Counter ──────────────────────────────────────────── */
-function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: string }) {
-  const [count, setCount] = useState(0)
-  const ref = useRef<HTMLDivElement>(null)
-  const started = useRef(false)
-
-  useEffect(() => {
-    started.current = false
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !started.current) {
-          started.current = true
-          if (target === 0) { setCount(0); return }
-          const duration = 1200
-          const step = Math.max(1, target / (duration / 16))
-          let current = 0
-          const timer = setInterval(() => {
-            current += step
-            if (current >= target) { setCount(target); clearInterval(timer) }
-            else setCount(Math.floor(current))
-          }, 16)
-        }
-      },
-      { threshold: 0.2 }
-    )
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
-  }, [target])
-
-  return <div ref={ref} className="tabular-nums">{count.toLocaleString()}{suffix}</div>
-}
 
 /* ─── Team Member Data ──────────────────────────────────────────── */
 interface TeamMember {
   name: string
-  role: string
   image: string
   isLeader?: boolean
   initial: string
@@ -107,7 +72,6 @@ interface TeamMember {
 const teamMembers: TeamMember[] = [
   {
     name: "Khun Si Thu Aung",
-    role: "Team Leader & Full Stack Developer",
     image: "/team/khun-si-thu-aung.png",
     isLeader: true,
     initial: "K",
@@ -121,7 +85,6 @@ const teamMembers: TeamMember[] = [
   },
   {
     name: "Saw Paing Wathone San",
-    role: "QA Engineer & System Analyst",
     image: "/team/saw-paing-wathone-san.png",
     isLeader: false,
     initial: "S",
@@ -135,7 +98,6 @@ const teamMembers: TeamMember[] = [
   },
   {
     name: "Mg Si Thu Aung",
-    role: "Backend Developer",
     image: "/team/mg-si-thu-aung.png",
     isLeader: false,
     initial: "M",
@@ -149,7 +111,6 @@ const teamMembers: TeamMember[] = [
   },
   {
     name: "Myo Min Oo",
-    role: "QA Engineer & Systems Tester",
     image: "/team/myo-min-oo.png",
     isLeader: false,
     initial: "M",
@@ -163,7 +124,6 @@ const teamMembers: TeamMember[] = [
   },
   {
     name: "Yadanar Htun",
-    role: "Documentation Lead",
     image: "/team/yadanar-htun.png",
     isLeader: false,
     initial: "Y",
@@ -177,7 +137,6 @@ const teamMembers: TeamMember[] = [
   },
   {
     name: "Nan Hnin Chit Aung",
-    role: "Database Designer & Analyst",
     image: "/team/nan-hnin-chit-aung.png",
     isLeader: false,
     initial: "N",
@@ -201,9 +160,6 @@ function TeamMemberCard({ member, index }: { member: TeamMember; index: number }
       className="group relative bg-card/80 backdrop-blur-md border border-border/80 rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-2 flex flex-col items-center text-center p-6"
       style={{ animationDelay: `${index * 100}ms` }}
     >
-      {/* Top accent bar */}
-      <div className={`absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r ${member.gradient} opacity-90 group-hover:opacity-100 transition-opacity`} />
-
       {/* Leader badge */}
       {member.isLeader && (
         <div className="absolute top-4 right-4 z-10">
@@ -235,13 +191,10 @@ function TeamMemberCard({ member, index }: { member: TeamMember; index: number }
         </div>
       </div>
 
-      {/* Name and Role */}
-      <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors leading-snug">
+      {/* Name */}
+      <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors leading-snug mb-6">
         {member.name}
       </h3>
-      <p className="text-xs text-primary font-semibold mt-1 mb-6">
-        {member.role}
-      </p>
 
       {/* Social Links with Icons */}
       <div className="mt-auto flex items-center justify-center gap-2.5 w-full pt-4 border-t border-border/60">
@@ -283,13 +236,6 @@ function TeamMemberCard({ member, index }: { member: TeamMember; index: number }
 
 /* ─── About Us Page ─────────────────────────────────────────────── */
 export default function AboutUs() {
-  const stats = [
-    { label: "Team Members", value: 6, suffix: "" },
-    { label: "Weeks of Dev", value: 12, suffix: "+" },
-    { label: "Features Built", value: 20, suffix: "+" },
-    { label: "API Endpoints", value: 30, suffix: "+" },
-  ]
-
   const values = [
     {
       icon: Target,
@@ -365,23 +311,6 @@ export default function AboutUs() {
       {/* ── Main Content ──────────────────────────────────────── */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-16 space-y-20">
 
-        {/* ── Stats ───────────────────────────────────────────── */}
-        <section>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {stats.map(({ label, value, suffix }) => (
-              <div
-                key={label}
-                className="bg-card/80 border border-border/80 rounded-xl p-6 text-center hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
-              >
-                <div className="text-3xl sm:text-4xl font-extrabold text-primary mb-1">
-                  <AnimatedCounter target={value} suffix={suffix} />
-                </div>
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{label}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
         {/* ── Mission / Vision / Team ─────────────────────────── */}
         <section className="space-y-10">
           <div className="text-center space-y-2">
@@ -419,89 +348,14 @@ export default function AboutUs() {
             </p>
           </div>
 
-          {/* Leader highlighted */}
-          <div className="flex justify-center">
-            <div className="w-full max-w-sm">
-              <TeamMemberCard member={teamMembers[0]} index={0} />
-            </div>
-          </div>
-
-          {/* Rest of team */}
+          {/* 2 rows × 3 columns grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {teamMembers.slice(1).map((member, i) => (
-              <TeamMemberCard key={member.name} member={member} index={i + 1} />
+            {teamMembers.map((member, i) => (
+              <TeamMemberCard key={member.name} member={member} index={i} />
             ))}
           </div>
         </section>
 
-        {/* ── Project Details ─────────────────────────────────── */}
-        <section className="relative rounded-xl overflow-hidden border border-border/80 bg-card/60 backdrop-blur-md p-8 sm:p-12">
-          <div
-            className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none"
-            style={{
-              backgroundImage: "linear-gradient(#FF8F00 1px, transparent 1px), linear-gradient(to right, #FF8F00 1px, transparent 1px)",
-              backgroundSize: "32px 32px",
-            }}
-          />
-          <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center">
-            <div className="size-20 rounded-2xl bg-primary flex items-center justify-center shadow-xl shrink-0">
-              <Car className="size-10 text-white" />
-            </div>
-            <div className="space-y-3 text-center md:text-left">
-              <h2 className="text-2xl font-extrabold text-foreground tracking-tight">Smart Parking Lot Management System</h2>
-              <p className="text-muted-foreground leading-relaxed max-w-2xl text-sm sm:text-base">
-                A comprehensive platform featuring real-time slot availability, digital wallet payments, 
-                3D parking visualization, session management, and a dedicated management dashboard — 
-                all crafted to bring smarter parking to Myanmar.
-              </p>
-              <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                {["React", "TypeScript", "FastAPI", "PostgreSQL", "Docker", "Nginx"].map((tech) => (
-                  <span
-                    key={tech}
-                    className="text-[11px] font-semibold px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20"
-                  >
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── CTA Contact ─────────────────────────────────────── */}
-        <section className="text-center space-y-6 py-4">
-          <h2 className="text-2xl font-extrabold text-foreground">Get in Touch</h2>
-          <p className="text-muted-foreground max-w-lg mx-auto text-sm leading-relaxed">
-            Interested in this project or want to collaborate? Feel free to reach out to our team.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <a
-              href="mailto:contact@smartparking.mm"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-border/80 bg-card/70 text-sm font-semibold text-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all"
-            >
-              <Mail className="size-4" />
-              Email Us
-            </a>
-            <a
-              href="https://t.me/smartparkingmm"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-border/80 bg-card/70 text-sm font-semibold text-foreground hover:border-sky-500/50 hover:bg-sky-500/5 hover:text-sky-500 transition-all"
-            >
-              <TelegramIcon className="size-4" />
-              Telegram Channel
-            </a>
-            <a
-              href="https://facebook.com/smartparkingmm"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-border/80 bg-card/70 text-sm font-semibold text-foreground hover:border-blue-600/50 hover:bg-blue-600/5 hover:text-blue-600 transition-all"
-            >
-              <FacebookIcon className="size-4" />
-              Facebook Page
-            </a>
-          </div>
-        </section>
 
       </main>
 
