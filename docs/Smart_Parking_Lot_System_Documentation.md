@@ -1,9 +1,10 @@
 # Smart Parking Lot Management System
+
 ### Project Documentation
 
 ---
 
-> [!NOTE]
+> [!NOTE] 💡
 > This document covers the full lifecycle of the Smart Parking Lot Management System — from its motivation and scope through its technical design, implementation details, and conclusions.
 
 ---
@@ -36,7 +37,7 @@ The **Smart Parking Lot Management System** is a full-stack, cloud-ready web pla
 The platform is composed of three independently deployable sub-systems:
 
 | Sub-System | Technology | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | `smart-parking-api` | Python 3.12 / FastAPI | RESTful backend API, business logic, database |
 | `smart-parking-management` | React 19 / TypeScript / Vite | Admin, Owner, and Staff web portal |
 | `smart-parking-customer` | React 19 / TypeScript / Vite | Customer-facing web application |
@@ -321,15 +322,15 @@ The class diagram below represents the full domain model of the Smart Parking Lo
 ### Notation Guide
 
 | Symbol | Meaning |
-|---|---|
+| --- | --- |
 | `+` | Public member (attribute or method) |
-| `-->`  | Association / Composition (one class references another) |
+| `-->` | Association / Composition (one class references another) |
 | `"1" --> "0..*"` | Multiplicity — one instance relates to zero-or-more instances |
 
 ### Class Descriptions
 
 | Class | Layer | Purpose | Key Business Rules |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **Role** | Auth | Defines the four platform roles (`ADMIN`, `OWNER`, `STAFF`, `CUSTOMER`). Seeded at startup. | Each `User` is assigned exactly one role; role drives all RBAC checks. |
 | **User** | Auth | Core account entity shared by all roles. Stores credentials and profile. | Password stored as bcrypt hash. `is_verified` must be `true` before login is permitted. |
 | **ParkingOwner** | Profile | Owner-specific profile linked 1-to-1 with a `User`. | Must hold an active `OwnerSubscription` to create lots or invite staff. |
@@ -600,7 +601,7 @@ The system defines four actors — **System Admin**, **Parking Owner**, **Parkin
 ### Actor Summary
 
 | Actor | Description | Entry Point | Scope of Authority |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **System Admin** | Platform super-user seeded at system startup. Not self-registered. | Admin Portal login | Platform-wide: user management, owner monitoring, subscription packages, wallet configuration, read-only access to all lots, sessions, and payments. |
 | **Parking Owner** | Business operator who self-registers and manages parking facilities. | Owner Portal login after registration | Own resources: lots, floors, slots, staff, subscriptions, and revenue data. |
 | **Parking Staff** | Operational user assigned to a single lot by the owner. | Staff Portal login | Single lot: slot board monitoring, session list, and finishing active sessions. |
@@ -609,7 +610,7 @@ The system defines four actors — **System Admin**, **Parking Owner**, **Parkin
 ### Relationship Notation
 
 | Notation | Name | When To Use |
-|---|---|---|
+| --- | --- | --- |
 | Solid actor line `---` | **Association** | Connects an actor to a use case they can directly initiate. |
 | Dashed arrow `include` | **Include** | The source use case **always and unconditionally** triggers the target use case (mandatory sub-flow). |
 | Dashed arrow `extend` | **Extend** | The source use case **optionally and conditionally** extends the target use case (optional behaviour). |
@@ -662,7 +663,7 @@ graph LR
 ```
 
 | Use Case | Relationship | Description |
-|---|---|---|
+| --- | --- | --- |
 | **Login and Logout** | — | Authenticate using email and password; receive JWT access and refresh tokens. Logout blacklists the refresh token. |
 | **Change Password** | — | Update the account password by providing the current password and a new password. |
 | **Update Profile** | — | Edit account name and phone number. |
@@ -736,7 +737,7 @@ graph LR
 ```
 
 | Use Case | Relationship | Description |
-|---|---|---|
+| --- | --- | --- |
 | **Self-Register Owner Account** | — | Register a new owner account directly via `/auth/register-owner` with company details. |
 | **Login and Logout** | — | Authenticate with JWT tokens. |
 | **Change Password** | — | Update account password from the profile settings page. |
@@ -798,7 +799,7 @@ graph LR
 ```
 
 | Use Case | Relationship | Description |
-|---|---|---|
+| --- | --- | --- |
 | **Login and Logout** | — | Authenticate using credentials created by the Parking Owner. |
 | **Change Password** | — | Update account password via the profile settings page. |
 | **Update Profile** | — | Edit display name and phone number. |
@@ -856,7 +857,7 @@ graph LR
 ```
 
 | Use Case | Relationship | Description |
-|---|---|---|
+| --- | --- | --- |
 | **Register New Account** | — | Self-register with name, email, and password. Account starts in an unverified state. |
 | **Verify Email via OTP** | `include` Register New Account | Always required immediately after registration — submits the OTP sent to the registered email. |
 | **Login and Logout** | — | Authenticate with email and password. Logout revokes the refresh token. |
@@ -879,7 +880,6 @@ graph LR
 | **View Session Details and Fee** | `include` View Own Sessions | Always navigated to from the session list to view the full session record and payment reference. |
 | **View Customer Dashboard** | — | Summary showing the current active session, recent history, and quick links to browse lots and manage vehicles. |
 
-
 ## 2.4 Sequence Diagram
 
 Each role's core workflows are illustrated below using standard UML sequence diagrams. Actors interact with the system via the **Management App** or **Customer App** (UI), which communicates with the backend **Smart Parking System** and the underlying **Database**, plus external services (Email Service, Payment Gateway) where applicable. Lifelines feature vertical activation bars representing active execution states.
@@ -887,7 +887,7 @@ Each role's core workflows are illustrated below using standard UML sequence dia
 ### Participants / Lifelines Legend
 
 | Participant Alias | Full Name | Role |
-|---|---|---|
+| --- | --- | --- |
 | **UI** | Management App / Customer App | Frontend application that renders user interface forms and sends API requests. |
 | **System** | Smart Parking System | Backend application service handling authentication, validation, and business rules. |
 | **DB** | Database | Relational database (PostgreSQL) storing system entities and persistent state. |
@@ -897,7 +897,7 @@ Each role's core workflows are illustrated below using standard UML sequence dia
 ### Lifeline Notation
 
 | Symbol | Meaning |
-|---|---|
+| --- | --- |
 | `activate` / `deactivate` | Vertical activation bar showing when a lifeline is processing a request. |
 | `->>` | Synchronous message call (request). |
 | `-->>` | Return message (response). |
@@ -933,7 +933,7 @@ sequenceDiagram
 #### Step-by-Step Description
 
 | Step | From → To | Message / Operation | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1 | Admin → UI | Request login page | Admin opens the Management App login page. |
 | 2 | UI → Admin | Render login form | UI presents the email and password input form. |
 | 3 | Admin → UI | Submit credentials | Admin enters credentials and clicks Sign In. |
@@ -983,7 +983,7 @@ sequenceDiagram
 #### Step-by-Step Description
 
 | Step | From → To | Message / Operation | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1 | Admin → UI | Select Create Package | Admin navigates to Package Management and clicks "New Package". |
 | 2 | Admin → UI | Submit package details | Admin inputs package name, price, duration, and limit caps. |
 | 3 | UI → System | `Submit package details` | UI sends new package data to the System backend. |
@@ -1026,7 +1026,7 @@ sequenceDiagram
 #### Step-by-Step Description
 
 | Step | From → To | Message / Operation | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1 | Admin → UI | Search owner & click Deactivate | Admin selects an owner from list and clicks Deactivate. |
 | 2 | UI → Admin | Prompt confirmation dialog | UI displays confirmation modal to prevent accidental deactivation. |
 | 3 | Admin → UI | Confirm deactivation | Admin confirms the action in modal. |
@@ -1070,7 +1070,7 @@ sequenceDiagram
 #### Step-by-Step Description
 
 | Step | From → To | Message / Operation | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1 | Owner → UI | Request registration page | Owner opens the Owner Registration URL (unprotected endpoint). |
 | 2 | UI → Owner | Render owner registration form | UI renders the registration form fields. |
 | 3 | Owner → UI | Submit credentials | Owner enters registration data and submits. |
@@ -1132,7 +1132,7 @@ sequenceDiagram
 #### Step-by-Step Description
 
 | Step | From → To | Message / Operation | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1 | Owner → UI | Fill lot form | Owner fills in lot name, hourly rate, and facility type. |
 | 2 | UI → System | `Submit lot details` | UI sends lot creation request. |
 | 3 | System → DB | `Verify subscription limits` | System checks DB to enforce package `max_lots` limit. |
@@ -1204,7 +1204,7 @@ sequenceDiagram
 #### Step-by-Step Description
 
 | Step | From → To | Message / Operation | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1 | Owner → UI | Select package & Subscribe | Owner picks a subscription package. |
 | 2 | UI → System | `Create subscription request` | UI requests subscription creation. |
 | 3 | System → DB | `Insert OwnerSubscription` | System creates pending subscription record in DB. |
@@ -1262,7 +1262,7 @@ sequenceDiagram
 #### Step-by-Step Description
 
 | Step | From → To | Message / Operation | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1 | Staff → UI | Request Slot Board | Staff opens the Slot Board for assigned lot. |
 | 2 | UI → System | `Request floor and slot layout` | UI requests floor and slot structure. |
 | 3 | System → DB | `Fetch floors and slots` | System retrieves floors and slots with current availability. |
@@ -1311,7 +1311,7 @@ sequenceDiagram
 #### Step-by-Step Description
 
 | Step | From → To | Message / Operation | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1 | Staff → UI | Select session & click Finish | Staff locates vehicle session and triggers checkout. |
 | 2 | UI → System | `Request finish parking session` | UI sends request to finish session. |
 | 3 | System → DB | `Fetch session details` | System retrieves start time and lot hourly rate. |
@@ -1377,7 +1377,7 @@ sequenceDiagram
 #### Step-by-Step Description
 
 | Step | From → To | Message / Operation | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1 | Customer → UI | Request registration page | Customer opens Customer App signup screen. |
 | 2 | UI → Customer | Render registration form | UI presents registration fields. |
 | 3 | Customer → UI | Submit credentials | Customer submits account details. |
@@ -1457,7 +1457,7 @@ sequenceDiagram
 #### Step-by-Step Description
 
 | Step | From → To | Message / Operation | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1 | Customer → UI | Select slot, car & duration | Customer selects slot, vehicle, and start/end time. |
 | 2 | UI → System | `Submit booking request` | UI sends booking reservation call. |
 | 3 | System → DB | `Validate schedule conflicts` | System checks DB for slot overlap or car double-booking (2-hour buffer gap). |
@@ -1538,13 +1538,16 @@ smart-parking-api/
 ### Key Implementation Details
 
 #### Authentication & Security
+
 - JWT access tokens (short-lived) and refresh tokens (long-lived) are issued on login/OTP verification.
 - On logout, the refresh token's `jti` (JWT ID) is stored in the `token_blacklist` table. A cleanup sweep on startup removes expired blacklist entries.
 - Passwords are hashed using **bcrypt** via `passlib`. Plain-text passwords are never stored.
 - The `get_current_user` FastAPI dependency decodes and validates the bearer token on every protected endpoint.
 
 #### Session Booking & Fee Calculation
+
 The `ParkingSessionService.book_session()` method enforces:
+
 1. Only `CUSTOMER` role users can book.
 2. Car must belong to the booking customer.
 3. Slot must exist.
@@ -1556,13 +1559,16 @@ The `ParkingSessionService.book_session()` method enforces:
 The session is created in `PENDING` state and transitions to `ACTIVE` only upon successful wallet payment confirmation.
 
 #### Digital Wallet Integration
+
 The `WalletPaymentClient` (`app/services/wallet_payment_client.py`) encapsulates all communication with the external digital wallet backend. It uses an `X-API-Key` (stored per `WalletAccount`) to authenticate requests. The payment flow is:
+
 - **Initiate**: The API calls the wallet backend to create a payment request. The wallet sends an OTP to the customer's registered phone.
 - **Confirm**: The customer submits the OTP and PIN to the Smart Parking API, which forwards them to the wallet backend. On success, the wallet returns a transaction number.
 
 The `Payment` record tracks both the internal reference (`PP-XXXXXX`) and the external wallet references throughout this flow.
 
 #### Subscription Enforcement
+
 Before an owner can create a new parking lot, `ParkingLotService` checks the owner's active subscription against the package's `max_lots` limit. Similarly, `ParkingStaffService` checks the `max_staff` limit before adding staff to a lot.
 
 ---
@@ -1571,8 +1577,8 @@ Before an owner can create a new parking lot, `ParkingLotService` checks the own
 
 This section provides a visual walkthrough of the running system. Each sub-section corresponds to a distinct role or user flow. A **screenshot placeholder** (`📸`) marks where an actual system screenshot should be inserted once the system is running.
 
-> [!NOTE]
-> To capture screenshots: run `docker-compose up` locally (or access the cloud deployment), navigate to each page, and embed the image file in place of the placeholder comment.
+> [!NOTE] 💡
+> To capture screenshots: run docker-compose up locally (or access the cloud deployment), navigate to each page, and embed the image file in place of the placeholder comment.
 
 ---
 
@@ -1584,29 +1590,32 @@ The Customer App is a standalone React web application (port `3000` locally). It
 
 ### 3.3.1.1 Register Page
 
-📸 *[Insert screenshot: Customer Register Page — `/register`]*
+📸 *\[Insert screenshot: Customer Register Page —* `/register`*\]*
 
 **How it works:**
 
 The Register page displays a multi-field form:
+
 - **Full Name**, **Email Address**, **Password**, **Confirm Password**
 
 When the customer clicks **"Register"**:
+
 1. Client-side validation runs via **React Hook Form + Zod**.
 2. A `POST /api/v1/auth/register` request is sent.
 3. On success, the customer is redirected to the Email Verification page and an OTP is dispatched to their inbox.
 
-> All seed accounts use the password: **`asdffdsa`**
+> All seed accounts use the password: `asdffdsa`
 
 ---
 
 ### 3.3.1.2 Email Verification Page
 
-📸 *[Insert screenshot: Email Verification Page — `/verify-email`]*
+📸 *\[Insert screenshot: Email Verification Page —* `/verify-email`*\]*
 
 **How it works:**
 
 After registration, the customer must verify their email before logging in:
+
 - **6-digit OTP input** — Code received via email.
 - **Countdown timer** — 10-minute validity window.
 - **"Resend OTP" button** — Active after the timer expires.
@@ -1617,19 +1626,20 @@ On valid OTP submission, `User.is_verified` is set to `true`, JWT tokens are gen
 
 ### 3.3.1.3 Login Page
 
-📸 *[Insert screenshot: Customer Login Page — `/login`]*
+📸 *\[Insert screenshot: Customer Login Page —* `/login`*\]*
 
 **How it works:**
 
 The Login page accepts **Email** and **Password**. On success:
+
 1. The backend verifies credentials and checks `is_verified = true` and `is_active = true`.
 2. JWT access and refresh tokens are returned and persisted in **Zustand** (`localStorage`).
 3. The customer is redirected to the Dashboard.
 
-**Seed customer credentials (password: `asdffdsa`):**
+**Seed customer credentials (password:** `asdffdsa`**):**
 
 | Email | Registered Cars |
-|---|---|
+| --- | --- |
 | `khunsithuaung35@gmail.com` | Toyota Silver, Nissan Black |
 | `nainglin.customer@gmail.com` | Honda White, Suzuki Red |
 | `phyowai.customer@gmail.com` | Mitsubishi Black, Toyota Gold, Honda Silver |
@@ -1638,7 +1648,7 @@ The Login page accepts **Email** and **Password**. On success:
 
 ### 3.3.1.4 Customer Dashboard
 
-📸 *[Insert screenshot: Customer Dashboard — `/dashboard`]*
+📸 *\[Insert screenshot: Customer Dashboard —* `/dashboard`*\]*
 
 **What it shows:**
 
@@ -1652,11 +1662,12 @@ If no active session exists, a prompt is shown to browse and book a lot.
 
 ### 3.3.1.5 Browse Parking Lots
 
-📸 *[Insert screenshot: Parking Lots List — `/parking`]*
+📸 *\[Insert screenshot: Parking Lots List —* `/parking`*\]*
 
 **What it shows:**
 
 All **active** and **publicly visible** parking lots. Each card displays:
+
 - Lot Name, Type (PUBLIC / PRIVATE), Hourly Rate, Available Slots count
 
 Clicking a card navigates to the Lot Detail page.
@@ -1665,7 +1676,7 @@ Clicking a card navigates to the Lot Detail page.
 
 ### 3.3.1.6 Parking Lot Detail & Slot Availability
 
-📸 *[Insert screenshot: Parking Lot Detail Page — `/parking/:id`]*
+📸 *\[Insert screenshot: Parking Lot Detail Page —* `/parking/:id`*\]*
 
 **What it shows:**
 
@@ -1680,40 +1691,59 @@ Clicking a card navigates to the Lot Detail page.
 
 ### 3.3.1.7 Booking Dialog
 
-📸 *[Insert screenshot: Booking Dialog modal]*
+📸 *\[Insert screenshot: Booking Dialog modal\]*
 
 **How it works:**
 
 Clicking an AVAILABLE slot opens a modal with:
+
 - Slot info (read-only), **Select Vehicle** dropdown, **Start / End Date-Time** pickers, **Estimated Fee** (auto-calculated in real time).
 
 On **"Confirm Booking"**:
+
 1. System checks for car and slot conflicts (including the 2-hour buffer gap rule).
 2. A `PENDING` parking session is created.
 3. The payment modal opens immediately.
 
 ---
 
-### 3.3.1.8 Wallet Payment — Initiate
+### 3.3.1.8 About Us Page
 
-📸 *[Insert screenshot: Wallet Payment Initiation Modal]*
+📸 *\[Insert screenshot: About Us Page —* `/about`*\]*
 
-**How it works:**
+**What it shows:**
 
-A payment modal shows the **amount due** and a **wallet phone number** input. On **"Pay Now"**:
-1. System calls the external wallet API.
-2. Wallet sends an OTP SMS to the customer's phone.
-3. The modal transitions to the OTP confirmation step.
+The About Us page is publicly accessible (no login required) and introduces the team behind the Smart Parking Lot Management System. It includes:
+
+- **Hero Section** — A full-width banner with the project title, a Computer Science Capstone badge, and a Myanmar location tagline.
+- **Platform Statistics** — Animated counters displaying Team Members (6), Weeks of Development (12+), Features Built (20+), and API Endpoints (30+).
+- **Mission, Vision & Team Values** — Three cards outlining the project's core purpose and the team's engineering commitment.
+- **Team Member Cards** — Profile photo, name, role title, and social link icons (Telegram, Facebook, Email) for all 6 team members:
+  - Khun Si Thu Aung — Team Leader & Full Stack Developer
+  - Saw Paing Wathone San — QA Engineer & System Analyst
+  - Mg Si Thu Aung — Backend Developer
+  - Myo Min Oo — QA Engineer & Systems Tester
+  - Yadanar Htun — Documentation Lead
+  - Nan Hnin Chit Aung — Database Designer & Analyst
+- **Tech Stack Highlights** — Badges for React, TypeScript, FastAPI, PostgreSQL, Docker, Nginx.
+- **Contact Section** — Email, Telegram channel, and Facebook page links.
+
+**Navigation:**
+
+- Accessible from the **Navbar** ("About Us" link — visible to both logged-in and guest users).
+- Accessible from the **Footer** via a direct "About Us" text link.
+- Route: `/about` — no authentication required.
 
 ---
 
-### 3.3.1.9 Wallet Payment — OTP Confirmation
+### 3.3.1. Wallet Payment — OTP Confirmation
 
-📸 *[Insert screenshot: OTP & PIN Confirmation Modal]*
+📸 *\[Insert screenshot: OTP & PIN Confirmation Modal\]*
 
 **How it works:**
 
 The confirmation modal requests the **OTP** (received via SMS) and the customer's **wallet PIN**. On **"Confirm Payment"**:
+
 1. System forwards OTP + PIN to the wallet gateway.
 2. Gateway validates and deducts the amount.
 3. Session status: `PENDING → ACTIVE`; Slot status: `AVAILABLE → OCCUPIED`.
@@ -1723,11 +1753,12 @@ The confirmation modal requests the **OTP** (received via SMS) and the customer'
 
 ### 3.3.1.10 3D Parking Layout View
 
-📸 *[Insert screenshot: 3D Parking Lot View — `/parking/:id/3d`]*
+📸 *\[Insert screenshot: 3D Parking Lot View —* `/parking/:id/3d`*\]*
 
 **What it shows:**
 
 An interactive Three.js 3D floor map. Each slot is rendered as a coloured block:
+
 - 🟢 Green = Available, 🔴 Red = Occupied
 
 The customer can rotate/pan the scene (mouse drag or touch), click a slot block to view details and book, or switch back to the 2D grid.
@@ -1736,13 +1767,14 @@ The customer can rotate/pan the scene (mouse drag or touch), click a slot block 
 
 ### 3.3.1.11 My Cars (Vehicle Management)
 
-📸 *[Insert screenshot: My Cars Page — `/cars`]*
+📸 *\[Insert screenshot: My Cars Page —* `/cars`*\]*
 
 **What it shows:**
 
 All registered vehicles. Each card shows **Plate Number**, **Brand**, **Color**.
 
 Actions available:
+
 - **Add** a new car (plate must be globally unique).
 - **Edit** brand or color.
 - **Delete** a car (blocked if it has active/pending sessions).
@@ -1751,13 +1783,14 @@ Actions available:
 
 ### 3.3.1.12 My Sessions (Session History)
 
-📸 *[Insert screenshot: My Sessions Page — `/sessions`]*
+📸 *\[Insert screenshot: My Sessions Page —* `/sessions`*\]*
 
 **What it shows:**
 
 All personal parking sessions. Each entry shows Lot, Slot, Start/End, Duration, Fee, and a **Status Badge** (`PENDING` / `ACTIVE` / `FINISHED`).
 
 Actions available:
+
 - Filter by status.
 - Click a session to view full details and payment reference.
 - **Finish** an `ACTIVE` session (releases the slot).
@@ -1766,7 +1799,7 @@ Actions available:
 
 ### 3.3.1.13 Profile Page
 
-📸 *[Insert screenshot: Customer Profile Page — `/profile`]*
+📸 *\[Insert screenshot: Customer Profile Page —* `/profile`*\]*
 
 **What it shows:**
 
@@ -1784,7 +1817,7 @@ The Management Portal (port `3001` locally) is a shared React application. After
 
 ### 3.3.2.1 Admin Login
 
-📸 *[Insert screenshot: Management Portal Login Page]*
+📸 *\[Insert screenshot: Management Portal Login Page\]*
 
 **How to log in:**
 
@@ -1793,18 +1826,19 @@ The login form (shared across Admin, Owner, and Staff roles) accepts **Email** a
 **Admin seed credentials:**
 
 | Email | Password |
-|---|---|
+| --- | --- |
 | `khunsithu350@gmail.com` | `asdffdsa` |
 
 ---
 
 ### 3.3.2.2 Admin Dashboard
 
-📸 *[Insert screenshot: Admin Dashboard]*
+📸 *\[Insert screenshot: Admin Dashboard\]*
 
 **What it shows:**
 
 Platform-wide summary cards and charts:
+
 - Total Users, Total Owners, Total Parking Lots, Active Sessions
 - Revenue chart (bar/line) showing payment volume over time
 - Subscription count (active vs. expired)
@@ -1813,13 +1847,14 @@ Platform-wide summary cards and charts:
 
 ### 3.3.2.3 User Management
 
-📸 *[Insert screenshot: Admin — All Users Table]*
+📸 *\[Insert screenshot: Admin — All Users Table\]*
 
 **What it shows:**
 
 A searchable, paginated table with columns: Name, Email, Role, Status (Active/Inactive), Verified, Joined Date.
 
 Actions:
+
 - Search/filter by role.
 - **Activate / Deactivate** user — Toggles `is_active`; deactivated users cannot log in.
 
@@ -1827,13 +1862,14 @@ Actions:
 
 ### 3.3.2.4 Parking Owner Management
 
-📸 *[Insert screenshot: Admin — Parking Owners Table]*
+📸 *\[Insert screenshot: Admin — Parking Owners Table\]*
 
 **What it shows:**
 
 All registered parking owners with: Owner Name, Company Name, Email, Subscription Status, Account Status.
 
 Actions:
+
 - View subscription details (package tier, expiry).
 - **Deactivate** an owner account.
 
@@ -1841,13 +1877,14 @@ Actions:
 
 ### 3.3.2.5 Subscription Package Management
 
-📸 *[Insert screenshot: Admin — Subscription Packages]*
+📸 *\[Insert screenshot: Admin — Subscription Packages\]*
 
 **What it shows:**
 
 All tiered subscription packages with: Name, Price, Duration (days), Max Lots, Max Staff, Status (Active/Inactive).
 
 Actions:
+
 - **Create** a new package.
 - **Edit** existing package details.
 - **Toggle status** — Inactive packages are hidden from the owner marketplace.
@@ -1855,7 +1892,7 @@ Actions:
 **Seed packages:**
 
 | Package | Price (MMK/month) | Max Lots | Max Staff |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Basic | 9,900 | 1 | 5 |
 | Pro | 24,900 | 3 | 20 |
 | Enterprise | 49,900 | 10 | 999 |
@@ -1864,7 +1901,7 @@ Actions:
 
 ### 3.3.2.6 All Parking Lots (Read-Only)
 
-📸 *[Insert screenshot: Admin — All Parking Lots Overview]*
+📸 *\[Insert screenshot: Admin — All Parking Lots Overview\]*
 
 **What it shows:**
 
@@ -1876,7 +1913,7 @@ The Admin cannot modify lot settings — that is the owner's responsibility.
 
 ### 3.3.2.7 Payments Overview
 
-📸 *[Insert screenshot: Admin — Payments Table]*
+📸 *\[Insert screenshot: Admin — Payments Table\]*
 
 **What it shows:**
 
@@ -1888,11 +1925,12 @@ Filterable by `PENDING`, `COMPLETED`, or `FAILED`.
 
 ### 3.3.2.8 Platform Wallet Account
 
-📸 *[Insert screenshot: Admin — Platform Wallet Account Settings]*
+📸 *\[Insert screenshot: Admin — Platform Wallet Account Settings\]*
 
 **What it shows:**
 
 Configuration form for the Admin's platform-level wallet (receives subscription fees from owners):
+
 - Wallet Name, Wallet Phone Number, API Key
 
 This account is separate from each owner's individual wallet (which receives session fees from customers).
@@ -1903,10 +1941,10 @@ This account is separate from each owner's individual wallet (which receives ses
 
 After logging in as an Owner, the sidebar shows: Dashboard, My Lots, Subscriptions, Wallet, Staff, Sessions.
 
-**Owner seed credentials (company-name email format, password: `asdffdsa`):**
+**Owner seed credentials (company-name email format, password:** `asdffdsa`**):**
 
 | Email | Company | Package |
-|---|---|---|
+| --- | --- | --- |
 | `kst.parking@gmail.com` | KST Parking Co., Ltd. | Pro |
 | `tw.premiumparking@gmail.com` | TW Premium Parking | Enterprise |
 | `akk.smartparking@gmail.com` | AKK Smart Parking | Pro |
@@ -1916,7 +1954,7 @@ After logging in as an Owner, the sidebar shows: Dashboard, My Lots, Subscriptio
 
 ### 3.3.3.1 Owner Dashboard
 
-📸 *[Insert screenshot: Owner Dashboard]*
+📸 *\[Insert screenshot: Owner Dashboard\]*
 
 **What it shows:**
 
@@ -1929,11 +1967,12 @@ After logging in as an Owner, the sidebar shows: Dashboard, My Lots, Subscriptio
 
 ### 3.3.3.2 Subscription Purchase
 
-📸 *[Insert screenshot: Owner — Subscription Packages Marketplace]*
+📸 *\[Insert screenshot: Owner — Subscription Packages Marketplace\]*
 
 **How it works:**
 
 Available packages are shown as cards. To purchase:
+
 1. Click **"Subscribe"** on the desired package.
 2. Enter wallet phone number in the payment dialog.
 3. Wallet sends an OTP; enter OTP + wallet PIN.
@@ -1943,13 +1982,14 @@ Available packages are shown as cards. To purchase:
 
 ### 3.3.3.3 Create & Manage Parking Lots
 
-📸 *[Insert screenshot: Owner — My Lots List]*
+📸 *\[Insert screenshot: Owner — My Lots List\]*
 
 **What it shows:**
 
 All owned lots: Name, Type, Rate/Hour, Total Slots, Active Status.
 
 Actions:
+
 - **Create** a new lot (blocked if `max_lots` subscription limit reached).
 - **Edit** lot name, rate, map URL, or toggle active/inactive.
 
@@ -1957,16 +1997,18 @@ Actions:
 
 ### 3.3.3.4 Lot Detail — Floors & Slots Management
 
-📸 *[Insert screenshot: Owner — Lot Detail with Floors and Slots Tabs]*
+📸 *\[Insert screenshot: Owner — Lot Detail with Floors and Slots Tabs\]*
 
 **What it shows:**
 
 A tabbed interface per lot:
 
 **Floors tab:**
+
 - Lists all floors. Actions: add, edit, or delete a floor (deletion cascades to slots).
 
 **Slots tab (per floor):**
+
 - Grid of slots with slot number, section, and status.
 - Actions: add a new slot (slot number + section + optional GPS), edit, or delete a slot (blocked if session is active).
 
@@ -1974,11 +2016,12 @@ A tabbed interface per lot:
 
 ### 3.3.3.5 Staff Management
 
-📸 *[Insert screenshot: Owner — Staff List for a Lot]*
+📸 *\[Insert screenshot: Owner — Staff List for a Lot\]*
 
 **What it shows:**
 
 Staff assigned to each lot. Actions:
+
 - **Invite** staff by entering their email (user must already exist with `STAFF` role; `max_staff` limit enforced).
 - **Remove** staff (unlinks from lot; user account remains).
 
@@ -1986,13 +2029,14 @@ Staff assigned to each lot. Actions:
 
 ### 3.3.3.6 Sessions & Revenue
 
-📸 *[Insert screenshot: Owner — Sessions Overview]*
+📸 *\[Insert screenshot: Owner — Sessions Overview\]*
 
 **What it shows:**
 
 All sessions across owned lots: Customer, Car Plate, Lot, Slot, Start/End, Duration, Fee, Status.
 
 The **Revenue Summary** tab shows:
+
 - Total revenue by lot
 - Revenue trend chart (daily/monthly)
 - Average session duration
@@ -2001,11 +2045,12 @@ The **Revenue Summary** tab shows:
 
 ### 3.3.3.7 Owner Wallet Account
 
-📸 *[Insert screenshot: Owner — Wallet Account Settings]*
+📸 *\[Insert screenshot: Owner — Wallet Account Settings\]*
 
 **What it shows:**
 
 Configuration for the owner's wallet (receives customer session payments):
+
 - Wallet Name, Wallet Phone Number, API Key
 
 Separate from the Admin's platform wallet (which receives owner subscription payments).
@@ -2016,10 +2061,10 @@ Separate from the Admin's platform wallet (which receives owner subscription pay
 
 After logging in as Staff, the sidebar shows only: Dashboard, Slot Board, Sessions.
 
-**Staff seed credentials (password: `asdffdsa`):**
+**Staff seed credentials (password:** `asdffdsa`**):**
 
 | Email | Assigned Lot |
-|---|---|
+| --- | --- |
 | `khunsithu2003@gmail.com` | Yangon Central Parking |
 | `zawlin.staff@gmail.com` | Sule Square Parking |
 | `susuhtwe.staff@gmail.com` | Junction Square Parking |
@@ -2029,11 +2074,12 @@ After logging in as Staff, the sidebar shows only: Dashboard, Slot Board, Sessio
 
 ### 3.3.4.1 Staff Dashboard
 
-📸 *[Insert screenshot: Staff Dashboard]*
+📸 *\[Insert screenshot: Staff Dashboard\]*
 
 **What it shows:**
 
 Focused operational summary for the assigned lot:
+
 - Active Sessions count, Available Slots count
 - Quick link to Slot Board
 
@@ -2041,7 +2087,7 @@ Focused operational summary for the assigned lot:
 
 ### 3.3.4.2 Slot Board
 
-📸 *[Insert screenshot: Staff — Slot Board Grid View]*
+📸 *\[Insert screenshot: Staff — Slot Board Grid View\]*
 
 **What it shows:**
 
@@ -2055,7 +2101,7 @@ Focused operational summary for the assigned lot:
 
 ### 3.3.4.3 Finish an Active Session
 
-📸 *[Insert screenshot: Staff — Session Detail with Finish Button]*
+📸 *\[Insert screenshot: Staff — Session Detail with Finish Button\]*
 
 **How it works:**
 
@@ -2069,11 +2115,12 @@ Focused operational summary for the assigned lot:
 
 ### 3.3.4.4 Sessions List (Staff View)
 
-📸 *[Insert screenshot: Staff — Sessions List]*
+📸 *\[Insert screenshot: Staff — Sessions List\]*
 
 **What it shows:**
 
 All sessions for the assigned lot, filterable by status:
+
 - **PENDING** — Booked, payment not yet confirmed
 - **ACTIVE** — Payment confirmed, vehicle currently parked
 - **FINISHED** — Session completed, slot released
@@ -2125,7 +2172,7 @@ The Smart Parking Lot Management System successfully demonstrates how a modern, 
 ### Limitations and Future Work
 
 | Limitation | Proposed Future Enhancement |
-|---|---|
+| --- | --- |
 | No hardware integration | Integrate ANPR cameras and barrier gates via MQTT/WebSocket |
 | No native mobile apps | Build React Native apps using the existing REST API |
 | Slot scheduling uses time-window booking only | Add support for walk-in (open-ended) sessions with real-time sensor data |
@@ -2137,23 +2184,23 @@ The Smart Parking Lot Management System successfully demonstrates how a modern, 
 
 ## 4.2 References
 
-1. **FastAPI Documentation** — Sebastián Ramírez. *FastAPI — Modern, fast (high-performance) web framework for building APIs with Python.* https://fastapi.tiangolo.com
+ 1. **FastAPI Documentation** — Sebastián Ramírez. *FastAPI — Modern, fast (high-performance) web framework for building APIs with Python.* https://fastapi.tiangolo.com
 
-2. **SQLAlchemy 2.0 Documentation** — Mike Bayer et al. *SQLAlchemy — The Python SQL Toolkit and Object Relational Mapper.* https://docs.sqlalchemy.org/en/20/
+ 2. **SQLAlchemy 2.0 Documentation** — Mike Bayer et al. *SQLAlchemy — The Python SQL Toolkit and Object Relational Mapper.* https://docs.sqlalchemy.org/en/20/
 
-3. **Pydantic v2 Documentation** — Samuel Colvin et al. *Pydantic — Data validation using Python type annotations.* https://docs.pydantic.dev/latest/
+ 3. **Pydantic v2 Documentation** — Samuel Colvin et al. *Pydantic — Data validation using Python type annotations.* https://docs.pydantic.dev/latest/
 
-4. **Alembic Documentation** — Mike Bayer. *Alembic — A lightweight database migration tool for SQLAlchemy.* https://alembic.sqlalchemy.org/en/latest/
+ 4. **Alembic Documentation** — Mike Bayer. *Alembic — A lightweight database migration tool for SQLAlchemy.* https://alembic.sqlalchemy.org/en/latest/
 
-5. **React Documentation** — Meta Open Source. *React — A JavaScript library for building user interfaces.* https://react.dev
+ 5. **React Documentation** — Meta Open Source. *React — A JavaScript library for building user interfaces.* https://react.dev
 
-6. **TanStack Query v5** — Tanner Linsley. *TanStack Query — Powerful asynchronous state management for TypeScript/JavaScript.* https://tanstack.com/query/latest
+ 6. **TanStack Query v5** — Tanner Linsley. *TanStack Query — Powerful asynchronous state management for TypeScript/JavaScript.* https://tanstack.com/query/latest
 
-7. **React Router v7 Documentation** — Remix Team. *React Router — Declarative Routing for React.* https://reactrouter.com
+ 7. **React Router v7 Documentation** — Remix Team. *React Router — Declarative Routing for React.* https://reactrouter.com
 
-8. **Zustand** — Paul Henschel et al. *Zustand — A small, fast, and scalable bearbones state management solution.* https://github.com/pmndrs/zustand
+ 8. **Zustand** — Paul Henschel et al. *Zustand — A small, fast, and scalable bearbones state management solution.* https://github.com/pmndrs/zustand
 
-9. **shadcn/ui** — shadcn. *shadcn/ui — Beautifully designed components built with Radix UI and Tailwind CSS.* https://ui.shadcn.com
+ 9. **shadcn/ui** — shadcn. *shadcn/ui — Beautifully designed components built with Radix UI and Tailwind CSS.* https://ui.shadcn.com
 
 10. **Tailwind CSS v4** — Adam Wathan et al. *Tailwind CSS — A utility-first CSS framework.* https://tailwindcss.com
 
