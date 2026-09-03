@@ -36,11 +36,12 @@ The **Smart Parking Lot Management System** is a full-stack, cloud-ready web pla
 
 The platform is composed of three independently deployable sub-systems:
 
-| Sub-System | Technology | Purpose |
-| --- | --- | --- |
-| `smart-parking-api` | Python 3.12 / FastAPI | RESTful backend API, business logic, database |
-| `smart-parking-management` | React 19 / TypeScript / Vite | Admin, Owner, and Staff web portal |
-| `smart-parking-customer` | React 19 / TypeScript / Vite | Customer-facing web application |
+
+| Sub-System                 | Technology                   | Purpose                                       |
+| -------------------------- | ---------------------------- | --------------------------------------------- |
+| `smart-parking-api`        | Python 3.12 / FastAPI        | RESTful backend API, business logic, database |
+| `smart-parking-management` | React 19 / TypeScript / Vite | Admin, Owner, and Staff web portal            |
+| `smart-parking-customer`   | React 19 / TypeScript / Vite | Customer-facing web application               |
 
 All three components are containerised with Docker and can be orchestrated via `docker-compose` for both local development and cloud deployment (Render).
 
@@ -321,30 +322,32 @@ The class diagram below represents the full domain model of the Smart Parking Lo
 
 ### Notation Guide
 
-| Symbol | Meaning |
-| --- | --- |
-| `+` | Public member (attribute or method) |
-| `-->` | Association / Composition (one class references another) |
+
+| Symbol           | Meaning                                                        |
+| ---------------- | -------------------------------------------------------------- |
+| `+`              | Public member (attribute or method)                            |
+| `-->`            | Association / Composition (one class references another)       |
 | `"1" --> "0..*"` | Multiplicity — one instance relates to zero-or-more instances |
 
 ### Class Descriptions
 
-| Class | Layer | Purpose | Key Business Rules |
-| --- | --- | --- | --- |
-| **Role** | Auth | Defines the four platform roles (`ADMIN`, `OWNER`, `STAFF`, `CUSTOMER`). Seeded at startup. | Each `User` is assigned exactly one role; role drives all RBAC checks. |
-| **User** | Auth | Core account entity shared by all roles. Stores credentials and profile. | Password stored as bcrypt hash. `is_verified` must be `true` before login is permitted. |
-| **ParkingOwner** | Profile | Owner-specific profile linked 1-to-1 with a `User`. | Must hold an active `OwnerSubscription` to create lots or invite staff. |
-| **Customer** | Profile | Customer-specific profile linked 1-to-1 with a `User`. | Stores optional geolocation (`lat/lng`) for proximity-based lot discovery. |
-| **ParkingStaff** | Profile | Staff profile linked to both a `User` and a specific `ParkingLot`. | Staff can only manage sessions belonging to their assigned lot. |
-| **Car** | Vehicle | A registered vehicle (plate, brand, colour) belonging to a `Customer`. | Plate number must be globally unique. A car may not have two overlapping `PENDING`/`ACTIVE` sessions. |
-| **ParkingLot** | Infrastructure | Top-level parking facility. Contains floors and staff. | `is_active` controls customer visibility. `rate_per_hour` drives fee calculation. |
-| **ParkingFloor** | Infrastructure | Named floor within a lot (e.g., "Ground", "Level 1"). | A floor must belong to a lot; deleting a floor cascades to its slots. |
-| **ParkingSlot** | Infrastructure | Individual bookable space on a floor. Tracks `status` (AVAILABLE / OCCUPIED). | A slot may not be double-booked; a 2-hour buffer gap is enforced between consecutive sessions. |
-| **ParkingSession** | Session | Records a booking from `PENDING → ACTIVE → FINISHED`. Tracks start/end times, duration, and computed fee. | Fee is recalculated at finish time using actual duration × `rate_per_hour`. |
-| **Package** | Subscription | Subscription tier defined by Admin (price, duration, lot cap, staff cap). | `is_active=false` hides a package from the owner marketplace without deleting historical subscriptions. |
-| **OwnerSubscription** | Subscription | Instance of an owner purchasing a package. Tracks `PENDING → ACTIVE` state. | An owner may only have one `ACTIVE` subscription at a time. Lot/staff limits come from the associated `Package`. |
-| **WalletAccount** | Payment | Digital wallet API credentials (API key, phone) belonging to either Admin (subscription fees) or Owner (session fees). | The API key is used to initiate and confirm two-phase wallet payments. |
-| **Payment** | Payment | Ledger record for a single completed wallet transaction. Linked to either a `ParkingSession` or an `OwnerSubscription`. | Tracks `PENDING → COMPLETED / FAILED` status and stores the wallet transaction reference for audit. |
+
+| Class                 | Layer          | Purpose                                                                                                                | Key Business Rules                                                                                              |
+| --------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Role**              | Auth           | Defines the four platform roles (`ADMIN`, `OWNER`, `STAFF`, `CUSTOMER`). Seeded at startup.                            | Each`User` is assigned exactly one role; role drives all RBAC checks.                                           |
+| **User**              | Auth           | Core account entity shared by all roles. Stores credentials and profile.                                               | Password stored as bcrypt hash.`is_verified` must be `true` before login is permitted.                          |
+| **ParkingOwner**      | Profile        | Owner-specific profile linked 1-to-1 with a`User`.                                                                     | Must hold an active`OwnerSubscription` to create lots or invite staff.                                          |
+| **Customer**          | Profile        | Customer-specific profile linked 1-to-1 with a`User`.                                                                  | Stores optional geolocation (`lat/lng`) for proximity-based lot discovery.                                      |
+| **ParkingStaff**      | Profile        | Staff profile linked to both a`User` and a specific `ParkingLot`.                                                      | Staff can only manage sessions belonging to their assigned lot.                                                 |
+| **Car**               | Vehicle        | A registered vehicle (plate, brand, colour) belonging to a`Customer`.                                                  | Plate number must be globally unique. A car may not have two overlapping`PENDING`/`ACTIVE` sessions.            |
+| **ParkingLot**        | Infrastructure | Top-level parking facility. Contains floors and staff.                                                                 | `is_active` controls customer visibility. `rate_per_hour` drives fee calculation.                               |
+| **ParkingFloor**      | Infrastructure | Named floor within a lot (e.g., "Ground", "Level 1").                                                                  | A floor must belong to a lot; deleting a floor cascades to its slots.                                           |
+| **ParkingSlot**       | Infrastructure | Individual bookable space on a floor. Tracks`status` (AVAILABLE / OCCUPIED).                                           | A slot may not be double-booked; a 2-hour buffer gap is enforced between consecutive sessions.                  |
+| **ParkingSession**    | Session        | Records a booking from`PENDING → ACTIVE → FINISHED`. Tracks start/end times, duration, and computed fee.             | Fee is recalculated at finish time using actual duration ×`rate_per_hour`.                                     |
+| **Package**           | Subscription   | Subscription tier defined by Admin (price, duration, lot cap, staff cap).                                              | `is_active=false` hides a package from the owner marketplace without deleting historical subscriptions.         |
+| **OwnerSubscription** | Subscription   | Instance of an owner purchasing a package. Tracks`PENDING → ACTIVE` state.                                            | An owner may only have one`ACTIVE` subscription at a time. Lot/staff limits come from the associated `Package`. |
+| **WalletAccount**     | Payment        | Digital wallet API credentials (API key, phone) belonging to either Admin (subscription fees) or Owner (session fees). | The API key is used to initiate and confirm two-phase wallet payments.                                          |
+| **Payment**           | Payment        | Ledger record for a single completed wallet transaction. Linked to either a`ParkingSession` or an `OwnerSubscription`. | Tracks`PENDING → COMPLETED / FAILED` status and stores the wallet transaction reference for audit.             |
 
 ```mermaid
 classDiagram
@@ -600,20 +603,22 @@ The system defines four actors — **System Admin**, **Parking Owner**, **Parkin
 
 ### Actor Summary
 
-| Actor | Description | Entry Point | Scope of Authority |
-| --- | --- | --- | --- |
-| **System Admin** | Platform super-user seeded at system startup. Not self-registered. | Admin Portal login | Platform-wide: user management, owner monitoring, subscription packages, wallet configuration, read-only access to all lots, sessions, and payments. |
-| **Parking Owner** | Business operator who self-registers and manages parking facilities. | Owner Portal login after registration | Own resources: lots, floors, slots, staff, subscriptions, and revenue data. |
-| **Parking Staff** | Operational user assigned to a single lot by the owner. | Staff Portal login | Single lot: slot board monitoring, session list, and finishing active sessions. |
-| **Customer** | End user of the customer-facing app. Self-registers with email verification. | Customer App login after OTP | Own account: vehicle management, lot discovery, slot booking, wallet payments, and session history. |
+
+| Actor             | Description                                                                  | Entry Point                           | Scope of Authority                                                                                                                                   |
+| ----------------- | ---------------------------------------------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **System Admin**  | Platform super-user seeded at system startup. Not self-registered.           | Admin Portal login                    | Platform-wide: user management, owner monitoring, subscription packages, wallet configuration, read-only access to all lots, sessions, and payments. |
+| **Parking Owner** | Business operator who self-registers and manages parking facilities.         | Owner Portal login after registration | Own resources: lots, floors, slots, staff, subscriptions, and revenue data.                                                                          |
+| **Parking Staff** | Operational user assigned to a single lot by the owner.                      | Staff Portal login                    | Single lot: slot board monitoring, session list, and finishing active sessions.                                                                      |
+| **Customer**      | End user of the customer-facing app. Self-registers with email verification. | Customer App login after OTP          | Own account: vehicle management, lot discovery, slot booking, wallet payments, and session history.                                                  |
 
 ### Relationship Notation
 
-| Notation | Name | When To Use |
-| --- | --- | --- |
-| Solid actor line `---` | **Association** | Connects an actor to a use case they can directly initiate. |
-| Dashed arrow `include` | **Include** | The source use case **always and unconditionally** triggers the target use case (mandatory sub-flow). |
-| Dashed arrow `extend` | **Extend** | The source use case **optionally and conditionally** extends the target use case (optional behaviour). |
+
+| Notation              | Name            | When To Use                                                                                           |
+| --------------------- | --------------- | ----------------------------------------------------------------------------------------------------- |
+| Solid actor line`---` | **Association** | Connects an actor to a use case they can directly initiate.                                           |
+| Dashed arrow`include` | **Include**     | The source use case**always and unconditionally** triggers the target use case (mandatory sub-flow).  |
+| Dashed arrow`extend`  | **Extend**      | The source use case**optionally and conditionally** extends the target use case (optional behaviour). |
 
 ---
 
@@ -662,24 +667,25 @@ graph LR
     D3 -.->|extend| D2
 ```
 
-| Use Case | Relationship | Description |
-| --- | --- | --- |
-| **Login and Logout** | — | Authenticate using email and password; receive JWT access and refresh tokens. Logout blacklists the refresh token. |
-| **Change Password** | — | Update the account password by providing the current password and a new password. |
-| **Update Profile** | — | Edit account name and phone number. |
-| **View All Users** | — | Browse and search all registered users across every role on the platform. |
-| **Activate or Deactivate User** | `extend` View All Users | Optional action performed while viewing users — toggled without leaving the list view. |
-| **View All Parking Owners** | — | List all registered parking owner accounts with their company names and subscription status. |
-| **Deactivate Owner Account** | `extend` View All Parking Owners | Optional suspension action available when viewing an owner's detail record. |
-| **Create Subscription Package** | — | Define a new tiered subscription plan with price, duration, and lot/staff limits. |
-| **Edit Subscription Package** | `extend` Create Subscription Package | Optional modification of an existing package after it has been created. |
-| **Activate or Deactivate Package** | `extend` Edit Subscription Package | Optional availability toggle, always triggered through the edit flow. |
-| **View All Parking Lots** | — | Read-only platform-wide overview of all registered lots. |
-| **View All Subscriptions** | `include` View All Parking Owners | Always displays owner context alongside each subscription record. |
-| **View All Payments** | — | Audit the complete payment ledger for session fees and subscription purchases. |
-| **View System Dashboard** | — | Aggregated platform statistics: total revenue, active sessions, users, and owner counts. |
-| **Create Platform Wallet Account** | — | Register the Admin's digital wallet API key that receives subscription fees. |
-| **Update Platform Wallet Account** | `extend` Create Platform Wallet Account | Optional rotation of API key or wallet phone after the account has been created. |
+
+| Use Case                           | Relationship                            | Description                                                                                                        |
+| ---------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Login and Logout**               | —                                      | Authenticate using email and password; receive JWT access and refresh tokens. Logout blacklists the refresh token. |
+| **Change Password**                | —                                      | Update the account password by providing the current password and a new password.                                  |
+| **Update Profile**                 | —                                      | Edit account name and phone number.                                                                                |
+| **View All Users**                 | —                                      | Browse and search all registered users across every role on the platform.                                          |
+| **Activate or Deactivate User**    | `extend` View All Users                 | Optional action performed while viewing users — toggled without leaving the list view.                            |
+| **View All Parking Owners**        | —                                      | List all registered parking owner accounts with their company names and subscription status.                       |
+| **Deactivate Owner Account**       | `extend` View All Parking Owners        | Optional suspension action available when viewing an owner's detail record.                                        |
+| **Create Subscription Package**    | —                                      | Define a new tiered subscription plan with price, duration, and lot/staff limits.                                  |
+| **Edit Subscription Package**      | `extend` Create Subscription Package    | Optional modification of an existing package after it has been created.                                            |
+| **Activate or Deactivate Package** | `extend` Edit Subscription Package      | Optional availability toggle, always triggered through the edit flow.                                              |
+| **View All Parking Lots**          | —                                      | Read-only platform-wide overview of all registered lots.                                                           |
+| **View All Subscriptions**         | `include` View All Parking Owners       | Always displays owner context alongside each subscription record.                                                  |
+| **View All Payments**              | —                                      | Audit the complete payment ledger for session fees and subscription purchases.                                     |
+| **View System Dashboard**          | —                                      | Aggregated platform statistics: total revenue, active sessions, users, and owner counts.                           |
+| **Create Platform Wallet Account** | —                                      | Register the Admin's digital wallet API key that receives subscription fees.                                       |
+| **Update Platform Wallet Account** | `extend` Create Platform Wallet Account | Optional rotation of API key or wallet phone after the account has been created.                                   |
 
 ---
 
@@ -736,32 +742,33 @@ graph LR
     F2 -.->|extend| F1
 ```
 
-| Use Case | Relationship | Description |
-| --- | --- | --- |
-| **Self-Register Owner Account** | — | Register a new owner account directly via `/auth/register-owner` with company details. |
-| **Login and Logout** | — | Authenticate with JWT tokens. |
-| **Change Password** | — | Update account password from the profile settings page. |
-| **Update Profile** | — | Edit display name and phone number. |
-| **Browse Available Packages** | — | View all active subscription packages with price, duration, and lot/staff limits. |
-| **Purchase Subscription** | — | Initiate a subscription to a chosen package, creating a PENDING subscription record. |
-| **Pay Subscription via Wallet** | `include` Purchase Subscription | Always triggered after initiating a subscription — starts the two-phase wallet payment. |
-| **Confirm Subscription Payment with OTP** | `include` Pay Subscription via Wallet | Always required to finalise payment — submits OTP and PIN to activate the subscription. |
-| **View Subscription Status** | — | Check current expiry date, package tier, and payment history. |
-| **Create Owner Wallet Account** | — | Register the digital wallet API key that receives parking session fees from customers. |
-| **Update Owner Wallet Account** | `extend` Create Owner Wallet Account | Optionally rotate API key or update wallet phone after initial creation. |
-| **Create Parking Lot** | — | Add a new lot with name, type, hourly rate, and map URL. Requires an active subscription within lot limits. |
-| **Edit Parking Lot Details** | `extend` Create Parking Lot | Optionally update lot name, rate, map URL, or type after creation. |
-| **Activate or Deactivate Lot** | `extend` Edit Parking Lot Details | Optionally toggle lot visibility from within the edit flow. |
-| **Add Parking Floor** | `include` Create Parking Lot | Always requires an existing lot — floor cannot exist independently. |
-| **Edit or Delete Floor** | `extend` Add Parking Floor | Optionally rename or remove a floor after it has been created. |
-| **Add Parking Slot** | `include` Add Parking Floor | Always requires an existing floor — slot cannot exist without a floor. |
-| **Edit or Delete Slot** | `extend` Add Parking Slot | Optionally update slot details or remove a slot after creation. |
-| **Invite Staff to Lot** | `include` Create Parking Lot | Always requires an existing lot to assign staff to. Respects max_staff subscription limit. |
-| **Remove Staff from Lot** | `extend` View Staff List | Optionally unlinks a staff member when viewing the staff list. |
-| **View Staff List** | — | See all staff members assigned to each of the owner's lots. |
-| **View Parking Sessions** | — | List all sessions (PENDING, ACTIVE, FINISHED) across the owner's lots. |
-| **View Revenue Summary** | `extend` View Parking Sessions | Optional aggregated revenue view triggered from within the sessions page. |
-| **View Owner Dashboard** | — | Summary cards: active sessions, today's revenue, slot occupancy rate, subscription status. |
+
+| Use Case                                  | Relationship                          | Description                                                                                                 |
+| ----------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Self-Register Owner Account**           | —                                    | Register a new owner account directly via`/auth/register-owner` with company details.                       |
+| **Login and Logout**                      | —                                    | Authenticate with JWT tokens.                                                                               |
+| **Change Password**                       | —                                    | Update account password from the profile settings page.                                                     |
+| **Update Profile**                        | —                                    | Edit display name and phone number.                                                                         |
+| **Browse Available Packages**             | —                                    | View all active subscription packages with price, duration, and lot/staff limits.                           |
+| **Purchase Subscription**                 | —                                    | Initiate a subscription to a chosen package, creating a PENDING subscription record.                        |
+| **Pay Subscription via Wallet**           | `include` Purchase Subscription       | Always triggered after initiating a subscription — starts the two-phase wallet payment.                    |
+| **Confirm Subscription Payment with OTP** | `include` Pay Subscription via Wallet | Always required to finalise payment — submits OTP and PIN to activate the subscription.                    |
+| **View Subscription Status**              | —                                    | Check current expiry date, package tier, and payment history.                                               |
+| **Create Owner Wallet Account**           | —                                    | Register the digital wallet API key that receives parking session fees from customers.                      |
+| **Update Owner Wallet Account**           | `extend` Create Owner Wallet Account  | Optionally rotate API key or update wallet phone after initial creation.                                    |
+| **Create Parking Lot**                    | —                                    | Add a new lot with name, type, hourly rate, and map URL. Requires an active subscription within lot limits. |
+| **Edit Parking Lot Details**              | `extend` Create Parking Lot           | Optionally update lot name, rate, map URL, or type after creation.                                          |
+| **Activate or Deactivate Lot**            | `extend` Edit Parking Lot Details     | Optionally toggle lot visibility from within the edit flow.                                                 |
+| **Add Parking Floor**                     | `include` Create Parking Lot          | Always requires an existing lot — floor cannot exist independently.                                        |
+| **Edit or Delete Floor**                  | `extend` Add Parking Floor            | Optionally rename or remove a floor after it has been created.                                              |
+| **Add Parking Slot**                      | `include` Add Parking Floor           | Always requires an existing floor — slot cannot exist without a floor.                                     |
+| **Edit or Delete Slot**                   | `extend` Add Parking Slot             | Optionally update slot details or remove a slot after creation.                                             |
+| **Invite Staff to Lot**                   | `include` Create Parking Lot          | Always requires an existing lot to assign staff to. Respects max_staff subscription limit.                  |
+| **Remove Staff from Lot**                 | `extend` View Staff List              | Optionally unlinks a staff member when viewing the staff list.                                              |
+| **View Staff List**                       | —                                    | See all staff members assigned to each of the owner's lots.                                                 |
+| **View Parking Sessions**                 | —                                    | List all sessions (PENDING, ACTIVE, FINISHED) across the owner's lots.                                      |
+| **View Revenue Summary**                  | `extend` View Parking Sessions        | Optional aggregated revenue view triggered from within the sessions page.                                   |
+| **View Owner Dashboard**                  | —                                    | Summary cards: active sessions, today's revenue, slot occupancy rate, subscription status.                  |
 
 ---
 
@@ -798,18 +805,19 @@ graph LR
     B3 -.->|extend| B1
 ```
 
-| Use Case | Relationship | Description |
-| --- | --- | --- |
-| **Login and Logout** | — | Authenticate using credentials created by the Parking Owner. |
-| **Change Password** | — | Update account password via the profile settings page. |
-| **Update Profile** | — | Edit display name and phone number. |
-| **View Slot Board for Assigned Lot** | — | Real-time occupancy grid of all slots across floors for the assigned lot. |
-| **View Slot Availability by Floor** | `include` View Slot Board | Always triggered as part of viewing the slot board — the board is organised by floor tabs. |
-| **Search Session by Plate Number** | `extend` View Slot Board | Optional search action available from the slot board to locate a session by plate. |
-| **View Session List** | — | Browse all sessions visible to this staff member's assigned lot, with status filters. |
-| **View Session Details** | `include` View Session List | Always navigated to from the session list — requires a session record to be selected first. |
-| **Finish Active Parking Session** | `include` View Session Details · `extend` View Session Details | Always requires viewing session details first; the finish action is then optionally triggered from that detail view. |
-| **View Staff Dashboard** | — | Summary of active sessions in progress at the assigned lot and any pending actions. |
+
+| Use Case                             | Relationship                                                    | Description                                                                                                          |
+| ------------------------------------ | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Login and Logout**                 | —                                                              | Authenticate using credentials created by the Parking Owner.                                                         |
+| **Change Password**                  | —                                                              | Update account password via the profile settings page.                                                               |
+| **Update Profile**                   | —                                                              | Edit display name and phone number.                                                                                  |
+| **View Slot Board for Assigned Lot** | —                                                              | Real-time occupancy grid of all slots across floors for the assigned lot.                                            |
+| **View Slot Availability by Floor**  | `include` View Slot Board                                       | Always triggered as part of viewing the slot board — the board is organised by floor tabs.                          |
+| **Search Session by Plate Number**   | `extend` View Slot Board                                        | Optional search action available from the slot board to locate a session by plate.                                   |
+| **View Session List**                | —                                                              | Browse all sessions visible to this staff member's assigned lot, with status filters.                                |
+| **View Session Details**             | `include` View Session List                                     | Always navigated to from the session list — requires a session record to be selected first.                         |
+| **Finish Active Parking Session**    | `include` View Session Details · `extend` View Session Details | Always requires viewing session details first; the finish action is then optionally triggered from that detail view. |
+| **View Staff Dashboard**             | —                                                              | Summary of active sessions in progress at the assigned lot and any pending actions.                                  |
 
 ---
 
@@ -856,29 +864,30 @@ graph LR
     D3 -.->|extend| D1
 ```
 
-| Use Case | Relationship | Description |
-| --- | --- | --- |
-| **Register New Account** | — | Self-register with name, email, and password. Account starts in an unverified state. |
-| **Verify Email via OTP** | `include` Register New Account | Always required immediately after registration — submits the OTP sent to the registered email. |
-| **Login and Logout** | — | Authenticate with email and password. Logout revokes the refresh token. |
-| **Change Password** | — | Update account password from the profile page. |
-| **Update Profile** | — | Edit display name and phone number. |
-| **Add Vehicle** | — | Register a car with plate number, brand, and colour. Plate must be unique across the platform. |
-| **Edit Vehicle Details** | `extend` View Vehicle List | Optionally triggered when viewing the vehicle list to update brand or colour. |
-| **Delete Vehicle** | `extend` View Vehicle List | Optionally remove a vehicle from the list. Vehicles with active sessions cannot be deleted. |
-| **View Vehicle List** | — | See all registered cars linked to the customer account. |
-| **Browse Available Parking Lots** | — | View active PUBLIC parking lots with names, locations, and hourly rates. |
-| **View Lot Details and Location** | `include` Browse Available Parking Lots | Always navigated to from the lot list — requires a lot to be selected first. |
-| **View Floor and Slot Availability** | `include` View Lot Details and Location | Always loaded as part of the lot detail page — shows per-floor slot grid. |
-| **View 3D Parking Layout** | `extend` View Floor and Slot Availability | Optionally switch to an interactive 3D floor view from the slot grid. |
-| **View 3D Slot View** | `extend` View 3D Parking Layout | Optionally drill into an immersive 3D view of a single slot from the 3D floor view. |
-| **Book Parking Slot for Time Window** | `include` View Floor and Slot Availability | Always triggered from the slot grid — requires a visible AVAILABLE slot to book. |
-| **Initiate Wallet Payment for Session** | `include` Book Parking Slot | Always triggered immediately after a booking is created — starts the two-phase wallet payment. |
-| **Confirm Payment with OTP and PIN** | `include` Initiate Wallet Payment | Always required to finalise payment — submits OTP and PIN; on success the session becomes ACTIVE. |
-| **Finish Own Parking Session** | `extend` View Own Sessions | Optionally mark an ACTIVE session as FINISHED from the sessions list, releasing the slot. |
-| **View Own Sessions** | — | Browse all personal sessions with status filters and fee summaries. |
-| **View Session Details and Fee** | `include` View Own Sessions | Always navigated to from the session list to view the full session record and payment reference. |
-| **View Customer Dashboard** | — | Summary showing the current active session, recent history, and quick links to browse lots and manage vehicles. |
+
+| Use Case                                | Relationship                               | Description                                                                                                     |
+| --------------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| **Register New Account**                | —                                         | Self-register with name, email, and password. Account starts in an unverified state.                            |
+| **Verify Email via OTP**                | `include` Register New Account             | Always required immediately after registration — submits the OTP sent to the registered email.                 |
+| **Login and Logout**                    | —                                         | Authenticate with email and password. Logout revokes the refresh token.                                         |
+| **Change Password**                     | —                                         | Update account password from the profile page.                                                                  |
+| **Update Profile**                      | —                                         | Edit display name and phone number.                                                                             |
+| **Add Vehicle**                         | —                                         | Register a car with plate number, brand, and colour. Plate must be unique across the platform.                  |
+| **Edit Vehicle Details**                | `extend` View Vehicle List                 | Optionally triggered when viewing the vehicle list to update brand or colour.                                   |
+| **Delete Vehicle**                      | `extend` View Vehicle List                 | Optionally remove a vehicle from the list. Vehicles with active sessions cannot be deleted.                     |
+| **View Vehicle List**                   | —                                         | See all registered cars linked to the customer account.                                                         |
+| **Browse Available Parking Lots**       | —                                         | View active PUBLIC parking lots with names, locations, and hourly rates.                                        |
+| **View Lot Details and Location**       | `include` Browse Available Parking Lots    | Always navigated to from the lot list — requires a lot to be selected first.                                   |
+| **View Floor and Slot Availability**    | `include` View Lot Details and Location    | Always loaded as part of the lot detail page — shows per-floor slot grid.                                      |
+| **View 3D Parking Layout**              | `extend` View Floor and Slot Availability  | Optionally switch to an interactive 3D floor view from the slot grid.                                           |
+| **View 3D Slot View**                   | `extend` View 3D Parking Layout            | Optionally drill into an immersive 3D view of a single slot from the 3D floor view.                             |
+| **Book Parking Slot for Time Window**   | `include` View Floor and Slot Availability | Always triggered from the slot grid — requires a visible AVAILABLE slot to book.                               |
+| **Initiate Wallet Payment for Session** | `include` Book Parking Slot                | Always triggered immediately after a booking is created — starts the two-phase wallet payment.                 |
+| **Confirm Payment with OTP and PIN**    | `include` Initiate Wallet Payment          | Always required to finalise payment — submits OTP and PIN; on success the session becomes ACTIVE.              |
+| **Finish Own Parking Session**          | `extend` View Own Sessions                 | Optionally mark an ACTIVE session as FINISHED from the sessions list, releasing the slot.                       |
+| **View Own Sessions**                   | —                                         | Browse all personal sessions with status filters and fee summaries.                                             |
+| **View Session Details and Fee**        | `include` View Own Sessions                | Always navigated to from the session list to view the full session record and payment reference.                |
+| **View Customer Dashboard**             | —                                         | Summary showing the current active session, recent history, and quick links to browse lots and manage vehicles. |
 
 ## 2.4 Sequence Diagram
 
@@ -886,21 +895,23 @@ Each role's core workflows are illustrated below using standard UML sequence dia
 
 ### Participants / Lifelines Legend
 
-| Participant Alias | Full Name | Role |
-| --- | --- | --- |
-| **UI** | Management App / Customer App | Frontend application that renders user interface forms and sends API requests. |
-| **System** | Smart Parking System | Backend application service handling authentication, validation, and business rules. |
-| **DB** | Database | Relational database (PostgreSQL) storing system entities and persistent state. |
-| **Email** | Email Service | External SMTP email provider used for sending OTP verification codes. |
-| **Wallet** | Payment Gateway | External digital wallet API used for two-phase payment processing. |
+
+| Participant Alias | Full Name                     | Role                                                                                 |
+| ----------------- | ----------------------------- | ------------------------------------------------------------------------------------ |
+| **UI**            | Management App / Customer App | Frontend application that renders user interface forms and sends API requests.       |
+| **System**        | Smart Parking System          | Backend application service handling authentication, validation, and business rules. |
+| **DB**            | Database                      | Relational database (PostgreSQL) storing system entities and persistent state.       |
+| **Email**         | Email Service                 | External SMTP email provider used for sending OTP verification codes.                |
+| **Wallet**        | Payment Gateway               | External digital wallet API used for two-phase payment processing.                   |
 
 ### Lifeline Notation
 
-| Symbol | Meaning |
-| --- | --- |
+
+| Symbol                    | Meaning                                                                  |
+| ------------------------- | ------------------------------------------------------------------------ |
 | `activate` / `deactivate` | Vertical activation bar showing when a lifeline is processing a request. |
-| `->>` | Synchronous message call (request). |
-| `-->>` | Return message (response). |
+| `->>`                     | Synchronous message call (request).                                      |
+| `-->>`                    | Return message (response).                                               |
 
 ---
 
@@ -932,17 +943,18 @@ sequenceDiagram
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Operation | Description |
-| --- | --- | --- | --- |
-| 1 | Admin → UI | Request login page | Admin opens the Management App login page. |
-| 2 | UI → Admin | Render login form | UI presents the email and password input form. |
-| 3 | Admin → UI | Submit credentials | Admin enters credentials and clicks Sign In. |
-| 4 | UI → System | `Submit credentials` | UI sends login credentials payload to the backend. |
-| 5 | System → DB | `Query user by email` | System fetches user account details from the database. |
-| 6 | DB → System | `User record` | Database returns hashed password and assigned role. |
-| 7 | System | `Verify password & generate JWT` | System checks bcrypt hash and generates JWT token pair on match. |
-| 8 | System → UI | `Return authentication tokens` | System returns access and refresh tokens to the client. |
-| 9 | UI → Admin | Display Admin Dashboard | UI saves token and redirects Admin to dashboard view. |
+
+| Step | From → To   | Message / Operation              | Description                                                      |
+| ---- | ------------ | -------------------------------- | ---------------------------------------------------------------- |
+| 1    | Admin → UI  | Request login page               | Admin opens the Management App login page.                       |
+| 2    | UI → Admin  | Render login form                | UI presents the email and password input form.                   |
+| 3    | Admin → UI  | Submit credentials               | Admin enters credentials and clicks Sign In.                     |
+| 4    | UI → System | `Submit credentials`             | UI sends login credentials payload to the backend.               |
+| 5    | System → DB | `Query user by email`            | System fetches user account details from the database.           |
+| 6    | DB → System | `User record`                    | Database returns hashed password and assigned role.              |
+| 7    | System       | `Verify password & generate JWT` | System checks bcrypt hash and generates JWT token pair on match. |
+| 8    | System → UI | `Return authentication tokens`   | System returns access and refresh tokens to the client.          |
+| 9    | UI → Admin  | Display Admin Dashboard          | UI saves token and redirects Admin to dashboard view.            |
 
 ---
 
@@ -982,21 +994,22 @@ sequenceDiagram
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Operation | Description |
-| --- | --- | --- | --- |
-| 1 | Admin → UI | Select Create Package | Admin navigates to Package Management and clicks "New Package". |
-| 2 | Admin → UI | Submit package details | Admin inputs package name, price, duration, and limit caps. |
-| 3 | UI → System | `Submit package details` | UI sends new package data to the System backend. |
-| 4 | System → DB | `Insert new Package record` | System stores new package record (`is_active=true`). |
-| 5 | DB → System | `Package record` | Database returns created package record. |
-| 6 | System → UI | `Return created Package data` | System sends success response with created package. |
-| 7 | UI → Admin | Display Package List | UI updates table with the new package entry. |
-| 8 | Admin → UI | Click Deactivate Package | Admin selects an active package and clicks Deactivate. |
-| 9 | UI → System | `Request package deactivation` | UI sends deactivation request for the package ID. |
-| 10 | System → DB | `Update package status` | System sets `is_active = false` in the database. |
-| 11 | DB → System | `Success status` | Database confirms update. |
-| 12 | System → UI | `Return status updated confirmation` | System responds with updated package state. |
-| 13 | UI → Admin | Update Package Status Badge | UI updates package badge to show Inactive. |
+
+| Step | From → To   | Message / Operation                  | Description                                                     |
+| ---- | ------------ | ------------------------------------ | --------------------------------------------------------------- |
+| 1    | Admin → UI  | Select Create Package                | Admin navigates to Package Management and clicks "New Package". |
+| 2    | Admin → UI  | Submit package details               | Admin inputs package name, price, duration, and limit caps.     |
+| 3    | UI → System | `Submit package details`             | UI sends new package data to the System backend.                |
+| 4    | System → DB | `Insert new Package record`          | System stores new package record (`is_active=true`).            |
+| 5    | DB → System | `Package record`                     | Database returns created package record.                        |
+| 6    | System → UI | `Return created Package data`        | System sends success response with created package.             |
+| 7    | UI → Admin  | Display Package List                 | UI updates table with the new package entry.                    |
+| 8    | Admin → UI  | Click Deactivate Package             | Admin selects an active package and clicks Deactivate.          |
+| 9    | UI → System | `Request package deactivation`       | UI sends deactivation request for the package ID.               |
+| 10   | System → DB | `Update package status`              | System sets`is_active = false` in the database.                 |
+| 11   | DB → System | `Success status`                     | Database confirms update.                                       |
+| 12   | System → UI | `Return status updated confirmation` | System responds with updated package state.                     |
+| 13   | UI → Admin  | Update Package Status Badge          | UI updates package badge to show Inactive.                      |
 
 ---
 
@@ -1025,16 +1038,17 @@ sequenceDiagram
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Operation | Description |
-| --- | --- | --- | --- |
-| 1 | Admin → UI | Search owner & click Deactivate | Admin selects an owner from list and clicks Deactivate. |
-| 2 | UI → Admin | Prompt confirmation dialog | UI displays confirmation modal to prevent accidental deactivation. |
-| 3 | Admin → UI | Confirm deactivation | Admin confirms the action in modal. |
-| 4 | UI → System | `Request owner deactivation` | UI sends deactivation request to System backend. |
-| 5 | System → DB | `Update owner user status` | System sets target user account `is_active = false`. |
-| 6 | DB → System | `Success status` | Database confirms status change. |
-| 7 | System → UI | `Return deactivation confirmation` | System returns success response to UI. |
-| 8 | UI → Admin | Update Owner Status | UI updates owner status badge to Deactivated. |
+
+| Step | From → To   | Message / Operation                | Description                                                        |
+| ---- | ------------ | ---------------------------------- | ------------------------------------------------------------------ |
+| 1    | Admin → UI  | Search owner & click Deactivate    | Admin selects an owner from list and clicks Deactivate.            |
+| 2    | UI → Admin  | Prompt confirmation dialog         | UI displays confirmation modal to prevent accidental deactivation. |
+| 3    | Admin → UI  | Confirm deactivation               | Admin confirms the action in modal.                                |
+| 4    | UI → System | `Request owner deactivation`       | UI sends deactivation request to System backend.                   |
+| 5    | System → DB | `Update owner user status`         | System sets target user account`is_active = false`.                |
+| 6    | DB → System | `Success status`                   | Database confirms status change.                                   |
+| 7    | System → UI | `Return deactivation confirmation` | System returns success response to UI.                             |
+| 8    | UI → Admin  | Update Owner Status                | UI updates owner status badge to Deactivated.                      |
 
 ---
 
@@ -1069,18 +1083,19 @@ sequenceDiagram
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Operation | Description |
-| --- | --- | --- | --- |
-| 1 | Owner → UI | Request registration page | Owner opens the Owner Registration URL (unprotected endpoint). |
-| 2 | UI → Owner | Render owner registration form | UI renders the registration form fields. |
-| 3 | Owner → UI | Submit credentials | Owner enters registration data and submits. |
-| 4 | UI → System | `Submit registration data` | UI sends registration payload to System endpoint. |
-| 5 | System → DB | `Check if email exists` | System checks database for existing email. |
-| 6 | DB → System | `Email available` | Database confirms email is unique. |
-| 7 | System → DB | `Insert User & ParkingOwner` | System creates User (`role=OWNER`, `is_verified=true`) and Owner profile. |
-| 8 | DB → System | `Created Owner record` | Database returns saved account data. |
-| 9 | System → UI | `Return created owner account` | System sends success response. |
-| 10 | UI → Owner | Redirect to Login Page | UI directs Owner to login page. |
+
+| Step | From → To   | Message / Operation            | Description                                                               |
+| ---- | ------------ | ------------------------------ | ------------------------------------------------------------------------- |
+| 1    | Owner → UI  | Request registration page      | Owner opens the Owner Registration URL (unprotected endpoint).            |
+| 2    | UI → Owner  | Render owner registration form | UI renders the registration form fields.                                  |
+| 3    | Owner → UI  | Submit credentials             | Owner enters registration data and submits.                               |
+| 4    | UI → System | `Submit registration data`     | UI sends registration payload to System endpoint.                         |
+| 5    | System → DB | `Check if email exists`        | System checks database for existing email.                                |
+| 6    | DB → System | `Email available`              | Database confirms email is unique.                                        |
+| 7    | System → DB | `Insert User & ParkingOwner`   | System creates User (`role=OWNER`, `is_verified=true`) and Owner profile. |
+| 8    | DB → System | `Created Owner record`         | Database returns saved account data.                                      |
+| 9    | System → UI | `Return created owner account` | System sends success response.                                            |
+| 10   | UI → Owner  | Redirect to Login Page         | UI directs Owner to login page.                                           |
 
 ---
 
@@ -1131,23 +1146,24 @@ sequenceDiagram
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Operation | Description |
-| --- | --- | --- | --- |
-| 1 | Owner → UI | Fill lot form | Owner fills in lot name, hourly rate, and facility type. |
-| 2 | UI → System | `Submit lot details` | UI sends lot creation request. |
-| 3 | System → DB | `Verify subscription limits` | System checks DB to enforce package `max_lots` limit. |
-| 4 | DB → System | `Limits valid` | Database confirms owner is within package allowance. |
-| 5 | System → DB | `Insert Parking Lot` | System persists the new `ParkingLot` entity. |
-| 6 | System → UI | `Return created lot data` | System returns newly created lot data. |
-| 7 | Owner → UI | Add Floor | Owner enters floor name and level number. |
-| 8 | UI → System | `Submit floor details` | UI sends floor creation payload. |
-| 9 | System → DB | `Insert Parking Floor` | System persists floor linked to lot. |
-| 10 | System → UI | `Return created floor data` | System returns floor object to UI. |
-| 11 | Owner → UI | Add Slot | Owner specifies slot identifier and category. |
-| 12 | UI → System | `Submit slot details` | UI sends slot creation payload. |
-| 13 | System → DB | `Insert Parking Slot` | System persists slot with initial status `AVAILABLE`. |
-| 14 | System → UI | `Return created slot data` | System returns slot data to UI. |
-| 15 | UI → Owner | Display Slot Board | UI renders updated slot grid. |
+
+| Step | From → To   | Message / Operation          | Description                                              |
+| ---- | ------------ | ---------------------------- | -------------------------------------------------------- |
+| 1    | Owner → UI  | Fill lot form                | Owner fills in lot name, hourly rate, and facility type. |
+| 2    | UI → System | `Submit lot details`         | UI sends lot creation request.                           |
+| 3    | System → DB | `Verify subscription limits` | System checks DB to enforce package`max_lots` limit.     |
+| 4    | DB → System | `Limits valid`               | Database confirms owner is within package allowance.     |
+| 5    | System → DB | `Insert Parking Lot`         | System persists the new`ParkingLot` entity.              |
+| 6    | System → UI | `Return created lot data`    | System returns newly created lot data.                   |
+| 7    | Owner → UI  | Add Floor                    | Owner enters floor name and level number.                |
+| 8    | UI → System | `Submit floor details`       | UI sends floor creation payload.                         |
+| 9    | System → DB | `Insert Parking Floor`       | System persists floor linked to lot.                     |
+| 10   | System → UI | `Return created floor data`  | System returns floor object to UI.                       |
+| 11   | Owner → UI  | Add Slot                     | Owner specifies slot identifier and category.            |
+| 12   | UI → System | `Submit slot details`        | UI sends slot creation payload.                          |
+| 13   | System → DB | `Insert Parking Slot`        | System persists slot with initial status`AVAILABLE`.     |
+| 14   | System → UI | `Return created slot data`   | System returns slot data to UI.                          |
+| 15   | UI → Owner  | Display Slot Board           | UI renders updated slot grid.                            |
 
 ---
 
@@ -1203,25 +1219,26 @@ sequenceDiagram
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Operation | Description |
-| --- | --- | --- | --- |
-| 1 | Owner → UI | Select package & Subscribe | Owner picks a subscription package. |
-| 2 | UI → System | `Create subscription request` | UI requests subscription creation. |
-| 3 | System → DB | `Insert OwnerSubscription` | System creates pending subscription record in DB. |
-| 4 | System → UI | `Return subscription reservation` | System returns subscription ID. |
-| 5 | Owner → UI | Initiate Payment | Owner enters wallet phone number and starts checkout. |
-| 6 | UI → System | `Initiate payment request` | UI sends payment initiation call. |
-| 7 | System → Wallet | `Payment Request` | System initiates payment request via digital wallet gateway. |
-| 8 | Wallet → System | `OTP Sent` | Gateway dispatches SMS OTP code to owner's phone. |
-| 9 | System → DB | `Insert Payment` | System logs pending Payment record in DB. |
-| 10 | System → UI | `Return payment prompt` | System instructs UI to display OTP entry modal. |
-| 11 | Owner → UI | Enter OTP & PIN | Owner types OTP and security PIN. |
-| 12 | UI → System | `Submit payment verification` | UI submits payment verification call. |
-| 13 | System → Wallet | `Verify OTP & Deduct` | System validates OTP with wallet gateway to execute transfer. |
-| 14 | Wallet → System | `Payment Confirmed` | Gateway confirms fund transfer with transaction ID. |
-| 15 | System → DB | `Update Subscription & Payment` | System sets subscription to `ACTIVE` and payment to `COMPLETED`. |
-| 16 | System → UI | `Return subscription activated status` | System responds with activated subscription details. |
-| 17 | UI → Owner | Display Active Subscription | UI shows active subscription badge and tier quota. |
+
+| Step | From → To       | Message / Operation                    | Description                                                     |
+| ---- | ---------------- | -------------------------------------- | --------------------------------------------------------------- |
+| 1    | Owner → UI      | Select package & Subscribe             | Owner picks a subscription package.                             |
+| 2    | UI → System     | `Create subscription request`          | UI requests subscription creation.                              |
+| 3    | System → DB     | `Insert OwnerSubscription`             | System creates pending subscription record in DB.               |
+| 4    | System → UI     | `Return subscription reservation`      | System returns subscription ID.                                 |
+| 5    | Owner → UI      | Initiate Payment                       | Owner enters wallet phone number and starts checkout.           |
+| 6    | UI → System     | `Initiate payment request`             | UI sends payment initiation call.                               |
+| 7    | System → Wallet | `Payment Request`                      | System initiates payment request via digital wallet gateway.    |
+| 8    | Wallet → System | `OTP Sent`                             | Gateway dispatches SMS OTP code to owner's phone.               |
+| 9    | System → DB     | `Insert Payment`                       | System logs pending Payment record in DB.                       |
+| 10   | System → UI     | `Return payment prompt`                | System instructs UI to display OTP entry modal.                 |
+| 11   | Owner → UI      | Enter OTP & PIN                        | Owner types OTP and security PIN.                               |
+| 12   | UI → System     | `Submit payment verification`          | UI submits payment verification call.                           |
+| 13   | System → Wallet | `Verify OTP & Deduct`                  | System validates OTP with wallet gateway to execute transfer.   |
+| 14   | Wallet → System | `Payment Confirmed`                    | Gateway confirms fund transfer with transaction ID.             |
+| 15   | System → DB     | `Update Subscription & Payment`        | System sets subscription to`ACTIVE` and payment to `COMPLETED`. |
+| 16   | System → UI     | `Return subscription activated status` | System responds with activated subscription details.            |
+| 17   | UI → Owner      | Display Active Subscription            | UI shows active subscription badge and tier quota.              |
 
 ---
 
@@ -1261,20 +1278,21 @@ sequenceDiagram
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Operation | Description |
-| --- | --- | --- | --- |
-| 1 | Staff → UI | Request Slot Board | Staff opens the Slot Board for assigned lot. |
-| 2 | UI → System | `Request floor and slot layout` | UI requests floor and slot structure. |
-| 3 | System → DB | `Fetch floors and slots` | System retrieves floors and slots with current availability. |
-| 4 | DB → System | `Floors and Slots data` | Database returns current floor grid data. |
-| 5 | System → UI | `Return floor grid layout` | System responds with grid details. |
-| 6 | UI → Staff | Display Slot Board Grid | UI renders slot grid (green=AVAILABLE, red=OCCUPIED). |
-| 7 | Staff → UI | Enter plate_number in search | Staff types vehicle plate number. |
-| 8 | UI → System | `Search active session by plate` | UI requests active session matching plate. |
-| 9 | System → DB | `Search active session` | System queries database for active session. |
-| 10 | DB → System | `ParkingSession details` | Database returns active session info with car details. |
-| 11 | System → UI | `Return matching session details` | System returns session detail object. |
-| 12 | UI → Staff | Highlight matching slot | UI highlights target slot in grid and shows session popover. |
+
+| Step | From → To   | Message / Operation               | Description                                                  |
+| ---- | ------------ | --------------------------------- | ------------------------------------------------------------ |
+| 1    | Staff → UI  | Request Slot Board                | Staff opens the Slot Board for assigned lot.                 |
+| 2    | UI → System | `Request floor and slot layout`   | UI requests floor and slot structure.                        |
+| 3    | System → DB | `Fetch floors and slots`          | System retrieves floors and slots with current availability. |
+| 4    | DB → System | `Floors and Slots data`           | Database returns current floor grid data.                    |
+| 5    | System → UI | `Return floor grid layout`        | System responds with grid details.                           |
+| 6    | UI → Staff  | Display Slot Board Grid           | UI renders slot grid (green=AVAILABLE, red=OCCUPIED).        |
+| 7    | Staff → UI  | Enter plate_number in search      | Staff types vehicle plate number.                            |
+| 8    | UI → System | `Search active session by plate`  | UI requests active session matching plate.                   |
+| 9    | System → DB | `Search active session`           | System queries database for active session.                  |
+| 10   | DB → System | `ParkingSession details`          | Database returns active session info with car details.       |
+| 11   | System → UI | `Return matching session details` | System returns session detail object.                        |
+| 12   | UI → Staff  | Highlight matching slot           | UI highlights target slot in grid and shows session popover. |
 
 ---
 
@@ -1310,17 +1328,18 @@ sequenceDiagram
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Operation | Description |
-| --- | --- | --- | --- |
-| 1 | Staff → UI | Select session & click Finish | Staff locates vehicle session and triggers checkout. |
-| 2 | UI → System | `Request finish parking session` | UI sends request to finish session. |
-| 3 | System → DB | `Fetch session details` | System retrieves start time and lot hourly rate. |
-| 4 | DB → System | `ParkingSession details` | Database returns session record. |
-| 5 | System | `Calculate final fee` | System calculates total duration and final fee (`ceil(hours) × rate`). |
-| 6 | System → DB | `Update session` | System updates session status to `FINISHED` with end timestamp and final fee. |
-| 7 | System → DB | `Update slot status` | System sets parking slot status back to `AVAILABLE`. |
-| 8 | System → UI | `Return final receipt & calculated fee` | System returns session receipt payload. |
-| 9 | UI → Staff | Display receipt & mark slot AVAILABLE | UI shows final receipt and updates slot color to green on board. |
+
+| Step | From → To   | Message / Operation                     | Description                                                                  |
+| ---- | ------------ | --------------------------------------- | ---------------------------------------------------------------------------- |
+| 1    | Staff → UI  | Select session & click Finish           | Staff locates vehicle session and triggers checkout.                         |
+| 2    | UI → System | `Request finish parking session`        | UI sends request to finish session.                                          |
+| 3    | System → DB | `Fetch session details`                 | System retrieves start time and lot hourly rate.                             |
+| 4    | DB → System | `ParkingSession details`                | Database returns session record.                                             |
+| 5    | System       | `Calculate final fee`                   | System calculates total duration and final fee (`ceil(hours) × rate`).      |
+| 6    | System → DB | `Update session`                        | System updates session status to`FINISHED` with end timestamp and final fee. |
+| 7    | System → DB | `Update slot status`                    | System sets parking slot status back to`AVAILABLE`.                          |
+| 8    | System → UI | `Return final receipt & calculated fee` | System returns session receipt payload.                                      |
+| 9    | UI → Staff  | Display receipt & mark slot AVAILABLE   | UI shows final receipt and updates slot color to green on board.             |
 
 ---
 
@@ -1376,26 +1395,27 @@ sequenceDiagram
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Operation | Description |
-| --- | --- | --- | --- |
-| 1 | Customer → UI | Request registration page | Customer opens Customer App signup screen. |
-| 2 | UI → Customer | Render registration form | UI presents registration fields. |
-| 3 | Customer → UI | Submit credentials | Customer submits account details. |
-| 4 | UI → System | `Submit customer credentials` | UI posts registration payload. |
-| 5 | System → DB | `Check if email exists` | System verifies email is unique. |
-| 6 | DB → System | `Email available` | Database confirms email is not taken. |
-| 7 | System → DB | `Insert User` | System creates User record with `is_verified=false`. |
-| 8 | System → UI | `Return account registration status` | System returns created account payload. |
-| 9 | UI → System | `Request verification OTP` | UI requests OTP verification code. |
-| 10 | System → Email | `Send OTP code` | System sends 6-digit OTP via Email Service. |
-| 11 | Email → Customer | Deliver OTP | Email Service delivers verification email to Customer inbox. |
-| 12 | System → UI | `Return OTP sent status` | System responds that OTP has been sent. |
-| 13 | Customer → UI | Enter OTP code | Customer submits OTP received via email. |
-| 14 | UI → System | `Submit OTP verification code` | UI posts OTP verification request. |
-| 15 | System → DB | `Update User status` | System marks user `is_verified=true` in DB. |
-| 16 | System | `Generate JWT tokens` | System generates JWT access and refresh tokens. |
-| 17 | System → UI | `Return authentication tokens` | System returns JWT token pair. |
-| 18 | UI → Customer | Display Dashboard | UI stores tokens and redirects Customer to dashboard. |
+
+| Step | From → To        | Message / Operation                  | Description                                                  |
+| ---- | ----------------- | ------------------------------------ | ------------------------------------------------------------ |
+| 1    | Customer → UI    | Request registration page            | Customer opens Customer App signup screen.                   |
+| 2    | UI → Customer    | Render registration form             | UI presents registration fields.                             |
+| 3    | Customer → UI    | Submit credentials                   | Customer submits account details.                            |
+| 4    | UI → System      | `Submit customer credentials`        | UI posts registration payload.                               |
+| 5    | System → DB      | `Check if email exists`              | System verifies email is unique.                             |
+| 6    | DB → System      | `Email available`                    | Database confirms email is not taken.                        |
+| 7    | System → DB      | `Insert User`                        | System creates User record with`is_verified=false`.          |
+| 8    | System → UI      | `Return account registration status` | System returns created account payload.                      |
+| 9    | UI → System      | `Request verification OTP`           | UI requests OTP verification code.                           |
+| 10   | System → Email   | `Send OTP code`                      | System sends 6-digit OTP via Email Service.                  |
+| 11   | Email → Customer | Deliver OTP                          | Email Service delivers verification email to Customer inbox. |
+| 12   | System → UI      | `Return OTP sent status`             | System responds that OTP has been sent.                      |
+| 13   | Customer → UI    | Enter OTP code                       | Customer submits OTP received via email.                     |
+| 14   | UI → System      | `Submit OTP verification code`       | UI posts OTP verification request.                           |
+| 15   | System → DB      | `Update User status`                 | System marks user`is_verified=true` in DB.                   |
+| 16   | System            | `Generate JWT tokens`                | System generates JWT access and refresh tokens.              |
+| 17   | System → UI      | `Return authentication tokens`       | System returns JWT token pair.                               |
+| 18   | UI → Customer    | Display Dashboard                    | UI stores tokens and redirects Customer to dashboard.        |
 
 ---
 
@@ -1456,28 +1476,29 @@ sequenceDiagram
 
 #### Step-by-Step Description
 
-| Step | From → To | Message / Operation | Description |
-| --- | --- | --- | --- |
-| 1 | Customer → UI | Select slot, car & duration | Customer selects slot, vehicle, and start/end time. |
-| 2 | UI → System | `Submit booking request` | UI sends booking reservation call. |
-| 3 | System → DB | `Validate schedule conflicts` | System checks DB for slot overlap or car double-booking (2-hour buffer gap). |
-| 4 | DB → System | `No conflicts` | Database confirms schedule is available. |
-| 5 | System | `Calculate estimated fee` | System calculates estimated fee based on slot hourly rate. |
-| 6 | System → DB | `Insert ParkingSession` | System saves pending session record. |
-| 7 | System → UI | `Return booking reservation` | System returns session ID and estimated fee. |
-| 8 | Customer → UI | Enter wallet phone & click Pay | Customer inputs wallet phone number. |
-| 9 | UI → System | `Initiate session payment` | UI sends payment initiation request. |
-| 10 | System → Wallet | `Payment Request` | System initiates payment request via Payment Gateway. |
-| 11 | Wallet → System | `OTP Sent` | Gateway dispatches SMS OTP code to Customer's phone. |
-| 12 | System → DB | `Insert Payment` | System logs pending Payment record. |
-| 13 | System → UI | `Return payment prompt` | System instructs UI to show OTP and PIN prompt. |
-| 14 | Customer → UI | Enter OTP & PIN | Customer inputs received OTP and wallet PIN. |
-| 15 | UI → System | `Submit payment verification` | UI sends payment confirmation call. |
-| 16 | System → Wallet | `Verify OTP & Deduct` | Gateway validates OTP and deducts funds. |
-| 17 | Wallet → System | `Payment Confirmed` | Gateway returns transaction confirmation. |
-| 18 | System → DB | `Update Session & Slot` | System sets session to `ACTIVE` and slot status to `OCCUPIED`. |
-| 19 | System → UI | `Return payment confirmation` | System sends success response. |
-| 20 | UI → Customer | Display Active Session | UI displays active booking pass and receipt. |
+
+| Step | From → To       | Message / Operation            | Description                                                                  |
+| ---- | ---------------- | ------------------------------ | ---------------------------------------------------------------------------- |
+| 1    | Customer → UI   | Select slot, car & duration    | Customer selects slot, vehicle, and start/end time.                          |
+| 2    | UI → System     | `Submit booking request`       | UI sends booking reservation call.                                           |
+| 3    | System → DB     | `Validate schedule conflicts`  | System checks DB for slot overlap or car double-booking (2-hour buffer gap). |
+| 4    | DB → System     | `No conflicts`                 | Database confirms schedule is available.                                     |
+| 5    | System           | `Calculate estimated fee`      | System calculates estimated fee based on slot hourly rate.                   |
+| 6    | System → DB     | `Insert ParkingSession`        | System saves pending session record.                                         |
+| 7    | System → UI     | `Return booking reservation`   | System returns session ID and estimated fee.                                 |
+| 8    | Customer → UI   | Enter wallet phone & click Pay | Customer inputs wallet phone number.                                         |
+| 9    | UI → System     | `Initiate session payment`     | UI sends payment initiation request.                                         |
+| 10   | System → Wallet | `Payment Request`              | System initiates payment request via Payment Gateway.                        |
+| 11   | Wallet → System | `OTP Sent`                     | Gateway dispatches SMS OTP code to Customer's phone.                         |
+| 12   | System → DB     | `Insert Payment`               | System logs pending Payment record.                                          |
+| 13   | System → UI     | `Return payment prompt`        | System instructs UI to show OTP and PIN prompt.                              |
+| 14   | Customer → UI   | Enter OTP & PIN                | Customer inputs received OTP and wallet PIN.                                 |
+| 15   | UI → System     | `Submit payment verification`  | UI sends payment confirmation call.                                          |
+| 16   | System → Wallet | `Verify OTP & Deduct`          | Gateway validates OTP and deducts funds.                                     |
+| 17   | Wallet → System | `Payment Confirmed`            | Gateway returns transaction confirmation.                                    |
+| 18   | System → DB     | `Update Session & Slot`        | System sets session to`ACTIVE` and slot status to `OCCUPIED`.                |
+| 19   | System → UI     | `Return payment confirmation`  | System sends success response.                                               |
+| 20   | UI → Customer   | Display Active Session         | UI displays active booking pass and receipt.                                 |
 
 ---
 
@@ -1590,7 +1611,7 @@ The Customer App is a standalone React web application (port `3000` locally). It
 
 ### 3.3.1.1 Register Page
 
-📸 *\[Insert screenshot: Customer Register Page —* `/register`*\]*
+![Customer Register Page — /register](../screenshot/customer/3.3.1.1.png)
 
 **How it works:**
 
@@ -1610,7 +1631,7 @@ When the customer clicks **"Register"**:
 
 ### 3.3.1.2 Email Verification Page
 
-📸 *\[Insert screenshot: Email Verification Page —* `/verify-email`*\]*
+![Email Verification Page — /verify-email](../screenshot/customer/3.3.1.2.png)
 
 **How it works:**
 
@@ -1626,7 +1647,7 @@ On valid OTP submission, `User.is_verified` is set to `true`, JWT tokens are gen
 
 ### 3.3.1.3 Login Page
 
-📸 *\[Insert screenshot: Customer Login Page —* `/login`*\]*
+![Customer Login Page — /login](../screenshot/customer/3.3.1.3.png)
 
 **How it works:**
 
@@ -1638,17 +1659,18 @@ The Login page accepts **Email** and **Password**. On success:
 
 **Seed customer credentials (password:** `asdffdsa`**):**
 
-| Email | Registered Cars |
-| --- | --- |
-| `khunsithuaung35@gmail.com` | Toyota Silver, Nissan Black |
-| `nainglin.customer@gmail.com` | Honda White, Suzuki Red |
-| `phyowai.customer@gmail.com` | Mitsubishi Black, Toyota Gold, Honda Silver |
+
+| Email                         | Registered Cars                             |
+| ----------------------------- | ------------------------------------------- |
+| `khunsithuaung35@gmail.com`   | Toyota Silver, Nissan Black                 |
+| `nainglin.customer@gmail.com` | Honda White, Suzuki Red                     |
+| `phyowai.customer@gmail.com`  | Mitsubishi Black, Toyota Gold, Honda Silver |
 
 ---
 
 ### 3.3.1.4 Customer Dashboard
 
-📸 *\[Insert screenshot: Customer Dashboard —* `/dashboard`*\]*
+![Customer Dashboard — /dashboard](../screenshot/customer/3.3.1.4.png)
 
 **What it shows:**
 
@@ -1662,7 +1684,7 @@ If no active session exists, a prompt is shown to browse and book a lot.
 
 ### 3.3.1.5 Browse Parking Lots
 
-📸 *\[Insert screenshot: Parking Lots List —* `/parking`*\]*
+![Parking Lots List — /parking](../screenshot/customer/3.3.1.5.png)
 
 **What it shows:**
 
@@ -1676,7 +1698,7 @@ Clicking a card navigates to the Lot Detail page.
 
 ### 3.3.1.6 Parking Lot Detail & Slot Availability
 
-📸 *\[Insert screenshot: Parking Lot Detail Page —* `/parking/:id`*\]*
+![Parking Lot Detail Page — /parking/:id](../screenshot/customer/3.3.1.6.png)
 
 **What it shows:**
 
@@ -1691,7 +1713,7 @@ Clicking a card navigates to the Lot Detail page.
 
 ### 3.3.1.7 Booking Dialog
 
-📸 *\[Insert screenshot: Booking Dialog modal\]*
+![Booking Dialog modal](../screenshot/customer/3.3.1.7.png)
 
 **How it works:**
 
@@ -1709,7 +1731,7 @@ On **"Confirm Booking"**:
 
 ### 3.3.1.8 About Us Page
 
-📸 *\[Insert screenshot: About Us Page —* `/about`*\]*
+![About Us Page — /about](../screenshot/customer/track.png)
 
 **What it shows:**
 
@@ -1738,7 +1760,7 @@ The About Us page is publicly accessible (no login required) and introduces the 
 
 ### 3.3.1. Wallet Payment — OTP Confirmation
 
-📸 *\[Insert screenshot: OTP & PIN Confirmation Modal\]*
+![OTP & PIN Confirmation Modal](../screenshot/customer/3.3.1.9.png)
 
 **How it works:**
 
@@ -1753,7 +1775,7 @@ The confirmation modal requests the **OTP** (received via SMS) and the customer'
 
 ### 3.3.1.10 3D Parking Layout View
 
-📸 *\[Insert screenshot: 3D Parking Lot View —* `/parking/:id/3d`*\]*
+![3D Parking Lot View — /parking/:id/3d](../screenshot/customer/3.3.1.10.png)
 
 **What it shows:**
 
@@ -1767,7 +1789,7 @@ The customer can rotate/pan the scene (mouse drag or touch), click a slot block 
 
 ### 3.3.1.11 My Cars (Vehicle Management)
 
-📸 *\[Insert screenshot: My Cars Page —* `/cars`*\]*
+![My Cars Page — /cars](../screenshot/customer/3.3.1.11.png)
 
 **What it shows:**
 
@@ -1783,7 +1805,7 @@ Actions available:
 
 ### 3.3.1.12 My Sessions (Session History)
 
-📸 *\[Insert screenshot: My Sessions Page —* `/sessions`*\]*
+![My Sessions Page — /sessions](../screenshot/customer/3.3.1.12.png)
 
 **What it shows:**
 
@@ -1799,7 +1821,7 @@ Actions available:
 
 ### 3.3.1.13 Profile Page
 
-📸 *\[Insert screenshot: Customer Profile Page —* `/profile`*\]*
+![Customer Profile Page — /profile](../screenshot/customer/3.3.1.13.png)
 
 **What it shows:**
 
@@ -1817,7 +1839,7 @@ The Management Portal (port `3001` locally) is a shared React application. After
 
 ### 3.3.2.1 Admin Login
 
-📸 *\[Insert screenshot: Management Portal Login Page\]*
+![Management Portal Login Page](../screenshot/admin/3.3.2.1.png)
 
 **How to log in:**
 
@@ -1825,15 +1847,16 @@ The login form (shared across Admin, Owner, and Staff roles) accepts **Email** a
 
 **Admin seed credentials:**
 
-| Email | Password |
-| --- | --- |
+
+| Email                    | Password   |
+| ------------------------ | ---------- |
 | `khunsithu350@gmail.com` | `asdffdsa` |
 
 ---
 
 ### 3.3.2.2 Admin Dashboard
 
-📸 *\[Insert screenshot: Admin Dashboard\]*
+![Admin Dashboard](../screenshot/admin/3.3.2.2.png)
 
 **What it shows:**
 
@@ -1847,7 +1870,7 @@ Platform-wide summary cards and charts:
 
 ### 3.3.2.3 User Management
 
-📸 *\[Insert screenshot: Admin — All Users Table\]*
+![Admin — All Users Table](../screenshot/admin/3.3.2.3.png)
 
 **What it shows:**
 
@@ -1862,7 +1885,7 @@ Actions:
 
 ### 3.3.2.4 Parking Owner Management
 
-📸 *\[Insert screenshot: Admin — Parking Owners Table\]*
+![Admin — Parking Owners Table](../screenshot/admin/3.3.2.4.png)
 
 **What it shows:**
 
@@ -1877,7 +1900,7 @@ Actions:
 
 ### 3.3.2.5 Subscription Package Management
 
-📸 *\[Insert screenshot: Admin — Subscription Packages\]*
+![Admin — Subscription Packages](../screenshot/admin/3.3.2.5.png)
 
 **What it shows:**
 
@@ -1891,17 +1914,18 @@ Actions:
 
 **Seed packages:**
 
-| Package | Price (MMK/month) | Max Lots | Max Staff |
-| --- | --- | --- | --- |
-| Basic | 9,900 | 1 | 5 |
-| Pro | 24,900 | 3 | 20 |
-| Enterprise | 49,900 | 10 | 999 |
+
+| Package    | Price (MMK/month) | Max Lots | Max Staff |
+| ---------- | ----------------- | -------- | --------- |
+| Basic      | 9,900             | 1        | 5         |
+| Pro        | 24,900            | 3        | 20        |
+| Enterprise | 49,900            | 10       | 999       |
 
 ---
 
 ### 3.3.2.6 All Parking Lots (Read-Only)
 
-📸 *\[Insert screenshot: Admin — All Parking Lots Overview\]*
+![Admin — All Parking Lots Overview](../screenshot/admin/3.3.2.6.png)
 
 **What it shows:**
 
@@ -1913,7 +1937,7 @@ The Admin cannot modify lot settings — that is the owner's responsibility.
 
 ### 3.3.2.7 Payments Overview
 
-📸 *\[Insert screenshot: Admin — Payments Table\]*
+![Admin — Payments Table](../screenshot/admin/3.3.2.7.png)
 
 **What it shows:**
 
@@ -1925,7 +1949,7 @@ Filterable by `PENDING`, `COMPLETED`, or `FAILED`.
 
 ### 3.3.2.8 Platform Wallet Account
 
-📸 *\[Insert screenshot: Admin — Platform Wallet Account Settings\]*
+![Admin — Platform Wallet Account Settings](../screenshot/admin/3.3.2.8.png)
 
 **What it shows:**
 
@@ -1943,18 +1967,19 @@ After logging in as an Owner, the sidebar shows: Dashboard, My Lots, Subscriptio
 
 **Owner seed credentials (company-name email format, password:** `asdffdsa`**):**
 
-| Email | Company | Package |
-| --- | --- | --- |
-| `kst.parking@gmail.com` | KST Parking Co., Ltd. | Pro |
-| `tw.premiumparking@gmail.com` | TW Premium Parking | Enterprise |
-| `akk.smartparking@gmail.com` | AKK Smart Parking | Pro |
-| `ma.parkingsolutions@gmail.com` | MA Parking Solutions | Basic |
+
+| Email                           | Company               | Package    |
+| ------------------------------- | --------------------- | ---------- |
+| `kst.parking@gmail.com`         | KST Parking Co., Ltd. | Pro        |
+| `tw.premiumparking@gmail.com`   | TW Premium Parking    | Enterprise |
+| `akk.smartparking@gmail.com`    | AKK Smart Parking     | Pro        |
+| `ma.parkingsolutions@gmail.com` | MA Parking Solutions  | Basic      |
 
 ---
 
 ### 3.3.3.1 Owner Dashboard
 
-📸 *\[Insert screenshot: Owner Dashboard\]*
+![Owner Dashboard](../screenshot/owner/3.3.3.1.png)
 
 **What it shows:**
 
@@ -1967,7 +1992,7 @@ After logging in as an Owner, the sidebar shows: Dashboard, My Lots, Subscriptio
 
 ### 3.3.3.2 Subscription Purchase
 
-📸 *\[Insert screenshot: Owner — Subscription Packages Marketplace\]*
+![Owner — Subscription Packages Marketplace](../screenshot/owner/3.3.3.2.png)
 
 **How it works:**
 
@@ -1982,7 +2007,7 @@ Available packages are shown as cards. To purchase:
 
 ### 3.3.3.3 Create & Manage Parking Lots
 
-📸 *\[Insert screenshot: Owner — My Lots List\]*
+![Owner — My Lots List](../screenshot/owner/3.3.3.3.png)
 
 **What it shows:**
 
@@ -1997,7 +2022,7 @@ Actions:
 
 ### 3.3.3.4 Lot Detail — Floors & Slots Management
 
-📸 *\[Insert screenshot: Owner — Lot Detail with Floors and Slots Tabs\]*
+![Owner — Lot Detail with Floors and Slots Tabs](../screenshot/owner/3.3.3.4.png)
 
 **What it shows:**
 
@@ -2016,7 +2041,7 @@ A tabbed interface per lot:
 
 ### 3.3.3.5 Staff Management
 
-📸 *\[Insert screenshot: Owner — Staff List for a Lot\]*
+![Owner — Staff List for a Lot](../screenshot/owner/3.3.3.5.png)
 
 **What it shows:**
 
@@ -2029,7 +2054,7 @@ Staff assigned to each lot. Actions:
 
 ### 3.3.3.6 Sessions & Revenue
 
-📸 *\[Insert screenshot: Owner — Sessions Overview\]*
+![Owner — Sessions Overview](../screenshot/owner/3.3.3.6.png)
 
 **What it shows:**
 
@@ -2045,7 +2070,7 @@ The **Revenue Summary** tab shows:
 
 ### 3.3.3.7 Owner Wallet Account
 
-📸 *\[Insert screenshot: Owner — Wallet Account Settings\]*
+![Owner — Wallet Account Settings](../screenshot/owner/3.3.3.7.png)
 
 **What it shows:**
 
@@ -2063,18 +2088,19 @@ After logging in as Staff, the sidebar shows only: Dashboard, Slot Board, Sessio
 
 **Staff seed credentials (password:** `asdffdsa`**):**
 
-| Email | Assigned Lot |
-| --- | --- |
-| `khunsithu2003@gmail.com` | Yangon Central Parking |
-| `zawlin.staff@gmail.com` | Sule Square Parking |
+
+| Email                      | Assigned Lot            |
+| -------------------------- | ----------------------- |
+| `khunsithu2003@gmail.com`  | Yangon Central Parking  |
+| `zawlin.staff@gmail.com`   | Sule Square Parking     |
 | `susuhtwe.staff@gmail.com` | Junction Square Parking |
-| `kyawkyaw.staff@gmail.com` | Junction City Parking |
+| `kyawkyaw.staff@gmail.com` | Junction City Parking   |
 
 ---
 
 ### 3.3.4.1 Staff Dashboard
 
-📸 *\[Insert screenshot: Staff Dashboard\]*
+![Staff Dashboard](../screenshot/staff/3.3.4.1.png)
 
 **What it shows:**
 
@@ -2087,7 +2113,7 @@ Focused operational summary for the assigned lot:
 
 ### 3.3.4.2 Slot Board
 
-📸 *\[Insert screenshot: Staff — Slot Board Grid View\]*
+![Staff — Slot Board Grid View](../screenshot/staff/3.3.4.2.png)
 
 **What it shows:**
 
@@ -2101,7 +2127,7 @@ Focused operational summary for the assigned lot:
 
 ### 3.3.4.3 Finish an Active Session
 
-📸 *\[Insert screenshot: Staff — Session Detail with Finish Button\]*
+![Staff — Session Detail with Finish Button](../screenshot/staff/3.3.4.3.png)
 
 **How it works:**
 
@@ -2171,51 +2197,36 @@ The Smart Parking Lot Management System successfully demonstrates how a modern, 
 
 ### Limitations and Future Work
 
-| Limitation | Proposed Future Enhancement |
-| --- | --- |
-| No hardware integration | Integrate ANPR cameras and barrier gates via MQTT/WebSocket |
-| No native mobile apps | Build React Native apps using the existing REST API |
-| Slot scheduling uses time-window booking only | Add support for walk-in (open-ended) sessions with real-time sensor data |
-| No self-service password reset flow | Implement email-based password reset using a secure token link |
-| No real-time slot status push | Integrate WebSocket notifications so the slot board auto-refreshes |
-| No real-time WebSocket push for slot events | Integrate WebSocket or SSE so the customer app and slot board auto-refresh without manual polling |
+
+| Limitation                                    | Proposed Future Enhancement                                                                       |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| No hardware integration                       | Integrate ANPR cameras and barrier gates via MQTT/WebSocket                                       |
+| No native mobile apps                         | Build React Native apps using the existing REST API                                               |
+| Slot scheduling uses time-window booking only | Add support for walk-in (open-ended) sessions with real-time sensor data                          |
+| No self-service password reset flow           | Implement email-based password reset using a secure token link                                    |
+| No real-time slot status push                 | Integrate WebSocket notifications so the slot board auto-refreshes                                |
+| No real-time WebSocket push for slot events   | Integrate WebSocket or SSE so the customer app and slot board auto-refresh without manual polling |
 
 ---
 
 ## 4.2 References
 
- 1. **FastAPI Documentation** — Sebastián Ramírez. *FastAPI — Modern, fast (high-performance) web framework for building APIs with Python.* https://fastapi.tiangolo.com
-
- 2. **SQLAlchemy 2.0 Documentation** — Mike Bayer et al. *SQLAlchemy — The Python SQL Toolkit and Object Relational Mapper.* https://docs.sqlalchemy.org/en/20/
-
- 3. **Pydantic v2 Documentation** — Samuel Colvin et al. *Pydantic — Data validation using Python type annotations.* https://docs.pydantic.dev/latest/
-
- 4. **Alembic Documentation** — Mike Bayer. *Alembic — A lightweight database migration tool for SQLAlchemy.* https://alembic.sqlalchemy.org/en/latest/
-
- 5. **React Documentation** — Meta Open Source. *React — A JavaScript library for building user interfaces.* https://react.dev
-
- 6. **TanStack Query v5** — Tanner Linsley. *TanStack Query — Powerful asynchronous state management for TypeScript/JavaScript.* https://tanstack.com/query/latest
-
- 7. **React Router v7 Documentation** — Remix Team. *React Router — Declarative Routing for React.* https://reactrouter.com
-
- 8. **Zustand** — Paul Henschel et al. *Zustand — A small, fast, and scalable bearbones state management solution.* https://github.com/pmndrs/zustand
-
- 9. **shadcn/ui** — shadcn. *shadcn/ui — Beautifully designed components built with Radix UI and Tailwind CSS.* https://ui.shadcn.com
-
+1. **FastAPI Documentation** — Sebastián Ramírez. *FastAPI — Modern, fast (high-performance) web framework for building APIs with Python.* https://fastapi.tiangolo.com
+2. **SQLAlchemy 2.0 Documentation** — Mike Bayer et al. *SQLAlchemy — The Python SQL Toolkit and Object Relational Mapper.* https://docs.sqlalchemy.org/en/20/
+3. **Pydantic v2 Documentation** — Samuel Colvin et al. *Pydantic — Data validation using Python type annotations.* https://docs.pydantic.dev/latest/
+4. **Alembic Documentation** — Mike Bayer. *Alembic — A lightweight database migration tool for SQLAlchemy.* https://alembic.sqlalchemy.org/en/latest/
+5. **React Documentation** — Meta Open Source. *React — A JavaScript library for building user interfaces.* https://react.dev
+6. **TanStack Query v5** — Tanner Linsley. *TanStack Query — Powerful asynchronous state management for TypeScript/JavaScript.* https://tanstack.com/query/latest
+7. **React Router v7 Documentation** — Remix Team. *React Router — Declarative Routing for React.* https://reactrouter.com
+8. **Zustand** — Paul Henschel et al. *Zustand — A small, fast, and scalable bearbones state management solution.* https://github.com/pmndrs/zustand
+9. **shadcn/ui** — shadcn. *shadcn/ui — Beautifully designed components built with Radix UI and Tailwind CSS.* https://ui.shadcn.com
 10. **Tailwind CSS v4** — Adam Wathan et al. *Tailwind CSS — A utility-first CSS framework.* https://tailwindcss.com
-
 11. **Vite** — Evan You. *Vite — Next generation front-end tooling.* https://vitejs.dev
-
 12. **Docker Documentation** — Docker Inc. *Docker — Empowering App Development for Developers.* https://docs.docker.com
-
 13. **JSON Web Tokens (JWT) Specification** — M. Jones, J. Bradley, N. Sakimura. *RFC 7519 — JSON Web Token (JWT).* https://datatracker.ietf.org/doc/html/rfc7519
-
 14. **Recharts** — Recharts Group. *Recharts — A composable charting library built on React components.* https://recharts.org
-
 15. **Axios** — Matt Zabriskie et al. *Axios — Promise based HTTP client for the browser and node.js.* https://axios-http.com
-
 16. **React Hook Form** — Beier Liu. *React Hook Form — Performant, flexible and extensible forms with easy-to-use validation.* https://react-hook-form.com
-
 17. **Zod** — Colin McDonnell. *Zod — TypeScript-first schema validation with static type inference.* https://zod.dev
 
 ---

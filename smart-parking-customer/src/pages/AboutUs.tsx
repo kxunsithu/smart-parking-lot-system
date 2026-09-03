@@ -79,7 +79,7 @@ const teamMembers: TeamMember[] = [
     gradient: "from-amber-400 to-orange-500",
     badgeIcon: Award,
     socials: {
-      telegram: "https://t.me/khunsithuaung",
+      telegram: "https://t.me/khun_0",
       facebook: "https://facebook.com/khunsithuaung",
       email: "khunsithuaung@gmail.com",
     },
@@ -92,7 +92,7 @@ const teamMembers: TeamMember[] = [
     gradient: "from-emerald-400 to-teal-500",
     badgeIcon: ShieldCheck,
     socials: {
-      telegram: "https://t.me/sawpaingwathonesan",
+      telegram: "https://t.me/paingwathonesan67",
       facebook: "https://facebook.com/sawpaingwathonesan",
       email: "sawpaingwathonesan@gmail.com",
     },
@@ -105,7 +105,7 @@ const teamMembers: TeamMember[] = [
     gradient: "from-purple-400 to-violet-500",
     badgeIcon: Code2,
     socials: {
-      telegram: "https://t.me/mgsithuaung",
+      telegram: "https://t.me/sithuaung001",
       facebook: "https://facebook.com/mgsithuaung",
       email: "mgsithuaung@gmail.com",
     },
@@ -118,7 +118,7 @@ const teamMembers: TeamMember[] = [
     gradient: "from-rose-400 to-pink-500",
     badgeIcon: TestTube2,
     socials: {
-      telegram: "https://t.me/myominoo",
+      telegram: "https://t.me/more6701",
       facebook: "https://facebook.com/myominoo",
       email: "myominoo@gmail.com",
     },
@@ -131,7 +131,7 @@ const teamMembers: TeamMember[] = [
     gradient: "from-cyan-400 to-sky-500",
     badgeIcon: FileText,
     socials: {
-      telegram: "https://t.me/yadanarhtun",
+      telegram: "https://t.me/unknown3_15",
       facebook: "https://facebook.com/yadanarhtun",
       email: "yadanarhtun@gmail.com",
     },
@@ -144,7 +144,7 @@ const teamMembers: TeamMember[] = [
     gradient: "from-indigo-400 to-blue-500",
     badgeIcon: Database,
     socials: {
-      telegram: "https://t.me/nanhninchitaung",
+      telegram: "https://t.me/nannhnin04",
       facebook: "https://facebook.com/nanhninchitaung",
       email: "nanhninchitaung@gmail.com",
     },
