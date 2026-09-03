@@ -3,6 +3,7 @@ import {
   Users,
   Target,
   Lightbulb,
+  Mail,
   Sparkles,
   MapPin,
   GraduationCap,
