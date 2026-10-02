@@ -4,13 +4,15 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Loader2, Pencil, Plus, Box, Edit, Trash2, Filter, RotateCcw, Search, Layers, MapPin } from "lucide-react"
+import { Loader2, Pencil, Plus, Box, Edit, Trash2, Filter, RotateCcw, Search, Layers, MapPin, Maximize2, X, RotateCw, Briefcase, User, Mail, Phone } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { EmptyState } from "@/components/common/EmptyState"
 import { LoadingSpinner } from "@/components/common/LoadingBlock"
+import Embedded3DView from "@/components/parking/Embedded3DView"
 import { FormField } from "@/components/common/FormField"
 import { ConfirmDialog } from "@/components/common/ConfirmDialog"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -83,6 +85,32 @@ function toSlotPayload(values: SlotFormValues) {
 
 const SLOT_STATUS_OPTIONS: SlotStatus[] = ["AVAILABLE", "OCCUPIED"]
 
+function getEmbedUrl(mapUrl?: string | null): string | null {
+  if (!mapUrl) return null
+  const str = mapUrl.trim()
+  if (str.toLowerCase().includes("<iframe")) {
+    const match = str.match(/src=["']([^"']+)["']/i)
+    if (match && match[1]) return getEmbedUrl(match[1])
+  }
+  if (str.includes("maps/embed") || str.includes("output=embed")) return str
+  if (str.includes("pb=")) {
+    const match = str.match(/[?&]pb=([^&]+)/)
+    if (match) return `https://www.google.com/maps/embed?pb=${match[1]}`
+  }
+  const qMatch = str.match(/[?&]q=([^&]+)/)
+  if (qMatch && qMatch[1]) {
+    const query = decodeURIComponent(qMatch[1])
+    return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=15&output=embed`
+  }
+  const llMatch = str.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+  if (llMatch) return `https://maps.google.com/maps?q=${llMatch[1]},${llMatch[2]}&z=15&output=embed`
+  const coordMatch = str.match(/^(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)$/)
+  if (coordMatch) return `https://maps.google.com/maps?q=${coordMatch[1]},${coordMatch[2]}&z=15&output=embed`
+  if (str.startsWith("http://") || str.startsWith("https://"))
+    return `https://maps.google.com/maps?q=${encodeURIComponent(str)}&z=15&output=embed`
+  return null
+}
+
 export function LotDetailPage() {
   const { lotId } = useParams<{ lotId: string }>()
   const navigate = useNavigate()
@@ -105,6 +133,8 @@ export function LotDetailPage() {
   const [selectedSection, setSelectedSection] = useState<string>("all")
   const [slotSearchQuery, setSlotSearchQuery] = useState<string>("")
   const [lotSections, setLotSections] = useState<string[]>([])
+  const [slotsByFloor, setSlotsByFloor] = useState<Record<number, ParkingSlotOut[]>>({})
+  const [mapFullscreen, setMapFullscreen] = useState(false)
 
   const fetchLot = async () => {
     if (!Number.isFinite(id)) return
@@ -203,6 +233,11 @@ export function LotDetailPage() {
           items.map((f) => parkingSlotsApi.list({ floor_id: f.id, limit: 100 }))
         )
         if (cancelled) return
+        const map: Record<number, ParkingSlotOut[]> = {}
+        results.forEach((r, idx) => {
+          map[items[idx].id] = r.items
+        })
+        setSlotsByFloor(map)
         setLotSections(
           Array.from(
             new Set(
@@ -232,41 +267,183 @@ export function LotDetailPage() {
         description="Parking lot details"
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate(`/3d/${lot.id}`)}>
-              <Box className="size-4 mr-2" />
-              3D View
-            </Button>
             <Button variant="outline" onClick={() => setEditLotOpen(true)}>
-              <Pencil className="size-4" />
+              <Pencil className="size-4 mr-2" />
               Edit lot
             </Button>
           </div>
         }
       />
 
-      <Card>
-        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <p className="text-xs text-muted-foreground">Hourly Rate</p>
-            <p className="mt-1 text-sm font-semibold text-primary">
-              {lot.rate_per_hour != null ? `${lot.rate_per_hour.toLocaleString()} MMK / hr` : "Not set (System Default)"}
-            </p>
+      <Card className="border border-border/80 shadow-sm rounded">
+        <CardContent className="p-5 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-4 border-b border-border/60 text-xs">
+            <div>
+              <p className="text-muted-foreground font-medium">Hourly Rate</p>
+              <p className="mt-1 font-bold text-primary text-sm">
+                {lot.rate_per_hour != null ? `${lot.rate_per_hour.toLocaleString()} MMK / hr` : "Not set (System Default)"}
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground font-medium">City</p>
+              <p className="mt-1 font-bold text-foreground text-sm">{lot.city || "-"}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground font-medium">Location Status</p>
+              <p className="mt-1 font-bold text-foreground text-sm">
+                {lot.google_map_url ? "Map Configured" : "No Map URL"}
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground font-medium">Status</p>
+              <p className="mt-1 font-bold text-foreground text-sm">{lot.is_active ? "Active" : "Inactive"}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Google Maps</p>
-            {lot.google_map_url ? (
-              <button
-                onClick={() => navigate(`/map/${lot.id}`)}
-                className="mt-1 block truncate text-sm font-medium text-primary underline-offset-4 hover:underline text-left"
-              >
-                View on map
-              </button>
-            ) : (
-              <p className="mt-1 text-sm font-medium">-</p>
-            )}
-          </div>
+
+          {/* Operating Company / Owner Info */}
+          {lot.owner && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-muted/40 border border-border/60 p-3.5 rounded-lg text-xs">
+              <div className="flex items-center gap-3">
+                {(lot.owner.user as any)?.profile_image || (lot.owner.user as any)?.profile_image_url ? (
+                  <img
+                    src={(lot.owner.user as any)?.profile_image || (lot.owner.user as any)?.profile_image_url}
+                    alt={lot.owner.company_name || "Company"}
+                    className="size-10 rounded-full object-cover border border-primary/30 shrink-0"
+                  />
+                ) : (
+                  <div className="size-10 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                    {(lot.owner.company_name || lot.owner.user?.name || "C").charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p className="font-bold text-foreground text-sm flex items-center gap-1.5">
+                    <Briefcase className="size-4 text-primary" />
+                    {lot.owner.company_name || "Independent Operator"}
+                  </p>
+                  {lot.owner.user?.name && (
+                    <p className="text-muted-foreground text-xs flex items-center gap-1 mt-0.5">
+                      <User className="size-3 text-muted-foreground" />
+                      <span>{lot.owner.user.name}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
+                {lot.owner.user?.email && (
+                  <div className="flex items-center gap-1.5 bg-background px-2.5 py-1 rounded border border-border/60">
+                    <Mail className="size-3.5 text-primary" />
+                    <span>{lot.owner.user.email}</span>
+                  </div>
+                )}
+                {(lot.owner.user as any)?.phone && (
+                  <div className="flex items-center gap-1.5 bg-background px-2.5 py-1 rounded border border-border/60">
+                    <Phone className="size-3.5 text-primary" />
+                    <span>{(lot.owner.user as any).phone}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* ── 2-Column Side-by-Side Panels: Left = Location Map | Right = Interactive 3D View ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Panel: Location Map View */}
+        <Card className="flex flex-col h-full border border-border/80 shadow-sm overflow-hidden rounded-2xl">
+          <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b border-border/60 bg-muted/30">
+            <div className="flex items-center gap-2">
+              <MapPin className="size-4 text-primary" />
+              <CardTitle className="text-sm font-bold">Location Map</CardTitle>
+            </div>
+            {getEmbedUrl(lot.google_map_url) && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setMapFullscreen(true)}
+                className="h-7 text-xs gap-1.5 px-2.5 rounded-lg border-border/80 hover:bg-accent"
+              >
+                <Maximize2 className="size-3.5" />
+                Full View
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent className="p-0 flex-1 min-h-[340px] sm:min-h-[400px] relative bg-slate-950">
+            {getEmbedUrl(lot.google_map_url) ? (
+              <iframe
+                src={getEmbedUrl(lot.google_map_url)!}
+                width="100%"
+                height="100%"
+                style={{ border: 0, minHeight: "340px" }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title={`${lot.name} Embedded Map`}
+                className="w-full h-full min-h-[340px] sm:min-h-[400px]"
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full min-h-[340px] sm:min-h-[400px] text-center p-6 text-muted-foreground">
+                <MapPin className="size-8 mb-2 opacity-50 text-primary" />
+                <p className="text-sm font-medium">Location map not configured</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Right Panel: Interactive 3D View */}
+        <Card className="flex flex-col h-full border border-border/80 shadow-sm overflow-hidden rounded-2xl">
+          <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b border-border/60 bg-muted/30">
+            <div className="flex items-center gap-2">
+              <RotateCw className="size-4 text-primary" />
+              <CardTitle className="text-sm font-bold">Interactive 3D View</CardTitle>
+            </div>
+            <Badge variant="outline" className="text-[10px] font-bold border-primary/40 text-primary">
+              Live 3D View
+            </Badge>
+          </CardHeader>
+          <CardContent className="p-0 flex-1 min-h-[340px] sm:min-h-[400px]">
+            <Embedded3DView
+              floors={floors}
+              slotsByFloor={slotsByFloor}
+              onSlotClick={(slot) => navigate(`/slots/${slot.id}`)}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── Map Fullscreen Modal ── */}
+      {mapFullscreen && getEmbedUrl(lot.google_map_url) && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col p-4 sm:p-6 animate-in fade-in duration-200">
+          <div className="flex justify-between items-center mb-4 text-white">
+            <div className="flex items-center gap-2">
+              <MapPin className="size-5 text-primary" />
+              <h3 className="text-lg font-bold">{lot.name} — Location Map</h3>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/10 rounded-full"
+              onClick={() => setMapFullscreen(false)}
+            >
+              <X className="size-6" />
+            </Button>
+          </div>
+          <div className="flex-1 w-full rounded-2xl overflow-hidden border border-white/20 shadow-2xl">
+            <iframe
+              src={getEmbedUrl(lot.google_map_url)!}
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title={`${lot.name} Fullscreen Map`}
+              className="w-full h-full"
+            />
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold tracking-tight">Floors</h2>

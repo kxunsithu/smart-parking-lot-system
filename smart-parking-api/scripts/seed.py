@@ -599,9 +599,21 @@ CITIES_DATA = [
         "image_url": None,
     },
     {
+        "name": "Hlaingbwe",
+        "name_mm": "လှိုင်းဘွဲ",
+        "description": "Central township of Kayin State known for agricultural communities.",
+        "image_url": None,
+    },
+    {
         "name": "Thandaunggyi",
         "name_mm": "သံတောင်ကြီး",
         "description": "Scenic hill station town renowned for tea plantations and Naw Bu Baw Prayer Mountain.",
+        "image_url": None,
+    },
+    {
+        "name": "Htantabin",
+        "name_mm": "ထန်းတပင်",
+        "description": "Township situated near the border region of Kayin State.",
         "image_url": None,
     },
     {
@@ -614,6 +626,18 @@ CITIES_DATA = [
         "name": "Payathonzu",
         "name_mm": "ဘုရားသုံးဆူ",
         "description": "Border town famous for the Three Pagodas Pass connecting Myanmar and Thailand.",
+        "image_url": None,
+    },
+    {
+        "name": "Waw",
+        "name_mm": "ဝေါ",
+        "description": "Township connecting trade routes.",
+        "image_url": None,
+    },
+    {
+        "name": "Ler Mu Plaw",
+        "name_mm": "လာမူပလော",
+        "description": "Highland community township in Kayin State.",
         "image_url": None,
     },
 ]

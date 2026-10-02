@@ -63,7 +63,12 @@ apiClient.interceptors.response.use(
       }
 
       if (typeof window !== "undefined") {
-        window.location.href = "/login"
+        useAuthStore.getState().logout()
+        const pathname = window.location.pathname
+        const isProtectedPath = pathname.startsWith("/sessions") || pathname.startsWith("/cars") || pathname.startsWith("/profile") || pathname.startsWith("/wallet-payment")
+        if (isProtectedPath) {
+          window.location.href = "/login"
+        }
       }
     }
 

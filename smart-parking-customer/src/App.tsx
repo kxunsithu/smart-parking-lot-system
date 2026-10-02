@@ -56,14 +56,16 @@ function App() {
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
           <Route path="/verify-email" element={<AuthOnlyRoute><VerifyEmail /></AuthOnlyRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/cars" element={<ProtectedRoute><Cars /></ProtectedRoute>} />
           <Route path="/vehicles" element={<Navigate to="/cars" replace />} />
           <Route path="/sessions" element={<ProtectedRoute><Sessions /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/parking/:id" element={<ProtectedRoute><ParkingDetail /></ProtectedRoute>} />
-          <Route path="/parking/:id/3d" element={<ProtectedRoute><Lot3DView /></ProtectedRoute>} />
-          <Route path="/slots/:id" element={<ProtectedRoute><Slot3DView /></ProtectedRoute>} />
+          <Route path="/parking/:id" element={<ParkingDetail />} />
+          <Route path="/parking/:id/3d" element={<Lot3DView />} />
+          <Route path="/lots/:id" element={<ParkingDetail />} />
+          <Route path="/lots/:id/3d" element={<Lot3DView />} />
+          <Route path="/slots/:id" element={<Slot3DView />} />
           <Route path="/wallet-payment/result" element={<ProtectedRoute><WalletPaymentResult /></ProtectedRoute>} />
         </Routes>
         <Toaster />

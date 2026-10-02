@@ -26,7 +26,7 @@ import { Badge } from "@/components/ui/badge"
 import { citiesApi, type CityOut } from "@/api/cities"
 import { parkingLotsApi } from "@/api/parkingLots"
 import { API_ORIGIN } from "@/api/client"
-import { Kayin_STATE_CITIES } from "@/lib/KayinCities"
+
 
 /* ─── Main Home Page ─────────────────────────────────────────────── */
 export default function Home() {
@@ -51,27 +51,12 @@ export default function Home() {
           apiCities = []
         }
 
-        const existingNames = new Set(apiCities.map((c) => c.name.toLowerCase()))
-
-        const fallbackCities: CityOut[] = Kayin_STATE_CITIES.filter(
-          (c) => !existingNames.has(c.value.toLowerCase())
-        ).map((c, i) => ({
-          id: 1000 + i,
-          name: c.value,
-          name_mm: c.labelMm,
-          description: null,
-          image_url: null,
-          is_active: true,
-          created_at: "",
-        }))
-
-        const allCities = [...apiCities, ...fallbackCities]
-        setCities(allCities)
+        setCities(apiCities)
 
         // Fetch counts
         const counts: Record<string, number> = {}
         await Promise.all(
-          allCities.map(async (c) => {
+          apiCities.map(async (c) => {
             try {
               const res = await parkingLotsApi.list({ city: c.name, page: 1, limit: 1 })
               counts[c.name] = res.meta?.total ?? 0
@@ -98,12 +83,7 @@ export default function Home() {
   }
 
   const handleCityClick = (cityName: string) => {
-    const targetUrl = `/dashboard?city=${encodeURIComponent(cityName)}`
-    if (isAuthenticated) {
-      navigate(targetUrl)
-    } else {
-      navigate("/login")
-    }
+    navigate(`/dashboard?city=${encodeURIComponent(cityName)}`)
   }
 
   const features = [

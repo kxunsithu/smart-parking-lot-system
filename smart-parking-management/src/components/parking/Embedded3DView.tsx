@@ -1,25 +1,16 @@
-import { useState, useEffect, useRef, Suspense } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useEffect, useState, Suspense, useRef, useCallback } from "react"
 import { Canvas, useThree, useFrame } from "@react-three/fiber"
 import { OrbitControls, Text, Box } from "@react-three/drei"
 import * as THREE from "three"
-import { LoadingSpinner } from "@/components/common/LoadingBlock"
-import { EmptyState } from "@/components/common/EmptyState"
-import { StatusBadge } from "@/components/common/StatusBadge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import {
-  ArrowLeft, AlertCircle, Sun, Moon, Maximize2, Minimize2,
-  RotateCw, Layers, Hash, MapPin, ParkingSquare, Car, Timer
+  RotateCw, AlertCircle, Maximize2, Minimize2,
+  Sun, Moon,
 } from "lucide-react"
-import { parkingSlotsApi } from "@/api/parkingSlots"
-import { parkingFloorsApi } from "@/api/parkingFloors"
-import { parkingLotsApi } from "@/api/parkingLots"
-import { parkingSessionsApi } from "@/api/parkingSessions"
-import { SessionCardGrid } from "@/components/sessions/SessionCard"
-import { slotStatusTone } from "@/utils/statusColors"
-import type { ParkingSlotOut, ParkingFloorOut, ParkingLotOut, ParkingSessionOut } from "@/types"
+import type { ParkingFloorOut, ParkingSlotOut } from "@/types"
+import { useTheme } from "@/components/theme/ThemeProvider"
 
+// Vibrant car palette
 const CAR_PALETTE = [
   "#f43f5e", // Rose Red
   "#3b82f6", // Vibrant Blue
@@ -49,11 +40,13 @@ function WebGLFallback({ message }: { message: string }) {
       <div>
         <h3 className="text-lg font-bold mb-1">3D View Unavailable</h3>
         <p className="text-muted-foreground text-sm">{message}</p>
+        <p className="text-xs text-muted-foreground mt-1">Try Chrome or Firefox for WebGL support.</p>
       </div>
     </div>
   )
 }
 
+/** Hero-style 3D Car model matching Customer Landing Hero Section SVG design */
 function CarTopView({ slotId, bw, bl }: { slotId: number; bw: number; bl: number }) {
   const color = CAR_PALETTE[slotId % CAR_PALETTE.length]
   const isWhite = color === "#f8fafc" || color === "#ffffff"
@@ -154,7 +147,10 @@ function CarTopView({ slotId, bw, bl }: { slotId: number; bw: number; bl: number
   )
 }
 
-function DashedCenterLine({ totalWidth, z, isNightMode }: { totalWidth: number; z: number; isNightMode: boolean }) {
+/** Dashed center-lane line with electric blue glow in night mode */
+function DashedCenterLine({
+  totalWidth, z, isNightMode,
+}: { totalWidth: number; z: number; isNightMode: boolean }) {
   const dashLen = 1.5
   const dashGap = 1.0
   const count = Math.floor(totalWidth / (dashLen + dashGap))
@@ -163,7 +159,11 @@ function DashedCenterLine({ totalWidth, z, isNightMode }: { totalWidth: number; 
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
-        <Box key={i} args={[dashLen, 0.06, 0.16]} position={[startX + i * (dashLen + dashGap), 0.03, z]}>
+        <Box
+          key={i}
+          args={[dashLen, 0.06, 0.16]}
+          position={[startX + i * (dashLen + dashGap), 0.03, z]}
+        >
           <meshStandardMaterial
             color={isNightMode ? "#38bdf8" : "#ffffff"}
             emissive={isNightMode ? "#0284c7" : "#ffffff"}
@@ -175,6 +175,7 @@ function DashedCenterLine({ totalWidth, z, isNightMode }: { totalWidth: number; 
   )
 }
 
+/** Animated highlight beacon for selected slot */
 function SelectedSlotAnimation({ sw, sd, isOccupied }: { sw: number; sd: number; isOccupied?: boolean }) {
   const padMatRef = useRef<THREE.MeshStandardMaterial>(null)
   const ringRef = useRef<THREE.Mesh>(null)
@@ -182,7 +183,6 @@ function SelectedSlotAnimation({ sw, sd, isOccupied }: { sw: number; sd: number;
   const labelRef = useRef<THREE.Group>(null)
   const timeRef = useRef(0)
 
-  // Red for occupied slots, blue for available/reserved
   const selColor = isOccupied ? "#ef4444" : "#3b82f6"
   const selLabelColor = isOccupied ? "#fca5a5" : "#60a5fa"
 
@@ -235,13 +235,14 @@ function SelectedSlotAnimation({ sw, sd, isOccupied }: { sw: number; sd: number;
 
       <group ref={labelRef} position={[0, 1.8, -sd / 2 - 0.5]}>
         <Text fontSize={0.65} color={selLabelColor} anchorX="center" anchorY="middle" fontWeight="bold">
-          Target Slot
+          Selected
         </Text>
       </group>
     </>
   )
 }
 
+/** Single parking slot with full rectangular frame + pad tile */
 function ParkingSlot3D({
   slot, position, sw, sd, isNightMode, onClick, isHighlighted, isReserved,
 }: {
@@ -255,40 +256,38 @@ function ParkingSlot3D({
   isReserved?: boolean
 }) {
   const isOccupied = slot.status === "OCCUPIED"
-  const isSlotReserved = isReserved || slot.status === "RESERVED"
   const lw = 0.18
   const lh = 0.08
 
-  // Red = Occupied (car present), Amber = Reserved (session active, no car yet), Green = Available
   const padColor = isOccupied
     ? (isNightMode ? "#dc2626" : "#ef4444")
-    : isSlotReserved
+    : isReserved
       ? (isNightMode ? "#d97706" : "#f59e0b")
       : (isNightMode ? "#059669" : "#10b981")
 
   const padEmissive = isOccupied
     ? (isNightMode ? "#b91c1c" : "#dc2626")
-    : isSlotReserved
+    : isReserved
       ? (isNightMode ? "#f59e0b" : "#d97706")
       : (isNightMode ? "#10b981" : "#10b981")
 
   const padEmissiveIntensity = isNightMode
-    ? (isOccupied ? 0.1 : isSlotReserved ? 0.6 : 0.35)
-    : (isOccupied ? 0.1 : isSlotReserved ? 0.4 : 0.1)
+    ? (isOccupied ? 0.1 : isReserved ? 0.6 : 0.35)
+    : (isOccupied ? 0.1 : isReserved ? 0.4 : 0.1)
 
   const padOpacity = isNightMode
-    ? (isOccupied ? 0.5 : isSlotReserved ? 0.55 : 0.35)
-    : (isOccupied ? 0.3 : isSlotReserved ? 0.45 : 0.28)
+    ? (isOccupied ? 0.5 : isReserved ? 0.55 : 0.35)
+    : (isOccupied ? 0.3 : isReserved ? 0.45 : 0.28)
 
   const frameEmissive = isHighlighted
     ? "#f59e0b"
-    : isSlotReserved
+    : isReserved
       ? "#fbbf24"
       : isNightMode
         ? "#38bdf8"
         : "#ffffff"
 
-  const frameEmissiveIntensity = isHighlighted ? 0.8 : isSlotReserved ? 0.5 : isNightMode ? 0.5 : 0.08
+  const frameEmissiveIntensity = isHighlighted ? 0.8 : isReserved ? 0.5 : isNightMode ? 0.5 : 0.08
 
   return (
     <group
@@ -311,6 +310,7 @@ function ParkingSlot3D({
         </Box>
       )}
 
+      {/* 4-sided full rectangle frame lines */}
       <Box args={[lw, lh, sd]} position={[-sw / 2, lh / 2, 0]}>
         <meshStandardMaterial
           color={isNightMode ? "#e0f2fe" : "#ffffff"}
@@ -340,17 +340,19 @@ function ParkingSlot3D({
         />
       </Box>
 
+      {/* Car silhouette */}
       {isOccupied && (
         <group position={[0, 0, 0]}>
           <CarTopView slotId={slot.id} bw={sw * 0.68} bl={sd * 0.76} />
         </group>
       )}
 
+      {/* Slot number label */}
       {!isOccupied && (
         <Text
           position={[0, 0.35, 0]}
           fontSize={0.6}
-          color={isHighlighted ? "#fbbf24" : isSlotReserved ? "#fbbf24" : isNightMode ? "#f8fafc" : "#ffffff"}
+          color={isHighlighted ? "#fbbf24" : isReserved ? "#fbbf24" : isNightMode ? "#f8fafc" : "#ffffff"}
           anchorX="center"
           anchorY="middle"
           fontWeight="bold"
@@ -400,7 +402,6 @@ function ParkingFloor3D({
   const totalDepth = Math.max(zCursor, 10) + floorPad
   const totalWidth = spr * (sw + sg) + 4 + floorPad
 
-  // Sleek night mode obsidian asphalt tint matching project dark theme (#09090b & #121215) vs day mode slate
   const nightAsphalts = ["#121215", "#18181b", "#1c1c20", "#141418"]
   const dayAsphalts = ["#334155", "#374151", "#475569", "#3b4252"]
 
@@ -410,6 +411,7 @@ function ParkingFloor3D({
 
   return (
     <group position={[0, y, 0]}>
+      {/* Asphalt base */}
       <Box args={[totalWidth, 0.12, totalDepth]} position={[0, 0, (totalDepth - floorPad) / 2]}>
         <meshStandardMaterial
           color={asphaltColor}
@@ -430,6 +432,7 @@ function ParkingFloor3D({
         {floor.floor_name || `F${floorIndex + 1}`}
       </Text>
 
+      {/* Sections */}
       {sectionLayouts.map(({ name, secSlots, startZ, rows }) => {
         const slotsPerColumn = rows
         const rowWidth = spr * (sw + sg) - sg
@@ -478,12 +481,13 @@ function ParkingFloor3D({
   )
 }
 
-function Slot3DScene({
-  floors, slotsByFloor, isNightMode, highlightedSlotId, isAutoRotate, reservedSlotIds,
+function Scene3D({
+  floors, slotsByFloor, isNightMode, onSlotClick, highlightedSlotId, isAutoRotate, reservedSlotIds,
 }: {
   floors: ParkingFloorOut[]
   slotsByFloor: Record<number, ParkingSlotOut[]>
   isNightMode: boolean
+  onSlotClick: (s: ParkingSlotOut) => void
   highlightedSlotId: number | null
   isAutoRotate: boolean
   reservedSlotIds: Set<number>
@@ -491,7 +495,6 @@ function Slot3DScene({
   const { scene } = useThree()
 
   useEffect(() => {
-    // Project dark mode background (#09090b) vs daylight soft slate (#f1f5f9)
     scene.background = new THREE.Color(isNightMode ? "#09090b" : "#f1f5f9")
     scene.fog = new THREE.FogExp2(isNightMode ? "#09090b" : "#f1f5f9", 0.008)
   }, [isNightMode, scene])
@@ -539,7 +542,7 @@ function Slot3DScene({
             y={index * 4}
             floorIndex={index}
             isNightMode={isNightMode}
-            onSlotClick={() => { }}
+            onSlotClick={onSlotClick}
             highlightedSlotId={highlightedSlotId}
             reservedSlotIds={reservedSlotIds}
           />
@@ -549,40 +552,59 @@ function Slot3DScene({
   )
 }
 
+function WebGLContextHandler({ onContextLost }: { onContextLost: () => void }) {
+  const { gl } = useThree()
+
+  useEffect(() => {
+    const canvas = gl.domElement
+    const handleLost = (e: Event) => { e.preventDefault(); onContextLost() }
+    canvas.addEventListener("webglcontextlost", handleLost)
+    return () => {
+      canvas.removeEventListener("webglcontextlost", handleLost)
+    }
+  }, [gl, onContextLost])
+
+  return null
+}
+
 function checkWebGLSupport(): boolean {
   try {
     const canvas = document.createElement("canvas")
     const gl = (canvas.getContext("webgl") || canvas.getContext("experimental-webgl")) as WebGLRenderingContext | null
     if (!gl) return false
-    const loseContext = gl.getExtension("WEBGL_lose_context")
-    if (loseContext) loseContext.loseContext()
     return true
   } catch {
     return false
   }
 }
 
-import { useTheme } from "@/components/theme/ThemeProvider"
+export interface Embedded3DViewProps {
+  floors: ParkingFloorOut[]
+  slotsByFloor: Record<number, ParkingSlotOut[]>
+  onSlotClick: (slot: ParkingSlotOut) => void
+  highlightedSlotId?: number | null
+}
 
-export function SlotDetailPage() {
-  const { slotId } = useParams<{ slotId: string }>()
-  const navigate = useNavigate()
-  const containerRef = useRef<HTMLDivElement>(null)
-  const id = Number(slotId)
-
+export default function Embedded3DView({
+  floors,
+  slotsByFloor,
+  onSlotClick,
+  highlightedSlotId = null,
+}: Embedded3DViewProps) {
   const { resolvedTheme, setTheme } = useTheme()
   const isNightMode = resolvedTheme === "dark"
 
-  const [slot, setSlot] = useState<ParkingSlotOut | null>(null)
-  const [floor, setFloor] = useState<ParkingFloorOut | null>(null)
-  const [lot, setLot] = useState<ParkingLotOut | null>(null)
-  const [floors, setFloors] = useState<ParkingFloorOut[]>([])
-  const [slotsByFloor, setSlotsByFloor] = useState<Record<number, ParkingSlotOut[]>>({})
-  const [sessions, setSessions] = useState<ParkingSessionOut[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [webGLError, setWebGLError] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [isAutoRotate, setIsAutoRotate] = useState(true) // Default to auto-rotate for 360 view
+  const [isAutoRotate, setIsAutoRotate] = useState(true)
+  const [canvasKey, setCanvasKey] = useState(0)
+
+  const handleContextLost = useCallback(() => {
+    setTimeout(() => {
+      setCanvasKey((k) => k + 1)
+    }, 300)
+  }, [])
 
   useEffect(() => {
     if (!checkWebGLSupport()) setWebGLError("WebGL is not supported in your browser")
@@ -601,233 +623,95 @@ export function SlotDetailPage() {
     return () => document.removeEventListener("fullscreenchange", handler)
   }, [])
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!Number.isFinite(id)) return
-      try {
-        const slotData = await parkingSlotsApi.get(id)
-        setSlot(slotData)
-        const floorData = await parkingFloorsApi.get(slotData.floor_id)
-        setFloor(floorData)
-        const lotData = await parkingLotsApi.get(floorData.parking_lot_id)
-        setLot(lotData)
-        const floorsData = await parkingFloorsApi.list({ parking_lot_id: lotData.id, limit: 100 })
-        setFloors(floorsData.items)
-        const slotsData: Record<number, ParkingSlotOut[]> = {}
-        await Promise.all(floorsData.items.map(async (f) => {
-          const r = await parkingSlotsApi.list({ floor_id: f.id, limit: 100 })
-          slotsData[f.id] = r.items
-        }))
-        setSlotsByFloor(slotsData)
-        const sessionsRes = await parkingSessionsApi.list({ slot_id: id, limit: 100 })
-        setSessions(sessionsRes.items)
-      } catch (e) { console.error(e) }
-      finally { setIsLoading(false) }
-    }
-    fetchData()
-  }, [id])
-
-  if (isLoading) return <LoadingSpinner label="Loading slot details…" />
-  if (!slot) return <EmptyState title="Slot not found" description="This slot may have been removed." />
-
-  const isAvailable = slot.status === "AVAILABLE"
-  const isReserved = slot.status === "RESERVED"
-  // PENDING session status is eliminated in the new booking flow;
-  // sessions are only created as ACTIVE after payment is confirmed.
-  const activeSessions = sessions.filter(s => s.status === "ACTIVE")
-  const sortedSessions = [...sessions].sort((a, b) => {
-    const aActive = a.status === "ACTIVE" ? 0 : 1
-    const bActive = b.status === "ACTIVE" ? 0 : 1
-    if (aActive !== bActive) return aActive - bActive
-    return new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
-  })
-  // Build reserved set from slot status for 3D view
-  const reservedSlotIds = new Set<number>(
-    isReserved ? [slot.id] : []
-  )
-
   return (
-    <div className="space-y-5">
-
-      {/* ── Top Header Bar ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Button variant="ghost" size="icon" className="size-8 -ml-2 hover:bg-muted/80" onClick={() => navigate(-1)}>
-              <ArrowLeft className="size-4" />
-            </Button>
-            <h1 className="text-xl font-bold tracking-tight">Slot {slot.slot_number}</h1>
-            <StatusBadge label={slot.status} tone={slotStatusTone(slot.status)} />
-          </div>
-          <p className="text-xs text-muted-foreground pl-8">
-            {lot?.name}
-            {floor ? ` · ${floor.floor_name || `Floor ${floor.id}`}` : ""}
-            {slot.section ? ` · Section ${slot.section}` : ""}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant={isNightMode ? "default" : "outline"} onClick={() => setTheme(isNightMode ? "light" : "dark")} className="gap-2">
-            {isNightMode ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
-            {isNightMode ? "Day Mode" : "Night Mode"}
-          </Button>
-          <Button size="sm" variant={isAutoRotate ? "default" : "outline"} onClick={() => setIsAutoRotate(!isAutoRotate)} className="gap-2">
-            <RotateCw className={`size-3.5 ${isAutoRotate ? "animate-spin" : ""}`} />
-            {isAutoRotate ? "Stop" : "Rotate"}
-          </Button>
-          <Button size="sm" variant="outline" onClick={toggleFullscreen} className="gap-2">
-            {isFullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
-            {isFullscreen ? "Exit" : "Fullscreen"}
-          </Button>
-        </div>
+    <div
+      ref={containerRef}
+      className={`relative w-full rounded-2xl overflow-hidden border shadow-lg transition-colors duration-300 ${
+        isFullscreen ? "fixed inset-0 z-50 h-screen w-screen rounded-none border-none" : "h-[340px] sm:h-[400px]"
+      } ${isNightMode ? "bg-[#09090b] border-zinc-800" : "bg-card border-border"}`}
+    >
+      {/* Top Floating Controls */}
+      <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 backdrop-blur-md bg-background/60 p-1.5 rounded-xl border border-border/60 shadow-sm">
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-7 rounded-lg text-foreground hover:bg-accent"
+          onClick={() => setTheme(isNightMode ? "light" : "dark")}
+          title={isNightMode ? "Day Mode" : "Night Mode"}
+        >
+          {isNightMode ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className={`size-7 rounded-lg text-foreground hover:bg-accent ${isAutoRotate ? "text-primary" : ""}`}
+          onClick={() => setIsAutoRotate(!isAutoRotate)}
+          title={isAutoRotate ? "Stop Rotation" : "Auto Rotate"}
+        >
+          <RotateCw className={`size-3.5 ${isAutoRotate ? "animate-spin" : ""}`} />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-7 rounded-lg text-foreground hover:bg-accent"
+          onClick={toggleFullscreen}
+          title={isFullscreen ? "Exit Fullscreen" : "Full View"}
+        >
+          {isFullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
-
-        {/* ── Left Sidebar ── */}
-        <div className="lg:col-span-1 space-y-4">
-
-          {/* Status Hero Card */}
-          <div className={`rounded border p-5 space-y-4 transition-colors ${isAvailable
-            ? "border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5"
-            : isReserved
-              ? "border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-amber-500/5"
-              : "border-red-500/30 bg-gradient-to-br from-red-500/10 to-red-500/5"
-            }`}>
-            <div className="flex items-center gap-3">
-              <div className={`size-12 rounded flex items-center justify-center shadow-sm ${isAvailable ? "bg-emerald-500/20 text-emerald-500" : isReserved ? "bg-amber-500/20 text-amber-500" : "bg-red-500/20 text-red-500"
-                }`}>
-                {isAvailable ? <ParkingSquare className="size-6" /> : isReserved ? <Timer className="size-6" /> : <Car className="size-6" />}
-              </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Status</p>
-                <p className={`text-lg font-bold leading-tight ${isAvailable ? "text-emerald-500" : isReserved ? "text-amber-500" : "text-red-500"}`}>
-                  {isAvailable ? "Available" : isReserved ? "Reserved" : "Occupied"}
-                </p>
-              </div>
-            </div>
-            <div className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded ${isAvailable ? "bg-emerald-500/10 text-emerald-600" : isReserved ? "bg-amber-500/10 text-amber-600" : "bg-red-500/10 text-red-600"
-              }`}>
-              <span className={`size-2 rounded-full animate-pulse ${isAvailable ? "bg-emerald-500" : isReserved ? "bg-amber-500" : "bg-red-500"}`} />
-              {isAvailable ? "Ready to accept cars" : isReserved ? "Booked — awaiting arrival" : `${activeSessions.length} active session${activeSessions.length !== 1 ? "s" : ""}`}
-            </div>
-          </div>
-
-          {/* Slot Info Card */}
-          <Card>
-            <CardContent className="pt-4 pb-4 space-y-1">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Slot Details</p>
-
-              <div className="space-y-0.5">
-                {[
-                  { icon: <Hash className="size-3.5" />, label: "Slot Number", value: slot.slot_number },
-                  { icon: <Layers className="size-3.5" />, label: "Floor", value: floor?.floor_name || `Floor ${floor?.id}` },
-                  ...(slot.section ? [{ icon: <MapPin className="size-3.5" />, label: "Section", value: `Section ${slot.section}` }] : []),
-                  { icon: <ParkingSquare className="size-3.5" />, label: "Parking Lot", value: lot?.name || "—" },
-                ].map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-3 py-2.5 border-b border-border/40 last:border-0">
-                    <div className="size-7 rounded bg-muted flex items-center justify-center shrink-0 text-muted-foreground">
-                      {item.icon}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] text-muted-foreground leading-none mb-0.5">{item.label}</p>
-                      <p className="text-xs font-semibold text-foreground truncate">{item.value}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* ── 3D Canvas Panel ── */}
-        <div className="lg:col-span-3">
-          <div
-            ref={containerRef}
-            className={`relative w-full rounded overflow-hidden border shadow-xl transition-colors duration-300 ${isFullscreen ? "fixed inset-0 z-50 h-screen w-screen rounded-none border-none" : "h-[560px]"
-              } ${isNightMode ? "bg-[#09090b] border-zinc-800" : "bg-card border-border"}`}
+      {webGLError ? (
+        <WebGLFallback message={webGLError} />
+      ) : (
+        <Suspense fallback={<div className="flex items-center justify-center h-full text-xs text-muted-foreground">Loading 3D scene...</div>}>
+          <Canvas
+            key={canvasKey}
+            camera={{ position: [0, 36, 18], fov: 45 }}
+            gl={{ antialias: true, alpha: false }}
+            dpr={[1, 1.5]}
+            frameloop="always"
+            onError={() => setWebGLError("Failed to initialize 3D rendering.")}
+            onCreated={({ gl }) => {
+              const canvas = gl.domElement
+              const onLost = (e: Event) => { e.preventDefault(); handleContextLost() }
+              canvas.addEventListener("webglcontextlost", onLost)
+            }}
           >
-            {webGLError ? (
-              <WebGLFallback message={webGLError} />
-            ) : (
-              <Suspense fallback={<LoadingSpinner label="Loading scene…" />}>
-                <Canvas
-                  camera={{ position: [0, 40, 18], fov: 42 }}
-                  gl={{ antialias: true, alpha: false, preserveDrawingBuffer: true }}
-                  dpr={[1, 2]}
-                  frameloop="always"
-                  onError={() => setWebGLError("Failed to initialize 3D rendering.")}
-                >
-                  <Slot3DScene
-                    floors={floors}
-                    slotsByFloor={slotsByFloor}
-                    isNightMode={isNightMode}
-                    highlightedSlotId={id}
-                    isAutoRotate={isAutoRotate}
-                    reservedSlotIds={reservedSlotIds}
-                  />
-                </Canvas>
-              </Suspense>
-            )}
+            <WebGLContextHandler onContextLost={handleContextLost} />
+            <Scene3D
+              floors={floors}
+              slotsByFloor={slotsByFloor}
+              isNightMode={isNightMode}
+              onSlotClick={onSlotClick}
+              highlightedSlotId={highlightedSlotId}
+              isAutoRotate={isAutoRotate}
+              reservedSlotIds={new Set()}
+            />
+          </Canvas>
+        </Suspense>
+      )}
 
-            {/* Legend Pill */}
-            <div className={`absolute bottom-4 left-4 flex items-center gap-3 px-3.5 py-2 rounded text-xs font-medium backdrop-blur-md border transition-colors duration-300 ${isNightMode
-              ? "bg-[#09090b]/90 border-zinc-800 text-zinc-100 shadow-xl"
-              : "bg-white/80 border-slate-200 text-slate-800 shadow-md"
-              }`}>
-              <span className="flex items-center gap-1.5">
-                <span className={`size-3 rounded ${isNightMode ? "bg-[#dc2626]" : "bg-[#ef4444]"}`} />
-                Occupied
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className={`size-3 rounded inline-block ${isNightMode ? "bg-[#d97706] shadow-[0_0_8px_rgba(245,158,11,0.6)]" : "bg-[#f59e0b]"}`} />
-                Reserved
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className={`size-3 rounded border ${isNightMode ? "border-emerald-400 bg-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "border-emerald-600 bg-emerald-500/30"
-                  }`} />
-                Available
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="size-3 rounded bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
-                Selected
-              </span>
-            </div>
-
-            {/* Top-right slot badge HUD */}
-            <div className={`absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded text-xs font-semibold backdrop-blur-md border ${isNightMode ? "bg-slate-950/80 border-slate-700 text-slate-100" : "bg-white/90 border-slate-200 text-slate-800"
-              }`}>
-              <span className={`size-2 rounded-full ${isAvailable ? "bg-emerald-500" : isReserved ? "bg-amber-500" : "bg-red-500"}`} />
-              {slot.slot_number}
-              {slot.section ? ` · Section - ${slot.section}` : ""}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Session History (full list) ── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold tracking-tight">Session History</h2>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/60">
-              {sessions.length}
-            </span>
-          </div>
-          {activeSessions.length > 0 && (
-            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/30">
-              {activeSessions.length} active
-            </span>
-          )}
-        </div>
-
-        {sessions.length === 0 ? (
-          <EmptyState
-            title="No sessions yet"
-            description="This slot has no parking sessions yet."
-          />
-        ) : (
-          <SessionCardGrid sessions={sortedSessions} />
-        )}
+      {/* Bottom Floating Legend */}
+      <div
+        className={`absolute bottom-3 left-3 z-10 flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[11px] font-medium backdrop-blur-md border transition-colors duration-300 ${
+          isNightMode
+            ? "bg-[#09090b]/85 border-zinc-800 text-zinc-100 shadow-md"
+            : "bg-white/85 border-slate-200 text-slate-800 shadow-sm"
+        }`}
+      >
+        <span className="flex items-center gap-1">
+          <span className={`size-2.5 rounded-full ${isNightMode ? "bg-[#dc2626]" : "bg-[#ef4444]"}`} />
+          Occupied
+        </span>
+        <span className="flex items-center gap-1">
+          <span className={`size-2.5 rounded-full ${isNightMode ? "bg-[#d97706]" : "bg-[#f59e0b]"}`} />
+          Reserved
+        </span>
+        <span className="flex items-center gap-1">
+          <span className={`size-2.5 rounded-full ${isNightMode ? "bg-emerald-500" : "bg-emerald-500"}`} />
+          Available
+        </span>
       </div>
     </div>
   )

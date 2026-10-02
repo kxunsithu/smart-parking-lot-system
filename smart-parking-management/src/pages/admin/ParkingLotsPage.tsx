@@ -9,6 +9,7 @@ import {
   DollarSign,
   User,
   Mail,
+  Phone,
   Briefcase,
   ChevronDown,
   X,
@@ -22,16 +23,18 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { parkingLotsApi } from "@/api/parkingLots"
+import { citiesApi, type CityOut } from "@/api/cities"
 import { getErrorMessage } from "@/api/client"
 import { usePaginationState } from "@/hooks/usePaginationState"
 import type { ParkingLotWithStaffOut } from "@/types"
 import type { ListResult } from "@/api/types"
-import { Kayin_STATE_CITIES } from "@/lib/KayinCities"
+
 
 export function ParkingLotsPage() {
   const navigate = useNavigate()
   const { setPage, search, setSearch, params } = usePaginationState()
   const [data, setData] = useState<ListResult<ParkingLotWithStaffOut> | null>(null)
+  const [dbCities, setDbCities] = useState<CityOut[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isFetching, setIsFetching] = useState(false)
   const [selectedCity, setSelectedCity] = useState<string>("")
@@ -56,6 +59,19 @@ export function ParkingLotsPage() {
     }
   }
 
+  const fetchCities = async () => {
+    try {
+      const res = await citiesApi.list({ is_active: true })
+      setDbCities(res)
+    } catch {
+      // fallback
+    }
+  }
+
+  useEffect(() => {
+    fetchCities()
+  }, [])
+
   useEffect(() => {
     fetchData()
   }, [params, selectedCity])
@@ -72,8 +88,10 @@ export function ParkingLotsPage() {
   }, [])
 
   const lots = data?.items ?? []
+  const availableCities = dbCities.map((c) => ({ value: c.name, label: c.name, labelMm: c.name_mm ?? "" }))
+
   const selectedCityLabel = selectedCity
-    ? Kayin_STATE_CITIES.find((c) => c.value === selectedCity)?.label ?? selectedCity
+    ? availableCities.find((c) => c.value === selectedCity)?.label ?? selectedCity
     : ""
 
   return (
@@ -132,7 +150,7 @@ export function ParkingLotsPage() {
                     All Cities
                   </button>
                   <div className="h-px bg-border/60 mx-2 my-1" />
-                  {Kayin_STATE_CITIES.map((city) => (
+                  {availableCities.map((city) => (
                     <button
                       key={city.value}
                       type="button"
@@ -220,24 +238,44 @@ export function ParkingLotsPage() {
 
                     {/* Owner Profile Snippet Card */}
                     {lot.owner ? (
-                      <div className="rounded bg-muted/40 border border-border/60 p-3 space-y-1.5 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-foreground flex items-center gap-1.5">
-                            <Briefcase className="size-3.5 text-primary" />
-                            {lot.owner.company_name || "Company Not Set"}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-1 gap-1 text-[11px] text-muted-foreground pt-0.5">
-                          {lot.owner.user?.name && (
-                            <span className="flex items-center gap-1.5 truncate">
-                              <User className="size-3 text-muted-foreground shrink-0" />
-                              {lot.owner.user.name}
-                            </span>
+                      <div className="rounded bg-muted/40 border border-border/60 p-3 space-y-2 text-xs">
+                        <div className="flex items-center gap-2.5">
+                          {(lot.owner.user as any)?.profile_image || (lot.owner.user as any)?.profile_image_url ? (
+                            <img
+                              src={(lot.owner.user as any)?.profile_image || (lot.owner.user as any)?.profile_image_url}
+                              alt={lot.owner.company_name || "Company"}
+                              className="size-8 rounded-full object-cover border border-primary/30 shrink-0"
+                            />
+                          ) : (
+                            <div className="size-8 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                              {(lot.owner.company_name || lot.owner.user?.name || "C").charAt(0).toUpperCase()}
+                            </div>
                           )}
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-foreground flex items-center gap-1.5 truncate">
+                              <Briefcase className="size-3.5 text-primary shrink-0" />
+                              <span className="truncate">{lot.owner.company_name || "Company Not Set"}</span>
+                            </p>
+                            {lot.owner.user?.name && (
+                              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 truncate">
+                                <User className="size-3 shrink-0" />
+                                <span className="truncate">{lot.owner.user.name}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-1 text-[11px] text-muted-foreground pt-1 border-t border-border/40">
                           {lot.owner.user?.email && (
                             <span className="flex items-center gap-1.5 truncate">
                               <Mail className="size-3 text-muted-foreground shrink-0" />
-                              {lot.owner.user.email}
+                              <span className="truncate">{lot.owner.user.email}</span>
+                            </span>
+                          )}
+                          {(lot.owner.user as any)?.phone && (
+                            <span className="flex items-center gap-1.5 truncate">
+                              <Phone className="size-3 text-muted-foreground shrink-0" />
+                              <span className="truncate">{(lot.owner.user as any).phone}</span>
                             </span>
                           )}
                         </div>

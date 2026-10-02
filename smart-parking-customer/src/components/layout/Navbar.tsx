@@ -66,17 +66,12 @@ export default function Navbar() {
     navigate("/login")
   }
 
-  const navItems = isAuthenticated
-    ? [
-      { label: t("nav.home", "Home"), path: "/" },
-      { label: t("nav.parking", "Parking"), path: "/dashboard" },
-      { label: t("nav.sessions", "Sessions"), path: "/sessions" },
-      { label: t("nav.about", "About Us"), path: "/about" },
-    ]
-    : [
-      { label: t("nav.home", "Home"), path: "/" },
-      { label: t("nav.about", "About Us"), path: "/about" },
-    ]
+  const navItems = [
+    { label: t("nav.home", "Home"), path: "/" },
+    { label: t("nav.parking", "Parking"), path: "/dashboard" },
+    ...(isAuthenticated ? [{ label: t("nav.sessions", "Sessions"), path: "/sessions" }] : []),
+    { label: t("nav.about", "About Us"), path: "/about" },
+  ]
 
   return (
     <nav className="sticky top-0 z-50 w-full shrink-0 border-b border-border/60 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 shadow-xs">

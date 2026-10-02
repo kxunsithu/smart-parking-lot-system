@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { Box, Filter, RotateCcw, Search, Layers, MapPin } from "lucide-react"
+import { Box, Filter, RotateCcw, Search, Layers, MapPin, Briefcase, User, Mail, Phone } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { EmptyState } from "@/components/common/EmptyState"
 import { LoadingSpinner } from "@/components/common/LoadingBlock"
@@ -112,27 +112,71 @@ export function LotDetailPage() {
         }
       />
 
-      <Card>
-        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 pt-6">
-          <div>
-            <p className="text-xs text-muted-foreground">Status</p>
-            <p className="mt-1 text-sm font-medium">{lot.is_active ? "Active" : "Inactive"}</p>
+      <Card className="border border-border/80 shadow-sm rounded">
+        <CardContent className="p-5 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-4 border-b border-border/60 text-xs">
+            <div>
+              <p className="text-muted-foreground font-medium">Status</p>
+              <p className="mt-1 font-bold text-foreground text-sm">{lot.is_active ? "Active" : "Inactive"}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground font-medium">City</p>
+              <p className="mt-1 font-bold text-foreground text-sm">{lot.city || "-"}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground font-medium">Hourly Rate</p>
+              <p className="mt-1 font-bold text-primary text-sm">{lot.rate_per_hour ? `${lot.rate_per_hour.toLocaleString()} MMK/hr` : "Not set"}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground font-medium">Created</p>
+              <p className="mt-1 font-bold text-foreground text-sm">{new Date(lot.created_at).toLocaleDateString()}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Created</p>
-            <p className="mt-1 text-sm font-medium">{new Date(lot.created_at).toLocaleDateString()}</p>
-          </div>
+
+          {/* Operating Company / Owner Details */}
           {lot.owner && (
-            <>
-              <div>
-                <p className="text-xs text-muted-foreground">Owner Company</p>
-                <p className="mt-1 text-sm font-medium">{lot.owner.company_name || "-"}</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-muted/40 border border-border/60 p-3.5 rounded-lg text-xs">
+              <div className="flex items-center gap-3">
+                {(lot.owner.user as any)?.profile_image || (lot.owner.user as any)?.profile_image_url ? (
+                  <img
+                    src={(lot.owner.user as any)?.profile_image || (lot.owner.user as any)?.profile_image_url}
+                    alt={lot.owner.company_name || "Company"}
+                    className="size-10 rounded-full object-cover border border-primary/30 shrink-0"
+                  />
+                ) : (
+                  <div className="size-10 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                    {(lot.owner.company_name || lot.owner.user?.name || "C").charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p className="font-bold text-foreground text-sm flex items-center gap-1.5">
+                    <Briefcase className="size-4 text-primary" />
+                    {lot.owner.company_name || "Independent Operator"}
+                  </p>
+                  {lot.owner.user?.name && (
+                    <p className="text-muted-foreground text-xs flex items-center gap-1 mt-0.5">
+                      <User className="size-3 text-muted-foreground" />
+                      <span>{lot.owner.user.name}</span>
+                    </p>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Owner Email</p>
-                <p className="mt-1 text-sm font-medium">{lot.owner.user?.email || "-"}</p>
+
+              <div className="flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
+                {lot.owner.user?.email && (
+                  <div className="flex items-center gap-1.5 bg-background px-2.5 py-1 rounded border border-border/60">
+                    <Mail className="size-3.5 text-primary" />
+                    <span>{lot.owner.user.email}</span>
+                  </div>
+                )}
+                {(lot.owner.user as any)?.phone && (
+                  <div className="flex items-center gap-1.5 bg-background px-2.5 py-1 rounded border border-border/60">
+                    <Phone className="size-3.5 text-primary" />
+                    <span>{(lot.owner.user as any).phone}</span>
+                  </div>
+                )}
               </div>
-            </>
+            </div>
           )}
         </CardContent>
       </Card>

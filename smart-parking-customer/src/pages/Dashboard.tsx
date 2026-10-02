@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import {
   Clock, MapPin, Navigation2, Search,
-  Building2, ChevronLeft, ChevronRight, X, Layers,
+  Building2, ChevronLeft, ChevronRight, X, Layers, Briefcase, User, Mail, Phone,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,6 +17,7 @@ import { parkingSessionsApi } from "@/api/parkingSessions"
 import { citiesApi, type CityOut } from "@/api/cities"
 import { API_ORIGIN } from "@/api/client"
 import { useParkingStore } from "@/store/parkingStore"
+import { useAuthStore } from "@/store/authStore"
 import { useLanguage } from "@/lib/i18n"
 import { usePaginationState } from "@/hooks/usePaginationState"
 import type { ApiMeta, ParkingLotOut } from "@/api/types"
@@ -28,7 +29,7 @@ import {
   type ParkingTrackTarget,
   type SlotTrackContext,
 } from "@/lib/parkingTrack"
-import { Kayin_STATE_CITIES } from "@/lib/KayinCities"
+
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -76,7 +77,7 @@ export default function Dashboard() {
   const loadCitiesAndCounts = async () => {
     try {
       setLoading(true)
-      // 1. Fetch cities from API
+      // Fetch cities from API
       let apiCities: CityOut[] = []
       try {
         apiCities = await citiesApi.list({ is_active: true })
@@ -84,27 +85,12 @@ export default function Dashboard() {
         apiCities = []
       }
 
-      const existingNames = new Set(apiCities.map((c) => c.name.toLowerCase()))
-
-      const fallbackCities: CityOut[] = Kayin_STATE_CITIES.filter(
-        (c) => !existingNames.has(c.value.toLowerCase())
-      ).map((c, i) => ({
-        id: 1000 + i,
-        name: c.value,
-        name_mm: c.labelMm,
-        description: null,
-        image_url: null,
-        is_active: true,
-        created_at: "",
-      }))
-
-      const allCities = [...apiCities, ...fallbackCities]
-      setDbCities(allCities)
+      setDbCities(apiCities)
 
       // 2. Fetch lot counts for each city
       const counts: Record<string, number> = {}
       await Promise.all(
-        allCities.map(async (c) => {
+        apiCities.map(async (c) => {
           try {
             const res = await parkingLotsApi.list({ city: c.name, page: 1, limit: 1 })
             counts[c.name] = res.meta?.total ?? 0
@@ -139,6 +125,8 @@ export default function Dashboard() {
   }
 
   const loadActiveSession = async () => {
+    const token = useAuthStore.getState().accessToken
+    if (!token) return
     try {
       const response = await parkingSessionsApi.list({ status: "active" })
       if (response.length > 0) setActiveSession(response[0])
@@ -396,14 +384,9 @@ export default function Dashboard() {
                   >
                     <div>
                       <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <CardTitle className="text-lg font-bold group-hover:text-primary transition-colors">
-                            {lot.name}
-                          </CardTitle>
-                          <Badge variant="outline" className="shrink-0 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-wider">
-                            {lot.type}
-                          </Badge>
-                        </div>
+                        <CardTitle className="text-lg font-bold group-hover:text-primary transition-colors">
+                          {lot.name}
+                        </CardTitle>
                         <CardDescription className="text-xs mt-1">
                           <span className="line-clamp-1 text-muted-foreground">{lot.city}</span>
                         </CardDescription>
@@ -412,18 +395,64 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between text-sm py-2.5 px-3.5 bg-muted/40 rounded-xl border border-border/40">
                           <span className="text-muted-foreground text-xs font-medium">Hourly Rate</span>
                           <span className="font-bold text-primary">
-                            {lot.rate_per_hour.toLocaleString()} MMK / hr
+                            {lot.rate_per_hour != null ? `${lot.rate_per_hour.toLocaleString()} MMK / hr` : "—"}
                           </span>
                         </div>
+
+                        {/* Company Info Snippet */}
+                        {lot.owner ? (
+                          <div className="rounded-xl bg-muted/40 border border-border/50 p-3 space-y-2">
+                            {/* Avatar + Company name row */}
+                            <div className="flex items-center gap-2.5">
+                              {lot.owner.user?.profile_image ? (
+                                <img
+                                  src={getFullImageUrl(lot.owner.user.profile_image)}
+                                  alt={lot.owner.user.name}
+                                  className="size-9 rounded-full object-cover border border-border/60 shrink-0"
+                                />
+                              ) : (
+                                <div className="size-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                                  <Briefcase className="size-4" />
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-foreground truncate">
+                                  {lot.owner.company_name || "Unknown Company"}
+                                </p>
+                                {lot.owner.user?.name && (
+                                  <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+                                    <User className="size-2.5 shrink-0" />
+                                    {lot.owner.user.name}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            {/* Contact details */}
+                            <div className="space-y-1">
+                              {lot.owner.user?.email && (
+                                <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 truncate">
+                                  <Mail className="size-3 shrink-0 text-primary/60" />
+                                  {lot.owner.user.email}
+                                </p>
+                              )}
+                              {lot.owner.user?.phone && (
+                                <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                                  <Phone className="size-3 shrink-0 text-primary/60" />
+                                  {lot.owner.user.phone}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ) : null}
                       </CardContent>
                     </div>
 
                     <div className="p-4 pt-0">
                       <Button
                         className="w-full rounded-xl font-bold shadow-md cursor-pointer"
-                        onClick={() => navigate(`/lots/${lot.id}`)}
+                        onClick={() => navigate(`/parking/${lot.id}`)}
                       >
-                        View & Book Slots
+                        View &amp; Book Slots
                       </Button>
                     </div>
                   </Card>

@@ -51,37 +51,103 @@ function WebGLFallback({ message }: { message: string }) {
   )
 }
 
-/** Car silhouette rendered from top-down */
+/** Hero-style 3D Car model matching Customer Landing Hero Section SVG design */
 function CarTopView({ slotId, bw, bl }: { slotId: number; bw: number; bl: number }) {
   const color = CAR_PALETTE[slotId % CAR_PALETTE.length]
-  const darker = adjustBrightness(color, -45)
+  const isWhite = color === "#f8fafc" || color === "#ffffff"
+  const isTaxi = (slotId % 5 === 2) || color === "#eab308"
+  const darker = adjustBrightness(color, -40)
+
+  const carW = bw * 0.82
+  const carL = bl * 0.82
 
   return (
-    <group>
-      <Box args={[bw, 0.32, bl]} position={[0, 0.16, 0]}>
-        <meshStandardMaterial color={color} roughness={0.2} metalness={0.4} />
+    <group position={[0, 0, 0]}>
+      {/* Soft Ground Shadow */}
+      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[carW * 1.15, carL * 1.1]} />
+        <meshBasicMaterial color="#000000" transparent opacity={0.35} />
+      </mesh>
+
+      {/* Main Car Body Chassis */}
+      <Box args={[carW, 0.32, carL]} position={[0, 0.22, 0]}>
+        <meshStandardMaterial color={color} roughness={0.25} metalness={0.45} />
       </Box>
-      <Box args={[bw * 0.76, 0.34, bl * 0.24]} position={[0, 0.17, -bl * 0.2]}>
-        <meshStandardMaterial color="#38bdf8" transparent opacity={0.85} roughness={0.05} />
+
+      {/* Front Hood Curve */}
+      <Box args={[carW * 0.94, 0.18, carL * 0.28]} position={[0, 0.28, -carL * 0.34]}>
+        <meshStandardMaterial color={color} roughness={0.25} metalness={0.45} />
       </Box>
-      <Box args={[bw * 0.70, 0.34, bl * 0.19]} position={[0, 0.17, bl * 0.26]}>
-        <meshStandardMaterial color="#0284c7" transparent opacity={0.8} roughness={0.05} />
+
+      {/* Cabin / Roof Structure */}
+      <Box args={[carW * 0.78, 0.26, carL * 0.44]} position={[0, 0.44, carL * 0.02]}>
+        <meshStandardMaterial color={isWhite ? "#f1f5f9" : darker} roughness={0.3} metalness={0.3} />
       </Box>
-      <Box args={[bw * 0.78, 0.35, bl * 0.35]} position={[0, 0.18, bl * 0.04]}>
-        <meshStandardMaterial color={adjustBrightness(color, -20)} roughness={0.25} />
+
+      {/* Front Windshield (Angled dark glass) */}
+      <Box args={[carW * 0.74, 0.24, 0.08]} position={[0, 0.43, -carL * 0.2]} rotation={[0.4, 0, 0]}>
+        <meshStandardMaterial color="#0f172a" roughness={0.1} metalness={0.8} transparent opacity={0.9} />
       </Box>
-      <Box args={[0.19, 0.2, 0.4]} position={[-bw / 2 - 0.1, 0.16, -bl * 0.14]}>
-        <meshStandardMaterial color={color} />
+
+      {/* Rear Window */}
+      <Box args={[carW * 0.72, 0.22, 0.08]} position={[0, 0.43, carL * 0.23]} rotation={[-0.35, 0, 0]}>
+        <meshStandardMaterial color="#0f172a" roughness={0.1} metalness={0.8} transparent opacity={0.9} />
       </Box>
-      <Box args={[0.19, 0.2, 0.4]} position={[bw / 2 + 0.1, 0.16, -bl * 0.14]}>
-        <meshStandardMaterial color={color} />
+
+      {/* Side Windows */}
+      <Box args={[carW * 0.81, 0.2, carL * 0.36]} position={[0, 0.44, carL * 0.02]}>
+        <meshStandardMaterial color="#1e293b" roughness={0.1} metalness={0.7} transparent opacity={0.85} />
       </Box>
-      <Box args={[bw * 0.88, 0.28, 0.2]} position={[0, 0.14, -bl / 2 + 0.1]}>
-        <meshStandardMaterial color={darker} roughness={0.5} />
+
+      {/* Side Mirrors */}
+      <Box args={[0.18, 0.12, 0.22]} position={[-carW / 2 - 0.08, 0.34, -carL * 0.15]}>
+        <meshStandardMaterial color={color} roughness={0.3} />
       </Box>
-      <Box args={[bw * 0.88, 0.28, 0.2]} position={[0, 0.14, bl / 2 - 0.1]}>
-        <meshStandardMaterial color={darker} roughness={0.5} />
+      <Box args={[0.18, 0.12, 0.22]} position={[carW / 2 + 0.08, 0.34, -carL * 0.15]}>
+        <meshStandardMaterial color={color} roughness={0.3} />
       </Box>
+
+      {/* Front Headlights (Glow Amber/Yellow LED) */}
+      <Box args={[carW * 0.24, 0.1, 0.08]} position={[-carW * 0.28, 0.26, -carL / 2 - 0.01]}>
+        <meshStandardMaterial color="#fef08a" emissive="#fef08a" emissiveIntensity={0.9} />
+      </Box>
+      <Box args={[carW * 0.24, 0.1, 0.08]} position={[carW * 0.28, 0.26, -carL / 2 - 0.01]}>
+        <meshStandardMaterial color="#fef08a" emissive="#fef08a" emissiveIntensity={0.9} />
+      </Box>
+
+      {/* Rear Taillights (Red LED) */}
+      <Box args={[carW * 0.26, 0.08, 0.08]} position={[-carW * 0.28, 0.26, carL / 2 + 0.01]}>
+        <meshStandardMaterial color="#ef4444" emissive="#dc2626" emissiveIntensity={0.8} />
+      </Box>
+      <Box args={[carW * 0.26, 0.08, 0.08]} position={[carW * 0.28, 0.26, carL / 2 + 0.01]}>
+        <meshStandardMaterial color="#ef4444" emissive="#dc2626" emissiveIntensity={0.8} />
+      </Box>
+
+      {/* 4 Wheels */}
+      <Box args={[0.14, 0.24, 0.44]} position={[-carW / 2 - 0.02, 0.12, -carL * 0.28]}>
+        <meshStandardMaterial color="#18181b" roughness={0.8} />
+      </Box>
+      <Box args={[0.14, 0.24, 0.44]} position={[carW / 2 + 0.02, 0.12, -carL * 0.28]}>
+        <meshStandardMaterial color="#18181b" roughness={0.8} />
+      </Box>
+      <Box args={[0.14, 0.24, 0.44]} position={[-carW / 2 - 0.02, 0.12, carL * 0.28]}>
+        <meshStandardMaterial color="#18181b" roughness={0.8} />
+      </Box>
+      <Box args={[0.14, 0.24, 0.44]} position={[carW / 2 + 0.02, 0.12, carL * 0.28]}>
+        <meshStandardMaterial color="#18181b" roughness={0.8} />
+      </Box>
+
+      {/* TAXI Roof Box Sign */}
+      {isTaxi && (
+        <group position={[0, 0.62, 0]}>
+          <Box args={[carW * 0.45, 0.14, 0.22]}>
+            <meshStandardMaterial color="#fef08a" emissive="#eab308" emissiveIntensity={0.7} roughness={0.2} />
+          </Box>
+          <Text position={[0, 0, -0.12]} fontSize={0.1} color="#000000" fontWeight="bold" anchorX="center" anchorY="middle">
+            TAXI
+          </Text>
+        </group>
+      )}
     </group>
   )
 }

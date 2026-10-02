@@ -4,6 +4,13 @@ export interface RoleOut {
   description?: string | null
 }
 
+export interface ParkingOwnerOut {
+  id: number
+  user_id: number
+  company_name?: string | null
+  user?: UserOut | null
+}
+
 export interface UserOut {
   id: number
   name: string
@@ -64,6 +71,7 @@ export interface ParkingLotOut {
   is_active: boolean
   rate_per_hour?: number | null
   created_at: string
+  owner?: ParkingOwnerOut | null
 }
 
 export type SlotStatus = "AVAILABLE" | "OCCUPIED" | "RESERVED"

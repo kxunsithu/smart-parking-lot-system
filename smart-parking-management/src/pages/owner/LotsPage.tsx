@@ -15,6 +15,10 @@ import {
   Eye,
   Box,
   Users,
+  Briefcase,
+  User,
+  Mail,
+  Phone,
 } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { SearchInput } from "@/components/common/SearchInput"
@@ -38,11 +42,12 @@ import {
 } from "@/components/ui/dialog"
 import { parkingOwnersApi } from "@/api/parkingOwners"
 import { parkingLotsApi } from "@/api/parkingLots"
+import { citiesApi, type CityOut } from "@/api/cities"
 import { getErrorMessage } from "@/api/client"
 import { usePaginationState } from "@/hooks/usePaginationState"
 import type { ParkingLotOut, ParkingOwnerOut, ParkingLotCreate, ParkingLotUpdate } from "@/types"
 import type { ListResult } from "@/api/types"
-import { Kayin_STATE_CITIES } from "@/lib/KayinCities"
+
 
 const lotSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -69,6 +74,7 @@ export function LotsPage() {
   const [deleteTarget, setDeleteTarget] = useState<ParkingLotOut | null>(null)
   const [ownerProfile, setOwnerProfile] = useState<ParkingOwnerOut | null>(null)
   const [data, setData] = useState<ListResult<ParkingLotOut> | null>(null)
+  const [dbCities, setDbCities] = useState<CityOut[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isFetching, setIsFetching] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
@@ -100,8 +106,18 @@ export function LotsPage() {
     }
   }
 
+  const fetchCities = async () => {
+    try {
+      const result = await citiesApi.list({ is_active: true })
+      setDbCities(result)
+    } catch (error) {
+      console.error("Failed to fetch cities from DB:", error)
+    }
+  }
+
   useEffect(() => {
     fetchOwnerProfile()
+    fetchCities()
   }, [])
 
   useEffect(() => {
@@ -254,6 +270,55 @@ export function LotsPage() {
                       </p>
                     )}
 
+                    {/* Operating Company / Owner Snippet */}
+                    {(lot.owner || ownerProfile) && (() => {
+                      const ownerObj = lot.owner || ownerProfile
+                      return (
+                        <div className="rounded bg-muted/40 border border-border/60 p-3 space-y-2 text-xs">
+                          <div className="flex items-center gap-2.5">
+                            {(ownerObj?.user as any)?.profile_image || (ownerObj?.user as any)?.profile_image_url ? (
+                              <img
+                                src={(ownerObj?.user as any)?.profile_image || (ownerObj?.user as any)?.profile_image_url}
+                                alt={ownerObj?.company_name || "Company"}
+                                className="size-8 rounded-full object-cover border border-primary/30 shrink-0"
+                              />
+                            ) : (
+                              <div className="size-8 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                                {(ownerObj?.company_name || ownerObj?.user?.name || "C").charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-foreground flex items-center gap-1.5 truncate">
+                                <Briefcase className="size-3.5 text-primary shrink-0" />
+                                <span className="truncate">{ownerObj?.company_name || "Company Not Set"}</span>
+                              </p>
+                              {ownerObj?.user?.name && (
+                                <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 truncate">
+                                  <User className="size-3 shrink-0" />
+                                  <span className="truncate">{ownerObj.user.name}</span>
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-1 text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+                            {ownerObj?.user?.email && (
+                              <span className="flex items-center gap-1.5 truncate">
+                                <Mail className="size-3 text-muted-foreground shrink-0" />
+                                <span className="truncate">{ownerObj.user.email}</span>
+                              </span>
+                            )}
+                            {(ownerObj?.user as any)?.phone && (
+                              <span className="flex items-center gap-1.5 truncate">
+                                <Phone className="size-3 text-muted-foreground shrink-0" />
+                                <span className="truncate">{(ownerObj?.user as any).phone}</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })()}
+
                     {/* Status & Rate Badge Info Row */}
                     <div className="grid grid-cols-3 gap-2 text-xs">
                       <div className="rounded bg-muted/30 border border-border/40 p-2 space-y-1">
@@ -348,6 +413,7 @@ export function LotsPage() {
         title="Create parking lot"
         description="Add a new parking lot to your portfolio."
         submitLabel="Create lot"
+        cities={dbCities}
         onSubmit={(values) => handleCreate(toLotPayload(values))}
         submitting={isCreating}
       />
@@ -358,6 +424,7 @@ export function LotsPage() {
         title="Edit parking lot"
         description="Update the details for this parking lot."
         submitLabel="Save changes"
+        cities={dbCities}
         defaultValues={editTarget ?? undefined}
         onSubmit={(values) =>
           editTarget && handleUpdate(editTarget.id, toLotPayload(values))
@@ -385,6 +452,7 @@ function LotFormDialog({
   title,
   description,
   submitLabel,
+  cities = [],
   defaultValues,
   onSubmit,
   submitting,
@@ -394,6 +462,7 @@ function LotFormDialog({
   title: string
   description: string
   submitLabel: string
+  cities?: CityOut[]
   defaultValues?: ParkingLotOut
   onSubmit: (values: LotFormValues) => void
   submitting: boolean
@@ -420,6 +489,9 @@ function LotFormDialog({
     onOpenChange(next)
   }
 
+  // Only use database cities - no static fallback
+  const availableCities = cities.map((c) => ({ value: c.name, label: c.name, labelMm: c.name_mm ?? "" }))
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -438,8 +510,10 @@ function LotFormDialog({
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="">Select city…</option>
-              {Kayin_STATE_CITIES.map((c) => (
-                <option key={c.value} value={c.value}>{c.label} ({c.labelMm})</option>
+              {availableCities.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label} {c.labelMm ? `(${c.labelMm})` : ""}
+                </option>
               ))}
             </select>
           </FormField>

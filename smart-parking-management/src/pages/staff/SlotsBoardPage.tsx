@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { ParkingSquare, Box, Filter, RotateCcw, Search, Layers, MapPin, Car } from "lucide-react"
+import { ParkingSquare, Box, Filter, RotateCcw, Search, Layers, MapPin, Car, Briefcase, Mail, Phone, Building2 } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { EmptyState } from "@/components/common/EmptyState"
 import { CardGridSkeleton } from "@/components/common/LoadingBlock"
@@ -141,7 +141,65 @@ export function SlotsBoardPage() {
         }
       />
 
-      {/* ── Filter Controls Bar ── */}
+      {/* ── Lot & Operating Company Card ── */}
+      {parkingLot && (
+        <Card className="border border-border/80 shadow-sm rounded">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="size-9 rounded bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                  <Building2 className="size-4" />
+                </div>
+                <div>
+                  <p className="font-bold text-foreground text-sm leading-tight">{parkingLot.name}</p>
+                  <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                    {parkingLot.city && <span>{parkingLot.city} · Kayin State</span>}
+                    {parkingLot.rate_per_hour != null && (
+                      <span className="font-semibold text-primary">· {parkingLot.rate_per_hour.toLocaleString()} MMK/hr</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {parkingLot.owner && (
+                <div className="flex items-center gap-3 bg-muted/40 p-2.5 rounded-lg border border-border/60">
+                  {(parkingLot.owner.user as any)?.profile_image || (parkingLot.owner.user as any)?.profile_image_url ? (
+                    <img
+                      src={(parkingLot.owner.user as any)?.profile_image || (parkingLot.owner.user as any)?.profile_image_url}
+                      alt={parkingLot.owner.company_name || "Company"}
+                      className="size-8 rounded-full object-cover border border-primary/30 shrink-0"
+                    />
+                  ) : (
+                    <div className="size-8 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                      {(parkingLot.owner.company_name || parkingLot.owner.user?.name || "C").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-bold text-foreground truncate flex items-center gap-1">
+                      <Briefcase className="size-3 text-primary shrink-0" />
+                      <span className="truncate">{parkingLot.owner.company_name || "Company Not Set"}</span>
+                    </p>
+                    <p className="text-[11px] text-muted-foreground truncate flex items-center gap-2 mt-0.5">
+                      {parkingLot.owner.user?.email && (
+                        <span className="flex items-center gap-1">
+                          <Mail className="size-3 text-muted-foreground shrink-0" />
+                          <span>{parkingLot.owner.user.email}</span>
+                        </span>
+                      )}
+                      {(parkingLot.owner.user as any)?.phone && (
+                        <span className="flex items-center gap-1">
+                          <Phone className="size-3 text-muted-foreground shrink-0" />
+                          <span>{(parkingLot.owner.user as any).phone}</span>
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
       <Card className="border border-border/80 shadow-sm rounded">
         <CardContent className="p-4 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between flex-wrap">
           <div className="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-wider shrink-0">
