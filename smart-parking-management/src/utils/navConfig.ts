@@ -11,6 +11,7 @@ import {
   Timer,
   Repeat2,
   Wallet,
+  MapPin,
 } from "lucide-react"
 import type { RoleName } from "@/types"
 
@@ -24,6 +25,7 @@ export interface NavItem {
 export const NAV_CONFIG: Record<RoleName, NavItem[]> = {
   ADMIN: [
     { label: "Dashboard", to: "/admin", icon: LayoutDashboard, end: true },
+    { label: "Cities", to: "/admin/cities", icon: MapPin },
     { label: "Parking Lots", to: "/admin/lots", icon: ParkingSquare },
     { label: "Parking Owners", to: "/admin/owners", icon: Building2 },
     { label: "Customers", to: "/admin/users", icon: Users },

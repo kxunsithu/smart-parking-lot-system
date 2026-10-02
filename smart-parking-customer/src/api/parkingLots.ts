@@ -4,6 +4,7 @@ import type { ApiSuccess, ApiMeta, ParkingLotOut } from "./types"
 export const parkingLotsApi = {
   list: async (params?: {
     type?: string
+    city?: string
     page?: number
     limit?: number
     search?: string

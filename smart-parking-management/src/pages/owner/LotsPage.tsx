@@ -42,10 +42,12 @@ import { getErrorMessage } from "@/api/client"
 import { usePaginationState } from "@/hooks/usePaginationState"
 import type { ParkingLotOut, ParkingOwnerOut, ParkingLotCreate, ParkingLotUpdate } from "@/types"
 import type { ListResult } from "@/api/types"
+import { Kayin_STATE_CITIES } from "@/lib/KayinCities"
 
 const lotSchema = z.object({
   name: z.string().min(1, "Name is required"),
   google_map_url: z.string().optional(),
+  city: z.string().optional(),
   rate_per_hour: z.coerce.number().min(0, "Rate must be positive").optional(),
 })
 type LotFormValues = z.infer<typeof lotSchema>
@@ -54,6 +56,7 @@ function toLotPayload(values: LotFormValues): ParkingLotCreate {
   return {
     name: values.name,
     google_map_url: values.google_map_url || undefined,
+    city: values.city || undefined,
     rate_per_hour: values.rate_per_hour != null && !isNaN(values.rate_per_hour) ? values.rate_per_hour : undefined,
   }
 }
@@ -165,8 +168,8 @@ export function LotsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Parking Lots"
-        description="Manage your parking lots portfolio."
+        title="My Parking Lots"
+        description="Manage your parking lots in Kayin State (ကရင်ပြည်နယ်)."
         actions={
           <Button onClick={() => setCreateOpen(true)} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-sm">
             <Plus className="size-4" />
@@ -242,6 +245,14 @@ export function LotsPage() {
                         </Button>
                       </div>
                     </div>
+
+                    {/* City tag */}
+                    {lot.city && (
+                      <p className="text-xs text-primary font-medium flex items-center gap-1 -mt-2">
+                        <Building2 className="size-3 shrink-0" />
+                        {lot.city} · Kayin State
+                      </p>
+                    )}
 
                     {/* Status & Rate Badge Info Row */}
                     <div className="grid grid-cols-3 gap-2 text-xs">
@@ -398,6 +409,7 @@ function LotFormDialog({
       ? {
         name: defaultValues.name,
         google_map_url: defaultValues.google_map_url ?? "",
+        city: defaultValues.city ?? "",
         rate_per_hour: defaultValues.rate_per_hour ?? undefined,
       }
       : undefined,
@@ -416,14 +428,26 @@ function LotFormDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <FormField label="Name" htmlFor="name" error={errors.name?.message} required>
-            <Input id="name" {...register("name")} />
+          <FormField label="Name" htmlFor="lot-name" error={errors.name?.message} required>
+            <Input id="lot-name" {...register("name")} />
           </FormField>
-          <FormField label="Hourly Rate (MMK/hr)" htmlFor="rate_per_hour" error={errors.rate_per_hour?.message}>
-            <Input id="rate_per_hour" type="number" step="1" placeholder="e.g. 500" {...register("rate_per_hour")} />
+          <FormField label="City (Kayin State)" htmlFor="lot-city" error={errors.city?.message}>
+            <select
+              id="lot-city"
+              {...register("city")}
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">Select city…</option>
+              {Kayin_STATE_CITIES.map((c) => (
+                <option key={c.value} value={c.value}>{c.label} ({c.labelMm})</option>
+              ))}
+            </select>
           </FormField>
-          <FormField label="Google Maps URL" htmlFor="google_map_url" error={errors.google_map_url?.message}>
-            <Input id="google_map_url" {...register("google_map_url")} />
+          <FormField label="Hourly Rate (MMK/hr)" htmlFor="lot-rate" error={errors.rate_per_hour?.message}>
+            <Input id="lot-rate" type="number" step="1" placeholder="e.g. 500" {...register("rate_per_hour")} />
+          </FormField>
+          <FormField label="Google Maps URL" htmlFor="lot-map" error={errors.google_map_url?.message}>
+            <Input id="lot-map" {...register("google_map_url")} />
           </FormField>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>

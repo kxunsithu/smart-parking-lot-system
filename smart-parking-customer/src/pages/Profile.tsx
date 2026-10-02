@@ -37,7 +37,6 @@ type ProfileFormData = z.infer<typeof profileSchema>
 export default function Profile() {
   const { t } = useLanguage()
   const { user, setUser } = useAuthStore()
-  const [loading, setLoading] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [removingImage, setRemovingImage] = useState(false)

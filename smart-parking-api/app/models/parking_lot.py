@@ -18,6 +18,7 @@ class ParkingLot(Base):
     owner_id: Mapped[int] = mapped_column(ForeignKey("parking_owners.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     google_map_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    city: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     type: Mapped[str] = mapped_column(String(50), default=LotType.PUBLIC.value)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     rate_per_hour: Mapped[Optional[float]] = mapped_column(Float, nullable=True)  # owner-set hourly rate

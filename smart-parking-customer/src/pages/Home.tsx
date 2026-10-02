@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   Car,
@@ -12,155 +12,21 @@ import {
   ParkingCircle,
   Smartphone,
   ArrowRight,
-  Star,
   CheckCircle2,
+  Building2,
 } from "lucide-react"
 import Navbar from "@/components/layout/Navbar"
+import heroBg from "@/assets/hero-backgound.png"
+import Hero3DParkingLot from "@/components/home/Hero3DParkingLot"
 import Footer from "@/components/layout/Footer"
 import { useLanguage } from "@/lib/i18n"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { citiesApi, type CityOut } from "@/api/cities"
 import { parkingLotsApi } from "@/api/parkingLots"
-import { parkingSlotsApi } from "@/api/parkingSlots"
-import type { ParkingLotOut } from "@/api/types"
-
-/* ─── Animated Counter ──────────────────────────────────────────── */
-function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: string }) {
-  const [count, setCount] = useState(0)
-  const ref = useRef<HTMLDivElement>(null)
-  const started = useRef(false)
-
-  useEffect(() => {
-    started.current = false
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !started.current) {
-          started.current = true
-          if (target === 0) {
-            setCount(0)
-            return
-          }
-          const duration = 1200
-          const step = Math.max(1, target / (duration / 16))
-          let current = 0
-          const timer = setInterval(() => {
-            current += step
-            if (current >= target) {
-              setCount(target)
-              clearInterval(timer)
-            } else {
-              setCount(Math.floor(current))
-            }
-          }, 16)
-        }
-      },
-      { threshold: 0.2 }
-    )
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
-  }, [target])
-
-  return (
-    <div ref={ref} className="tabular-nums">
-      {count.toLocaleString()}{suffix}
-    </div>
-  )
-}
-
-/* ─── Floating Orb Background ───────────────────────────────────── */
-function FloatingOrbs() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-      <div
-        className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full opacity-20 dark:opacity-10 blur-3xl animate-pulse"
-        style={{ background: "radial-gradient(circle, #FF8F00 0%, transparent 70%)" }}
-      />
-      <div
-        className="absolute top-1/2 -left-40 w-[400px] h-[400px] rounded-full opacity-10 dark:opacity-5 blur-3xl animate-pulse"
-        style={{ background: "radial-gradient(circle, #FF8F00 0%, transparent 70%)", animationDelay: "1.5s" }}
-      />
-      <div
-        className="absolute -bottom-20 right-1/3 w-[350px] h-[350px] rounded-full opacity-10 dark:opacity-5 blur-3xl animate-pulse"
-        style={{ background: "radial-gradient(circle, #f59e0b 0%, transparent 70%)", animationDelay: "3s" }}
-      />
-    </div>
-  )
-}
-
-/* ─── Parking Lot Card ───────────────────────────────────────────── */
-function LotCard({ lot, onBook }: { lot: ParkingLotOut; onBook: () => void }) {
-  return (
-    <div className="group relative bg-card/80 backdrop-blur-md border border-border/80 rounded overflow-hidden hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between">
-      {/* Color accent bar */}
-      <div className="h-1.5 w-full bg-gradient-to-r from-primary via-amber-400 to-amber-500 opacity-90 group-hover:opacity-100 transition-opacity" />
-
-      <div className="p-6 space-y-4">
-        {/* Top bar with icon & status */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="size-12 rounded bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground text-primary transition-all duration-300 shadow-xs">
-            <ParkingCircle className="size-6 transition-transform group-hover:scale-110" />
-          </div>
-          <span
-            className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border shadow-2xs ${
-              lot.is_active
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                : "bg-muted text-muted-foreground border-border"
-            }`}
-          >
-            <span className={`size-1.5 rounded-full ${lot.is_active ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"}`} />
-            {lot.is_active ? "Open Now" : "Closed"}
-          </span>
-        </div>
-
-        {/* Title and location */}
-        <div>
-          <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
-            {lot.name}
-          </h3>
-          {lot.google_map_url ? (
-            <a
-              href={lot.google_map_url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors mt-1.5 truncate max-w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MapPin className="size-3.5 text-primary shrink-0" />
-              <span className="truncate">View on Google Maps</span>
-            </a>
-          ) : (
-            <p className="flex items-center gap-1 text-xs text-muted-foreground mt-1.5">
-              <MapPin className="size-3.5 text-muted-foreground/60 shrink-0" />
-              <span>Myanmar</span>
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Bottom price and action */}
-      <div className="p-6 pt-0">
-        <div className="flex items-center justify-between pt-4 border-t border-border/60">
-          <div>
-            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Hourly Rate</p>
-            <p className="text-lg font-extrabold text-primary">
-              {lot.rate_per_hour != null ? `${lot.rate_per_hour.toLocaleString()} MMK` : "—"}
-              <span className="text-xs font-normal text-muted-foreground ml-1">/ hr</span>
-            </p>
-          </div>
-          <Button
-            size="sm"
-            className="rounded gap-1.5 font-semibold text-xs px-4 shadow-sm group-hover:shadow-md transition-all cursor-pointer"
-            disabled={!lot.is_active}
-            onClick={onBook}
-          >
-            {lot.is_active ? "Reserve Slot" : "Closed"}
-            {lot.is_active && <ChevronRight className="size-4 group-hover:translate-x-0.5 transition-transform" />}
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
+import { API_ORIGIN } from "@/api/client"
+import { Kayin_STATE_CITIES } from "@/lib/KayinCities"
 
 /* ─── Main Home Page ─────────────────────────────────────────────── */
 export default function Home() {
@@ -169,47 +35,82 @@ export default function Home() {
   const user = useAuthStore((state) => state.user)
   const accessToken = useAuthStore((state) => state.accessToken)
   const isAuthenticated = Boolean(user && accessToken)
-  const [lots, setLots] = useState<ParkingLotOut[]>([])
-  const [lotsLoading, setLotsLoading] = useState(true)
-  const [stats, setStats] = useState({
-    totalLots: 0,
-    totalSlots: 0,
-    availableSlots: 0,
-  })
+
+  const [cities, setCities] = useState<CityOut[]>([])
+  const [lotCounts, setLotCounts] = useState<Record<string, number>>({})
+  const [citiesLoading, setCitiesLoading] = useState(true)
 
   useEffect(() => {
-    async function loadRealStats() {
+    async function loadCitiesData() {
       try {
-        const [lotsResult, slotsData] = await Promise.all([
-          parkingLotsApi.list({ limit: 100 }).catch(() => ({ items: [], meta: null })),
-          parkingSlotsApi.list({ limit: 1000 }).catch(() => []),
-        ])
-        const lotsData = lotsResult.items
+        setCitiesLoading(true)
+        let apiCities: CityOut[] = []
+        try {
+          apiCities = await citiesApi.list({ is_active: true })
+        } catch {
+          apiCities = []
+        }
 
-        setLots(lotsData.slice(0, 6))
+        const existingNames = new Set(apiCities.map((c) => c.name.toLowerCase()))
 
-        const availCount = slotsData.filter((s) => s.status === "AVAILABLE").length
+        const fallbackCities: CityOut[] = Kayin_STATE_CITIES.filter(
+          (c) => !existingNames.has(c.value.toLowerCase())
+        ).map((c, i) => ({
+          id: 1000 + i,
+          name: c.value,
+          name_mm: c.labelMm,
+          description: null,
+          image_url: null,
+          is_active: true,
+          created_at: "",
+        }))
 
-        setStats({
-          totalLots: lotsData.length,
-          totalSlots: slotsData.length,
-          availableSlots: availCount,
-        })
+        const allCities = [...apiCities, ...fallbackCities]
+        setCities(allCities)
+
+        // Fetch counts
+        const counts: Record<string, number> = {}
+        await Promise.all(
+          allCities.map(async (c) => {
+            try {
+              const res = await parkingLotsApi.list({ city: c.name, page: 1, limit: 1 })
+              counts[c.name] = res.meta?.total ?? 0
+            } catch {
+              counts[c.name] = 0
+            }
+          })
+        )
+        setLotCounts(counts)
       } catch (err) {
-        console.error("Failed to load real stats", err)
+        console.error("Failed to load cities data", err)
       } finally {
-        setLotsLoading(false)
+        setCitiesLoading(false)
       }
     }
 
-    loadRealStats()
+    loadCitiesData()
   }, [])
+
+  const getFullImageUrl = (path: string | null) => {
+    if (!path) return null
+    if (path.startsWith("http://") || path.startsWith("https://")) return path
+    return `${API_ORIGIN}${path}`
+  }
+
+  const handleCityClick = (cityName: string) => {
+    const targetUrl = `/dashboard?city=${encodeURIComponent(cityName)}`
+    if (isAuthenticated) {
+      navigate(targetUrl)
+    } else {
+      navigate("/login")
+    }
+  }
 
   const features = [
     {
       icon: Navigation2,
       title: t("home.feat1_title", "Real-Time Parking"),
-      desc: t("home.feat1_desc", "Locate available slots in real-time across all lots in Myanmar with live occupancy data."),
+      desc: t("home.feat1_desc", "Locate available slots in real-time across all lots in Kayin State with live occupancy data."),
       color: "text-amber-500 dark:text-amber-400",
       bg: "bg-amber-500/10 border-amber-500/20",
     },
@@ -254,94 +155,96 @@ export default function Home() {
     <div className="min-h-screen flex flex-col text-foreground selection:bg-primary/20">
       <Navbar />
 
-      {/* ── Hero Section (Full Width) ───────────────────────────── */}
-      <section className="relative w-full border-b border-border/60 bg-gradient-to-b from-card/80 via-card/30 to-background py-16 sm:py-24 overflow-hidden shadow-xs text-center flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
-        <FloatingOrbs />
-
-        {/* Grid pattern overlay */}
+      {/* ── Hero Section (Two Column with High-Contrast Photo Background) ────────── */}
+      <section className="relative w-full border-b border-border/60 overflow-hidden shadow-xs min-h-[calc(100vh-4rem)] flex items-center">
+        {/* Background image container (fixed attachment on scroll) */}
         <div
-          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.06] pointer-events-none"
-          style={{
-            backgroundImage:
-              "linear-gradient(#FF8F00 1px, transparent 1px), linear-gradient(to right, #FF8F00 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-fixed pointer-events-none"
+          style={{ backgroundImage: `url(${heroBg})`, backgroundAttachment: "fixed" }}
         />
+        {/* Softened Primary Amber Gradient Overlay over hero background photo */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/80 via-amber-950/45 to-slate-950/70 backdrop-blur-[2.5px] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-500/20 via-transparent to-transparent pointer-events-none" />
+        {/* Soft Ambient Primary Amber Glow */}
+        <div className="absolute top-1/4 right-10 w-[400px] h-[400px] bg-amber-500/12 rounded-full blur-[100px] pointer-events-none" />
 
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
-          {/* Nationwide badge */}
-          <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/25 text-primary rounded-full px-4 py-1.5 text-xs font-semibold shadow-2xs">
-            <span className="size-2 rounded-full bg-primary animate-pulse" />
-            <span>{t("home.hero_badge", "Save Money, Save Time")}</span>
-          </div>
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
-          <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold leading-normal tracking-normal max-w-5xl mx-auto flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-2 text-center whitespace-normal sm:whitespace-nowrap">
-            <span className="text-foreground shrink-0">{t("home.hero_title_1", "Park Smarter,")}</span>
-            <span
-              className="text-transparent bg-clip-text inline-block py-1.5 leading-normal shrink-0"
-              style={{ backgroundImage: "linear-gradient(135deg, #FF8F00 0%, #fbbf24 100%)" }}
-            >
-              {t("home.hero_title_2", "Drive Faster")}
-            </span>
-          </h1>
-
-          <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            {t("home.hero_subtitle", "Find, reserve, and manage your vehicle parking easily across Myanmar.")}
-          </p>
-
-          {/* Action buttons */}
-          <div className="pt-4">
-            {isAuthenticated ? (
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto text-base px-8 py-6 rounded shadow-lg shadow-primary/25 hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all gap-2.5 cursor-pointer font-bold"
-                  onClick={() => navigate("/dashboard")}
+            {/* ── Left: Text Content ── */}
+            <div className="flex flex-col gap-6">
+              {/* Headline */}
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold leading-tight tracking-tight">
+                <span className="text-white drop-shadow-md">{t("home.hero_title_1", "SMART PARKING")}</span>
+                <br />
+                <span
+                  className="text-transparent bg-clip-text drop-shadow-md"
+                  style={{ backgroundImage: "linear-gradient(135deg, #FF8F00 0%, #fbbf24 100%)" }}
                 >
-                  <ParkingCircle className="size-5" />
-                  {t("nav.parking", "Explore Parking Lots")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full sm:w-auto text-base px-8 py-6 rounded border-border/80 hover:bg-muted/60 transition-all gap-2.5 cursor-pointer font-bold"
-                  onClick={() => navigate("/cars")}
-                >
-                  <Car className="size-5" />
-                  {t("nav.cars", "My Vehicles")}
-                </Button>
+                  {t("home.hero_title_2", "IN Kayin STATE")}
+                </span>
+              </h1>
+
+              {/* Subtitle */}
+              <p className="text-base sm:text-lg text-slate-200 font-medium leading-relaxed max-w-lg drop-shadow-sm">
+                {t("home.hero_subtitle", "Find, reserve, and manage your parking easily with our smart parking system across Kayin State.")}
+              </p>
+
+              {/* Action buttons */}
+              {isAuthenticated ? (
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto text-base px-8 py-6 rounded shadow-lg shadow-amber-500/25 hover:shadow-amber-500/35 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer font-bold bg-amber-500 hover:bg-amber-600 text-slate-950"
+                    onClick={() => navigate("/dashboard")}
+                  >
+                    {t("nav.parking", "Explore Parking Lots")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full sm:w-auto text-base px-8 py-6 rounded border-white/30 bg-white/10 text-white hover:bg-white/20 backdrop-blur-md transition-all cursor-pointer font-bold"
+                    onClick={() => navigate("/cars")}
+                  >
+                    {t("nav.cars", "My Vehicles")}
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto text-base px-8 py-6 rounded shadow-lg shadow-amber-500/25 hover:shadow-amber-500/35 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer font-bold bg-amber-500 hover:bg-amber-600 text-slate-950"
+                    onClick={() => navigate("/register")}
+                  >
+                    {t("home.create_account", "Create Account")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full sm:w-auto text-base px-8 py-6 rounded border-white/30 bg-white/10 text-white hover:bg-white/20 backdrop-blur-md transition-all cursor-pointer font-bold"
+                    onClick={() => navigate("/login")}
+                  >
+                    {t("nav.login", "Log in")}
+                  </Button>
+                </div>
+              )}
+
+              {/* Proof badges */}
+              <div className="flex flex-wrap gap-3 pt-2 text-xs sm:text-sm text-slate-200">
+                {[t("home.proof1", "No credit card required"), t("home.proof2", "Instant setup"), t("home.proof3", "Available 24/7")].map((text) => (
+                  <span key={text} className="flex items-center gap-1.5 bg-black/50 border border-white/20 backdrop-blur-md rounded-full px-3.5 py-1.5 shadow-sm text-white font-medium">
+                    <CheckCircle2 className="size-3.5 text-amber-400 shrink-0" />
+                    <span>{text}</span>
+                  </span>
+                ))}
               </div>
-            ) : (
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto text-base px-8 py-6 rounded shadow-lg shadow-primary/25 hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all gap-2.5 cursor-pointer font-bold"
-                  onClick={() => navigate("/register")}
-                >
-                  {t("home.create_account", "Create Account")}
-                  <ArrowRight className="size-5" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full sm:w-auto text-base px-8 py-6 rounded border-border/80 hover:bg-muted/60 transition-all gap-2.5 cursor-pointer font-bold"
-                  onClick={() => navigate("/login")}
-                >
-                  <ParkingCircle className="size-5" />
-                  {t("nav.login", "Log in")}
-                </Button>
-              </div>
-            )}
-          </div>
+            </div>
 
-          {/* Proof badges */}
-          <div className="flex flex-wrap items-center justify-center gap-6 pt-6 text-xs sm:text-sm text-muted-foreground">
-            {[t("home.proof1", "No credit card required"), t("home.proof2", "Instant setup"), t("home.proof3", "Available 24/7")].map((text) => (
-              <span key={text} className="flex items-center gap-2 bg-muted/40 border border-border/40 rounded-full px-3.5 py-1.5">
-                <CheckCircle2 className="size-4 text-primary shrink-0" />
-                <span>{text}</span>
-              </span>
-            ))}
+            {/* ── Right: Interactive 3D Parking Lot Preview ── */}
+            <div className="relative flex items-center justify-center lg:justify-end w-full">
+              <Hero3DParkingLot />
+            </div>
+
           </div>
         </div>
       </section>
@@ -349,45 +252,103 @@ export default function Home() {
       {/* ── Main Content Container ─────────────────────────────── */}
       <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-16 py-12">
 
-        {/* ── Parking Lots Preview ─────────────────────────────────── */}
+        {/* ── City Cards Section (Replaces individual parking lots) ───────────────── */}
         <section className="space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <p className="text-primary text-xs font-bold uppercase tracking-widest mb-1">Live Locations</p>
+              <p className="text-primary text-xs font-bold uppercase tracking-widest mb-1">Explore Locations</p>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-                {t("home.nearby_lots", "Parking Lots in Myanmar")}
+                Cities in Kayin State (ကရင်ပြည်နယ်)
               </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Select a township or city to explore available smart parking lots and reserve your slot.
+              </p>
             </div>
             <Button
               variant="outline"
               className="self-start sm:self-auto rounded gap-2 cursor-pointer border-border/80 hover:bg-muted/60"
               onClick={() => navigate(isAuthenticated ? "/dashboard" : "/login")}
             >
-              {t("common.all", "View all lots")}
+              View all cities
               <ChevronRight className="size-4" />
             </Button>
           </div>
 
-          {lotsLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-64 bg-card/60 rounded animate-pulse border border-border/80" />
+          {citiesLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-56 bg-card/60 rounded-2xl animate-pulse border border-border/80" />
               ))}
             </div>
-          ) : lots.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {lots.map((lot) => (
-                <LotCard
-                  key={lot.id}
-                  lot={lot}
-                  onBook={() => navigate(isAuthenticated ? `/parking/${lot.id}` : "/login")}
-                />
-              ))}
+          ) : cities.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {cities.map((city) => {
+                const count = lotCounts[city.name] ?? 0
+                const imgUrl = getFullImageUrl(city.image_url)
+
+                return (
+                  <button
+                    key={city.id}
+                    onClick={() => handleCityClick(city.name)}
+                    className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/80 bg-card hover:border-primary/60 hover:shadow-xl hover:-translate-y-1 active:translate-y-0 transition-all duration-300 text-left cursor-pointer"
+                  >
+                    {/* Image Cover Container */}
+                    <div className="relative h-64 w-full bg-gradient-to-br from-slate-800 to-slate-900 overflow-hidden">
+                      {imgUrl ? (
+                        <img
+                          src={imgUrl}
+                          alt={city.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 p-4 text-center bg-gradient-to-br from-slate-900 via-emerald-950/40 to-slate-900">
+                          <Building2 className="w-12 h-12 mb-2 text-primary/40" />
+                          <span className="text-xs font-medium text-slate-400">Kayin State Township</span>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+
+                      {/* Lot Count Badge */}
+                      <div className="absolute top-3 right-3">
+                        <Badge
+                          className={
+                            count > 0
+                              ? "bg-primary text-primary-foreground font-bold shadow-md"
+                              : "bg-black/60 text-slate-300 border-none"
+                          }
+                        >
+                          {count} {count === 1 ? "Lot" : "Lots"}
+                        </Badge>
+                      </div>
+
+                      {/* City Name Banner */}
+                      <div className="absolute bottom-3 left-3 right-3 text-white">
+                        <h3 className="text-xl font-bold tracking-tight leading-tight group-hover:text-primary transition-colors drop-shadow">
+                          {city.name}
+                        </h3>
+                        {city.name_mm && (
+                          <p className="text-sm font-medium text-amber-300 drop-shadow">
+                            {city.name_mm}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* City Description Footer */}
+                    <div className="p-4 bg-card/60 backdrop-blur-sm flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                        {city.description || "Explore available smart parking lots in this township."}
+                      </p>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0 ml-2" />
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           ) : (
-            <div className="text-center py-16 border border-dashed border-border/80 rounded bg-card/40">
-              <ParkingCircle className="size-12 mx-auto text-muted-foreground/40 mb-3" />
-              <p className="text-muted-foreground font-medium">No parking lots available right now.</p>
+            <div className="text-center py-16 border border-dashed border-border/80 rounded-2xl bg-card/40">
+              <Building2 className="size-12 mx-auto text-muted-foreground/40 mb-3" />
+              <p className="text-muted-foreground font-medium">No cities available right now.</p>
             </div>
           )}
         </section>

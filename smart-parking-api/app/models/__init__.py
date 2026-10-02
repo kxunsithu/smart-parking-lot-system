@@ -16,6 +16,7 @@ from app.models.package import Package
 from app.models.owner_subscription import OwnerSubscription
 from app.models.payment import Payment
 from app.models.wallet_account import WalletAccount
+from app.models.city import City
 
 __all__ = [
     "Base",
@@ -35,5 +36,6 @@ __all__ = [
     "OwnerSubscription",
     "Payment",
     "WalletAccount",
+    "City",
 ]
 

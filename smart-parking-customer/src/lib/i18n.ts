@@ -45,9 +45,9 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Home / Landing
     "home.hero_badge": "Save Money, Save Time",
-    "home.hero_title_1": "MYANMAR'S FIRST ",
-    "home.hero_title_2": "SMART PARKING SYSTEM",
-    "home.hero_subtitle": "Find, reserve, and manage your vehicle parking easily across Myanmar.",
+    "home.hero_title_1": "SMART PARKING",
+    "home.hero_title_2": "IN KAYIN STATE",
+    "home.hero_subtitle": "Find, reserve, and manage your parking easily with our smart parking system across Kayin State.",
     "home.get_started": "Get Started Free",
     "home.find_parking": "Find Parking Lots",
     "home.active_lots": "Active Parking Lots",
@@ -55,11 +55,11 @@ export const translations: Record<Language, Record<string, string>> = {
     "home.stat_slots": "Total Parking Slots",
     "home.stat_available": "Available Slots Now",
     "home.stat_online": "Live System Online",
-    "home.nearby_lots": "Parking Lots in Myanmar",
+    "home.nearby_lots": "Parking Lots in Kayin State",
     "home.why_smart": "Why Smart Parking?",
-    "home.why_subtitle": "Everything you need for seamless vehicle parking in Myanmar.",
+    "home.why_subtitle": "Everything you need for seamless vehicle parking in Kayin State.",
     "home.feat1_title": "Real-Time Parking",
-    "home.feat1_desc": "Locate available slots in real-time across all lots in Myanmar with live occupancy data.",
+    "home.feat1_desc": "Locate available slots in real-time across all lots in Kayin State with live occupancy data.",
     "home.feat2_title": "Schedule Ahead",
     "home.feat2_desc": "Pre-book your parking slot for a future time — no more driving around looking for space.",
     "home.feat3_title": "Digital Payment",
@@ -74,13 +74,13 @@ export const translations: Record<Language, Record<string, string>> = {
     "home.step1_title": "Register & Add Vehicle",
     "home.step1_desc": "Create your account and register your vehicle plate number in seconds.",
     "home.step2_title": "Find a Parking Lot",
-    "home.step2_desc": "Browse available parking lots in Myanmar and check real-time slot availability.",
+    "home.step2_desc": "Browse available parking lots in Kayin State and check real-time slot availability.",
     "home.step3_title": "Book Your Slot",
     "home.step3_desc": "Select your preferred slot, set your parking schedule, and proceed to payment.",
     "home.step4_title": "Pay & Park",
     "home.step4_desc": "Complete payment via digital wallet and your session goes live instantly.",
     "home.cta_title": "Ready to park smarter?",
-    "home.cta_subtitle": "Join thousands of drivers using Smart Parking to save time and money in Myanmar.",
+    "home.cta_subtitle": "Join drivers across Kayin State using Smart Parking to save time and money.",
     "home.create_account": "Create Free Account",
     "home.login_instead": "Log in instead",
     "home.proof1": "No credit card required",
@@ -282,7 +282,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // Navigation
     "nav.home": "ပင်မစာမျက်နှာ",
     "nav.parking": "ယာဉ်ရပ်နားစခန်းများ",
-    "nav.cars": "ကျွန်ုပ်၏ ယာဉ်များ",
+    "nav.cars": "ကျွန်တော်၏ ယာဉ်များ",
     "nav.sessions": "ယာဉ်ရပ်နားမှု စာရင်းများ",
     "nav.profile": "ပရိုဖိုင်",
     "nav.login": "အကောင့်ဝင်ရန်",
@@ -320,9 +320,9 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Home / Landing
     "home.hero_badge": "အချိန်ကုန် သက်သာ၊ ငွေကုန် သက်သာ",
-    "home.hero_title_1": "မြန်မာနိုင်ငံ၏ ပထမဆုံးသော ",
-    "home.hero_title_2": "SMART PARKING SYSTEM",
-    "home.hero_subtitle": "မြန်မာနိုင်ငံအတွင်း ယာဉ်ရပ်နားရန် နေရာများကို လွယ်ကူစွာ ရှာဖွေ၊ ကြိုတင် ရပ်နား၊ စီမံခန့်ခွဲနိုင်ပါသည်။",
+    "home.hero_title_1": "ကရင်ပြည်နယ်၏ ",
+    "home.hero_title_2": "စမတ်ယာဉ်ရပ်နားစနစ်",
+    "home.hero_subtitle": "Smart Parking System ဖြင့် ကရင်ပြည်နယ်အတွင်း ယာဉ်ရပ်နားရန်နေရာများကို လွယ်ကူမြန်ဆန်စွာ ရှာဖွေ၊ ကြိုတင်မှာယူနိုင်ပါသည်။",
     "home.get_started": "စတင် အသုံးပြုမည်",
     "home.find_parking": "စခန်းများ ရှာဖွေမည်",
     "home.active_lots": "ဖွင့်လှစ်ထားသော စခန်းများ",
@@ -330,11 +330,11 @@ export const translations: Record<Language, Record<string, string>> = {
     "home.stat_slots": "စုစုပေါင်း ရပ်နားနေရာများ",
     "home.stat_available": "လက်ရှိ လွတ်လပ်သော နေရာများ",
     "home.stat_online": "အွန်လိုင်း ဝန်ဆောင်မှု",
-    "home.nearby_lots": "မြန်မာနိုင်ငံအတွင်းရှိ ယာဉ်ရပ်နားစခန်းများ",
+    "home.nearby_lots": "ကရင်ပြည်နယ်အတွင်းရှိ ယာဉ်ရပ်နားစခန်းများ",
     "home.why_smart": "စမတ် ယာဉ်ရပ်နားစနစ်၏ အားသာချက်များ",
-    "home.why_subtitle": "မြန်မာနိုင်ငံအတွင်း စနစ်တကျ လွယ်ကူစွာ ယာဉ်ရပ်နားနိုင်မည့် ဝန်ဆောင်မှုများ",
+    "home.why_subtitle": "ကရင်ပြည်နယ်အတွင်း စနစ်တကျ လွယ်ကူစွာ ယာဉ်ရပ်နားနိုင်မည့် ဝန်ဆောင်မှုများ",
     "home.feat1_title": "တိုက်ရိုက် နေရာရှာဖွေခြင်း",
-    "home.feat1_desc": "မြန်မာနိုင်ငံအတွင်းရှိ ယာဉ်ရပ်နားစခန်းများမှ လွတ်လပ်သော နေရာများကို တိုက်ရိုက် ကြည့်ရှု ရှာဖွေနိုင်ပါသည်။",
+    "home.feat1_desc": "ကရင်ပြည်နယ်အတွင်းရှိ ယာဉ်ရပ်နားစခန်းများမှ လွတ်လပ်သော နေရာများကို တိုက်ရိုက် ကြည့်ရှု ရှာဖွေနိုင်ပါသည်။",
     "home.feat2_title": "ကြိုတင် နေရာမှာယူခြင်း",
     "home.feat2_desc": "မိမိ ရပ်နားမည့် အချိန်ဇယားအတိုင်း နေရာကြိုတင်မှာယူနိုင်ပြီး နေရာရှာဖွေရသည့် အချိန်ကုန်သက်သာစေပါသည်။",
     "home.feat3_title": "ဒစ်ဂျစ်တယ် ငွေပေးချေမှု",
@@ -349,13 +349,13 @@ export const translations: Record<Language, Record<string, string>> = {
     "home.step1_title": "အကောင့်ဖွင့်ပြီး ယာဉ်ထည့်သွင်းပါ",
     "home.step1_desc": "စက္ကန့်ပိုင်းအတွင်း အကောင့်ဖွင့်ပြီး သင့်ယာဉ်၏ လိုင်စင်နံပါတ်ကို ထည့်သွင်းပါ။",
     "home.step2_title": "ယာဉ်ရပ်နားစခန်း ရှာဖွေပါ",
-    "home.step2_desc": "မြန်မာနိုင်ငံအတွင်းရှိ စခန်းများနှင့် လွတ်လပ်သော နေရာများကို တိုက်ရိုက် ကြည့်ရှုပါ။",
+    "home.step2_desc": "ကရင်ပြည်နယ်အတွင်းရှိ စခန်းများနှင့် လွတ်လပ်သော နေရာများကို တိုက်ရိုက် ကြည့်ရှုပါ။",
     "home.step3_title": "နေရာ ရွေးချယ် ကြိုတင်မှာယူပါ",
     "home.step3_desc": "စိတ်ကြိုက် နေရာနှင့် ရပ်နားမည့် အချိန်ဇယားကို ရွေးချယ်ပါ။",
     "home.step4_title": "ငွေချေပြီး စတင်ရပ်နားပါ",
     "home.step4_desc": "ဒစ်ဂျစ်တယ် ပိုက်ဆံအိတ်ဖြင့် လွယ်ကူစွာ ငွေချေပြီး ချက်ချင်း စတင် ရပ်နားပါ။",
     "home.cta_title": "စမတ်ကျကျ ရပ်နားရန် အသင့်ဖြစ်ပြီလား?",
-    "home.cta_subtitle": "မြန်မာနိုင်ငံအတွင်း အချိန်နှင့် ငွေကြေး သက်သာစေရန် Smart Parking ကို အသုံးပြုလိုက်ပါ။",
+    "home.cta_subtitle": "ကရင်ပြည်နယ်အတွင်း အချိန်နှင့် ငွေကြေး သက်သာစေရန် Smart Parking ကို အသုံးပြုလိုက်ပါ။",
     "home.create_account": "အကောင့် အခမဲ့ဖွင့်မည်",
     "home.login_instead": "အကောင့်ရှိပြီးပါက ဝင်ရန်",
     "home.proof1": "အခမဲ့ စတင် အသုံးပြုနိုင်သည်",
@@ -427,7 +427,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "parking.car": "ယာဉ်",
     "parking.start": "စတင်ချိန်",
     "parking.end": "ပြီးဆုံးချိန်",
-    "parking.view_sessions": "ကျွန်ုပ်၏ ရပ်နားမှုများ ကြည့်မည်",
+    "parking.view_sessions": "ကျွန်တော်၏ ရပ်နားမှုများ ကြည့်မည်",
     "parking.view_receipt": "ငွေလက်ခံဖြတ်ပိုင်း ကြည့်မည်",
     "parking.floors_slots": "အထပ်များနှင့် ရပ်နားနေရာများ",
     "parking.filter_slots": "နေရာများ စစ်ထုတ်မည်:",
@@ -561,16 +561,27 @@ interface LanguageState {
   t: (key: string, fallback?: string) => string;
 }
 
+const initialLang = (localStorage.getItem("app_language") as Language) || "mm";
+if (typeof document !== "undefined") {
+  document.documentElement.lang = initialLang === "mm" ? "my" : "en";
+}
+
 export const useLanguage = create<LanguageState>((set, get) => ({
-  language: (localStorage.getItem("app_language") as Language) || "mm",
+  language: initialLang,
   setLanguage: (lang: Language) => {
     localStorage.setItem("app_language", lang);
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = lang === "mm" ? "my" : "en";
+    }
     set({ language: lang });
   },
   toggleLanguage: () => {
     const current = get().language;
     const next = current === "en" ? "mm" : "en";
     localStorage.setItem("app_language", next);
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = next === "mm" ? "my" : "en";
+    }
     set({ language: next });
   },
   t: (key: string, fallback?: string) => {

@@ -133,16 +133,27 @@ interface LanguageState {
   t: (key: string, fallback?: string) => string;
 }
 
+const initialLang = (localStorage.getItem("app_language") as Language) || "mm";
+if (typeof document !== "undefined") {
+  document.documentElement.lang = initialLang === "mm" ? "my" : "en";
+}
+
 export const useLanguage = create<LanguageState>((set, get) => ({
-  language: (localStorage.getItem("app_language") as Language) || "en",
+  language: initialLang,
   setLanguage: (lang: Language) => {
     localStorage.setItem("app_language", lang);
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = lang === "mm" ? "my" : "en";
+    }
     set({ language: lang });
   },
   toggleLanguage: () => {
     const current = get().language;
     const next = current === "en" ? "mm" : "en";
     localStorage.setItem("app_language", next);
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = next === "mm" ? "my" : "en";
+    }
     set({ language: next });
   },
   t: (key: string, fallback?: string) => {

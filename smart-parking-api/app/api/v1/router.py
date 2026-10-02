@@ -18,6 +18,7 @@ from app.api.v1 import (
     wallet_account,
     wallet_payment,
     payments,
+    city,
 )
 
 api_router = APIRouter()
@@ -38,3 +39,4 @@ api_router.include_router(subscription.router)
 api_router.include_router(wallet_account.router)
 api_router.include_router(wallet_payment.router)
 api_router.include_router(payments.router)
+api_router.include_router(city.router)

@@ -55,6 +55,7 @@ class ParkingLotService:
             owner_id=owner_id,
             name=payload.name,
             google_map_url=payload.google_map_url,
+            city=payload.city,
             rate_per_hour=payload.rate_per_hour,
         )
         return self.lot_repo.create(lot)
@@ -74,12 +75,14 @@ class ParkingLotService:
         if not owner or lot.owner_id != owner.id:
             raise ForbiddenException("You do not have permission to manage this parking lot.")
 
-    def list_lots(self, params: PaginationParams, type_: str | None = None, owner_id: int | None = None, with_staff_count: bool = False):
+    def list_lots(self, params: PaginationParams, type_: str | None = None, owner_id: int | None = None, city: str | None = None, with_staff_count: bool = False):
         stmt = select(ParkingLot).options(joinedload(ParkingLot.owner))
         if type_:
             stmt = stmt.where(ParkingLot.type == type_)
         if owner_id:
             stmt = stmt.where(ParkingLot.owner_id == owner_id)
+        if city:
+            stmt = stmt.where(ParkingLot.city == city)
 
         items, total = self.lot_repo.paginate(
             stmt,

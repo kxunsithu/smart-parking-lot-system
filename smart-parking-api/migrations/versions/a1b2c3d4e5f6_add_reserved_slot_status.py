@@ -19,19 +19,20 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.drop_constraint("ck_parking_slots_status", "parking_slots", type_="check")
-    op.create_check_constraint(
-        "ck_parking_slots_status",
-        "parking_slots",
-        "status IN ('AVAILABLE', 'OCCUPIED', 'RESERVED')",
-    )
+    with op.batch_alter_table("parking_slots") as batch_op:
+        batch_op.drop_constraint("ck_parking_slots_status", type_="check")
+        batch_op.create_check_constraint(
+            "ck_parking_slots_status",
+            "status IN ('AVAILABLE', 'OCCUPIED', 'RESERVED')",
+        )
 
 
 def downgrade() -> None:
-    op.drop_constraint("ck_parking_slots_status", "parking_slots", type_="check")
+    with op.batch_alter_table("parking_slots") as batch_op:
+        batch_op.drop_constraint("ck_parking_slots_status", type_="check")
     op.execute("UPDATE parking_slots SET status = 'AVAILABLE' WHERE status = 'RESERVED'")
-    op.create_check_constraint(
-        "ck_parking_slots_status",
-        "parking_slots",
-        "status IN ('AVAILABLE', 'OCCUPIED')",
-    )
+    with op.batch_alter_table("parking_slots") as batch_op:
+        batch_op.create_check_constraint(
+            "ck_parking_slots_status",
+            "status IN ('AVAILABLE', 'OCCUPIED')",
+        )

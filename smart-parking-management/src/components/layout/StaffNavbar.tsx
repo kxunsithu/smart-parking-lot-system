@@ -88,9 +88,9 @@ export function StaffNavbar() {
                     to={item.to}
                     end={item.end}
                     className={({ isActive }) =>
-                      `relative flex items-center gap-2 px-4 py-2 rounded text-xs font-semibold transition-all duration-150 ${isActive
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
+                      `relative flex items-center gap-2 px-3 py-2 text-xs transition-all duration-150 ${isActive
+                        ? "font-bold text-primary"
+                        : "font-medium text-muted-foreground hover:text-foreground"
                       }`
                     }
                   >

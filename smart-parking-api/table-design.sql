@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS parking_lots (
     owner_id INT NOT NULL,
     name VARCHAR(100) NOT NULL,
     google_map_url TEXT,
+    city VARCHAR(100),                     -- City in Kayin State (ကရင်ပြည်နယ်)
     type VARCHAR(50) DEFAULT 'PUBLIC' CHECK (type IN ('PUBLIC', 'PRIVATE')),
     is_active BOOLEAN DEFAULT TRUE,
     rate_per_hour DOUBLE PRECISION,
@@ -70,6 +71,7 @@ CREATE TABLE IF NOT EXISTS parking_lots (
     FOREIGN KEY (owner_id) REFERENCES parking_owners(id)
 );
 CREATE INDEX ix_parking_lots_name ON parking_lots(name);
+CREATE INDEX ix_parking_lots_city ON parking_lots(city);
 
 -- 8. Parking Staff
 CREATE TABLE IF NOT EXISTS parking_staff (

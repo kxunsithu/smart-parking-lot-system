@@ -31,6 +31,7 @@ const UnauthorizedPage = lazy(() =>
   import("@/pages/shared/UnauthorizedPage").then((m) => ({ default: m.UnauthorizedPage }))
 )
 
+const CitiesPage = lazy(() => import("@/pages/admin/CitiesPage").then((m) => ({ default: m.CitiesPage })))
 const AdminDashboardPage = lazy(() =>
   import("@/pages/admin/AdminDashboardPage").then((m) => ({ default: m.AdminDashboardPage }))
 )
@@ -122,6 +123,7 @@ const router = createBrowserRouter([
             element: <ProtectedRoute allowedRoles={["ADMIN"]} />,
             children: [
               { path: "/admin", element: withSuspense(<AdminDashboardPage />) },
+              { path: "/admin/cities", element: withSuspense(<CitiesPage />) },
               { path: "/admin/lots", element: withSuspense(<ParkingLotsPage />) },
               { path: "/admin/lots/:lotId", element: withSuspense(<AdminLotDetailPage />) },
               { path: "/admin/slots/:slotId", element: withSuspense(<SlotDetailPage />) },

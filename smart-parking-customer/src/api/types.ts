@@ -60,6 +60,7 @@ export interface ParkingLotOut {
   owner_id: number
   name: string
   google_map_url?: string | null
+  city?: string | null
   is_active: boolean
   rate_per_hour?: number | null
   created_at: string

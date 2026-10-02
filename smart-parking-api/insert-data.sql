@@ -24,9 +24,11 @@ INSERT INTO wallet_accounts (id, owner_id, name, wallet_phone, api_key, is_activ
 (1, NULL, 'System Admin Platform Account', '09123456789', 'admin_platform_wallet_api_key_secret', TRUE),
 (2, 1, 'Bob''s Parking Wallet Account', '09234567890', 'bobs_parking_wallet_api_key_secret', TRUE);
 
--- 5) Parking Lots
-INSERT INTO parking_lots (id, owner_id, name, google_map_url, type, is_active, rate_per_hour) VALUES
-(1, 1, 'Downtown Lot', 'https://maps.example.com/?q=100+Market+St', 'PUBLIC', TRUE, 1000.0);
+-- 5) Parking Lots (Kayin State — ကရင်ပြည်နယ်)
+INSERT INTO parking_lots (id, owner_id, name, google_map_url, type, is_active, rate_per_hour, city) VALUES
+(1, 1, 'Hpa-an Central Parking', 'https://maps.google.com/?q=Hpa-an+Central', 'PUBLIC', TRUE, 1000.0, 'Hpa-an'),
+(2, 1, 'Myawaddy Border Parking', 'https://maps.google.com/?q=Myawaddy+Border+Myanmar', 'PUBLIC', TRUE, 800.0, 'Myawaddy'),
+(3, 1, 'Kawkareik Town Lot', NULL, 'PUBLIC', TRUE, 600.0, 'Kawkareik');
 
 -- 6) Parking Floors
 INSERT INTO parking_floors (id, parking_lot_id, floor_name) VALUES

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import {
@@ -10,6 +10,8 @@ import {
   User,
   Mail,
   Briefcase,
+  ChevronDown,
+  X,
 } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { SearchInput } from "@/components/common/SearchInput"
@@ -24,6 +26,7 @@ import { getErrorMessage } from "@/api/client"
 import { usePaginationState } from "@/hooks/usePaginationState"
 import type { ParkingLotWithStaffOut } from "@/types"
 import type { ListResult } from "@/api/types"
+import { Kayin_STATE_CITIES } from "@/lib/KayinCities"
 
 export function ParkingLotsPage() {
   const navigate = useNavigate()
@@ -31,11 +34,18 @@ export function ParkingLotsPage() {
   const [data, setData] = useState<ListResult<ParkingLotWithStaffOut> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isFetching, setIsFetching] = useState(false)
+  const [selectedCity, setSelectedCity] = useState<string>("")
+  const [cityDropdownOpen, setCityDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const fetchData = async () => {
     try {
       setIsFetching(true)
-      const result = await parkingLotsApi.list({ ...params, with_staff_count: "true" })
+      const result = await parkingLotsApi.list({
+        ...params,
+        with_staff_count: "true",
+        ...(selectedCity ? { city: selectedCity } : {}),
+      })
       setData(result as ListResult<ParkingLotWithStaffOut>)
     } catch (error) {
       console.error("Failed to fetch parking lots:", error)
@@ -48,31 +58,118 @@ export function ParkingLotsPage() {
 
   useEffect(() => {
     fetchData()
-  }, [params])
+  }, [params, selectedCity])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setCityDropdownOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [])
 
   const lots = data?.items ?? []
+  const selectedCityLabel = selectedCity
+    ? Kayin_STATE_CITIES.find((c) => c.value === selectedCity)?.label ?? selectedCity
+    : ""
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Parking Lots"
-        description="View and manage all parking lots in the system."
+        title="Parking Lots — Kayin State"
+        description="View and manage all parking lots across Kayin State (ကရင်ပြည်နယ်)."
       />
 
       <div className="space-y-4">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Search by lot name..."
-          className="max-w-sm"
-        />
+        {/* Search + city filter row */}
+        <div className="flex flex-col sm:flex-row gap-3 items-start">
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by lot name..."
+            className="max-w-sm"
+          />
+
+          {/* City filter dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              id="admin-city-filter-btn"
+              type="button"
+              onClick={() => setCityDropdownOpen((o) => !o)}
+              className={`flex items-center gap-2 h-9 px-3 rounded-md border text-sm font-medium transition-colors whitespace-nowrap
+                ${selectedCity
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-input bg-background text-foreground hover:bg-muted/60"
+                }`}
+            >
+              <Building2 className="size-4 shrink-0" />
+              {selectedCity ? selectedCityLabel : "All Cities"}
+              {selectedCity ? (
+                <span
+                  role="button"
+                  aria-label="Clear city filter"
+                  onClick={(e) => { e.stopPropagation(); setSelectedCity(""); setCityDropdownOpen(false) }}
+                  className="ml-1 rounded-full hover:text-destructive transition-colors"
+                >
+                  <X className="size-3.5" />
+                </span>
+              ) : (
+                <ChevronDown className={`size-3.5 transition-transform ${cityDropdownOpen ? "rotate-180" : ""}`} />
+              )}
+            </button>
+
+            {cityDropdownOpen && (
+              <div className="absolute z-50 top-full mt-1 left-0 min-w-[210px] rounded-md border border-border bg-popover shadow-lg overflow-hidden">
+                <div className="py-1">
+                  <button
+                    type="button"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors font-medium text-muted-foreground"
+                    onClick={() => { setSelectedCity(""); setCityDropdownOpen(false) }}
+                  >
+                    All Cities
+                  </button>
+                  <div className="h-px bg-border/60 mx-2 my-1" />
+                  {Kayin_STATE_CITIES.map((city) => (
+                    <button
+                      key={city.value}
+                      type="button"
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors flex items-center justify-between
+                        ${selectedCity === city.value ? "text-primary font-semibold bg-primary/5" : "text-foreground"}`}
+                      onClick={() => { setSelectedCity(city.value); setCityDropdownOpen(false) }}
+                    >
+                      <span>{city.label}</span>
+                      <span className="text-xs text-muted-foreground">{city.labelMm}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Active filter chip */}
+        {selectedCity && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Filtered by city:</span>
+            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 rounded-full px-3 py-0.5 text-xs font-semibold">
+              <Building2 className="size-3" />
+              {selectedCityLabel}
+              <button type="button" onClick={() => setSelectedCity("")} aria-label="Clear filter">
+                <X className="size-3 hover:text-destructive transition-colors" />
+              </button>
+            </span>
+          </div>
+        )}
 
         {isLoading ? (
           <CardGridSkeleton count={6} />
         ) : lots.length === 0 ? (
           <EmptyState
-            title="No parking lots found"
-            description="Parking lots will appear here once owners create them."
+            title={selectedCity ? `No parking lots found in ${selectedCityLabel}` : "No parking lots found"}
+            description={selectedCity ? "Try selecting a different city or clear the filter." : "Parking lots will appear here once owners create them."}
           />
         ) : (
           <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 ${isFetching ? "opacity-60" : ""}`}>
@@ -111,6 +208,15 @@ export function ParkingLotsPage() {
                         {lot.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </div>
+
+                    {/* City tag */}
+                    {lot.city && (
+                      <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
+                        <Building2 className="size-3.5 shrink-0" />
+                        <span>{lot.city}</span>
+                        <span className="text-muted-foreground">· Kayin State</span>
+                      </div>
+                    )}
 
                     {/* Owner Profile Snippet Card */}
                     {lot.owner ? (

@@ -42,3 +42,18 @@ class LotType(str, Enum):
 class SortOrder(str, Enum):
     ASC = "asc"
     DESC = "desc"
+
+
+# Kayin State (ကရင်ပြည်နယ်) cities — used for parking lot city field
+Kayin_STATE_CITIES: list[str] = [
+    "Hpa-an",
+    "Myawaddy",
+    "Kawkareik",
+    "Kyainseikgyi",
+    "Hlaingbwe",
+    "Thandaunggyi",
+    "Htantabin",
+    "Papun",
+    "Waw",
+    "Ler Mu Plaw",
+]

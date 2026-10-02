@@ -13,11 +13,11 @@ export default function Footer() {
           </div>
           <div>
             <p className="font-bold text-sm">Smart Parking</p>
-            <p className="text-[10px] text-muted-foreground">Myanmar Parking System</p>
+            <p className="text-[10px] text-muted-foreground">Kayin State · ကရင်ပြည်နယ်</p>
           </div>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-4 text-xs text-muted-foreground text-center">
-          <p>© {new Date().getFullYear()} Smart Parking Lot Management System. Built for Myanmar.</p>
+          <p>© {new Date().getFullYear()} Smart Parking Lot Management System. Built for Kayin State.</p>
           <Link to="/about" className="hover:text-primary transition-colors font-medium underline-offset-4 hover:underline">
             About Us
           </Link>

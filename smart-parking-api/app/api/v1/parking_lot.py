@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.constants import RoleName
+from app.core.constants import RoleName, Kayin_STATE_CITIES
 from app.database.session import get_db
 from app.dependencies.auth import get_current_user, require_roles
 from app.dependencies.pagination import pagination_params
@@ -12,6 +12,12 @@ from app.schemas.parking_lot import ParkingLotCreate, ParkingLotOut, ParkingLotU
 from app.services.parking_lot_service import ParkingLotService
 
 router = APIRouter(prefix="/parking-lots", tags=["Parking Lots"])
+
+
+@router.get("/cities", response_model=SuccessResponse[list[str]])
+def list_Kayin_cities():
+    """Return all Kayin State cities available for parking lot filtering."""
+    return {"success": True, "message": "Kayin State cities fetched.", "data": Kayin_STATE_CITIES}
 
 
 @router.post(
@@ -29,11 +35,12 @@ def create_lot(payload: ParkingLotCreate, db: Session = Depends(get_db), current
 def list_lots(
     type: str | None = Query(default=None),
     owner_id: int | None = Query(default=None),
+    city: str | None = Query(default=None, description="Filter by city in Kayin State"),
     with_staff_count: bool = Query(default=False),
     params: PaginationParams = Depends(pagination_params),
     db: Session = Depends(get_db),
 ):
-    items, meta = ParkingLotService(db).list_lots(params, type_=type, owner_id=owner_id, with_staff_count=with_staff_count)
+    items, meta = ParkingLotService(db).list_lots(params, type_=type, owner_id=owner_id, city=city, with_staff_count=with_staff_count)
     return {"success": True, "message": "Parking lots fetched successfully.", "data": items, "meta": meta}
 
 

@@ -241,14 +241,14 @@ export default function AboutUs() {
     {
       icon: Target,
       title: "Our Mission",
-      desc: "To simplify urban parking in Myanmar by providing a smart, digital-first parking management ecosystem that saves time, reduces congestion, and improves the daily commute for every driver.",
+      desc: "To simplify parking in Kayin State (ကရင်ပြည်နယ်) by providing a smart, digital-first parking management ecosystem that saves time, reduces congestion, and improves the daily commute for every driver.",
       color: "text-amber-500",
       bg: "bg-amber-500/10 border-amber-500/20",
     },
     {
       icon: Lightbulb,
       title: "Our Vision",
-      desc: "A Myanmar where every parking lot is connected, every driver can find a spot in seconds, and every transaction is seamless — powered by technology built right here in our country.",
+      desc: "A Kayin State where every parking lot is connected, every driver can find a spot in seconds, and every transaction is seamless — powered by technology built right here for our community.",
       color: "text-emerald-500",
       bg: "bg-emerald-500/10 border-emerald-500/20",
     },
@@ -298,13 +298,13 @@ export default function AboutUs() {
 
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             A full-stack smart parking lot management system designed and built by 6 passionate
-            Computer Science students — bringing modern technology to Myanmar's urban parking challenges.
+            Computer Science students — built to serve Kayin State's (ကရင်ပြည်နယ်) growing urban parking needs.
           </p>
 
           {/* Location */}
           <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="size-4 text-primary" />
-            <span>Myanmar · Computer Science Department</span>
+            <span>Kayin State · ကရင်ပြည်နယ် · Computer Science Department</span>
           </div>
         </div>
       </section>
@@ -345,7 +345,7 @@ export default function AboutUs() {
               Meet Our Team
             </h2>
             <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-              Six dedicated Computer Science students working together to build a smarter future for parking in Myanmar.
+              Six dedicated Computer Science students working together to build a smarter future for parking in Kayin State.
             </p>
           </div>
 

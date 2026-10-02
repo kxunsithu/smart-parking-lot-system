@@ -95,6 +95,7 @@ export interface ParkingLotOut {
   owner_id: number
   name: string
   google_map_url?: string | null
+  city?: string | null
   rate_per_hour?: number | null
   is_active: boolean
   created_at: string
@@ -290,6 +291,7 @@ export interface ParkingFloorUpdate {
 export interface ParkingLotCreate {
   name: string
   google_map_url?: string | null
+  city?: string | null
   rate_per_hour?: number | null
   owner_id?: number | null
 }
@@ -297,6 +299,7 @@ export interface ParkingLotCreate {
 export interface ParkingLotUpdate {
   name?: string | null
   google_map_url?: string | null
+  city?: string | null
   rate_per_hour?: number | null
 }
 

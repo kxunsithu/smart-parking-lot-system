@@ -13,7 +13,6 @@ import {
   History,
   AlertCircle,
   Filter,
-  Hourglass,
   Loader2,
   FileText,
 } from "lucide-react"
@@ -682,9 +681,6 @@ function EmptyState({
 
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="w-16 h-16 rounded bg-muted/80 border border-border flex items-center justify-center mb-4">
-        <ParkingCircle className="w-8 h-8 text-muted-foreground" />
-      </div>
       <h3 className="font-semibold mb-1">{msg.title}</h3>
       <p className="text-sm text-muted-foreground mb-6 max-w-xs">{msg.desc}</p>
       {filterTab === "all" && (
@@ -692,7 +688,6 @@ function EmptyState({
           onClick={onNavigate}
           className="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
         >
-          <ParkingCircle className="w-4 h-4" />
           Find Parking
           <ChevronRight className="w-4 h-4" />
         </button>

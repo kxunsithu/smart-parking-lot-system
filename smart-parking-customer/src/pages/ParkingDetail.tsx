@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useParams, useNavigate, useSearchParams } from "react-router-dom"
 import {
   ArrowLeft, MapPin, RotateCw, CheckCircle2, Loader2,
-  CalendarDays, ChevronRight, Filter, Search, Layers, RotateCcw, Wallet,
+  CalendarDays, ChevronRight, Filter, Search, RotateCcw, Wallet,
   Clock, Car, ShieldAlert, Calculator, Info,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -502,7 +502,6 @@ export default function ParkingDetail() {
             <div className="flex items-center gap-2 mb-4">
               {(() => {
                 const steps: BookingStep[] = ["rules", "select", "schedule", "pay", "success"]
-                const stepLabels = ["Rules", "Slot", "Schedule", "Pay", "Done"]
                 const stepIndex = steps.indexOf(step)
                 return steps.map((s, i) => (
                   <div key={s} className="flex items-center gap-1">
