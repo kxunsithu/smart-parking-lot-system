@@ -265,18 +265,24 @@ export function ParkingLotsPage() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-1 text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+                        <div className="flex items-center gap-2 pt-1 border-t border-border/40">
                           {lot.owner.user?.email && (
-                            <span className="flex items-center gap-1.5 truncate">
-                              <Mail className="size-3 text-muted-foreground shrink-0" />
-                              <span className="truncate">{lot.owner.user.email}</span>
-                            </span>
+                            <a
+                              href={`mailto:${lot.owner.user.email}`}
+                              title={`Email ${lot.owner.user.email}`}
+                              className="p-1 rounded bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                            >
+                              <Mail className="size-3.5" />
+                            </a>
                           )}
                           {(lot.owner.user as any)?.phone && (
-                            <span className="flex items-center gap-1.5 truncate">
-                              <Phone className="size-3 text-muted-foreground shrink-0" />
-                              <span className="truncate">{(lot.owner.user as any).phone}</span>
-                            </span>
+                            <a
+                              href={`tel:${(lot.owner.user as any).phone}`}
+                              title={`Call ${(lot.owner.user as any).phone}`}
+                              className="p-1 rounded bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                            >
+                              <Phone className="size-3.5" />
+                            </a>
                           )}
                         </div>
                       </div>

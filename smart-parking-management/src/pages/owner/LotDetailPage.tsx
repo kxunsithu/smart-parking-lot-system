@@ -329,18 +329,24 @@ export function LotDetailPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
+              <div className="flex items-center gap-2 text-xs">
                 {lot.owner.user?.email && (
-                  <div className="flex items-center gap-1.5 bg-background px-2.5 py-1 rounded border border-border/60">
-                    <Mail className="size-3.5 text-primary" />
-                    <span>{lot.owner.user.email}</span>
-                  </div>
+                  <a
+                    href={`mailto:${lot.owner.user.email}`}
+                    title={`Email ${lot.owner.user.email}`}
+                    className="p-2 rounded bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                  >
+                    <Mail className="size-4" />
+                  </a>
                 )}
                 {(lot.owner.user as any)?.phone && (
-                  <div className="flex items-center gap-1.5 bg-background px-2.5 py-1 rounded border border-border/60">
-                    <Phone className="size-3.5 text-primary" />
-                    <span>{(lot.owner.user as any).phone}</span>
-                  </div>
+                  <a
+                    href={`tel:${(lot.owner.user as any).phone}`}
+                    title={`Call ${(lot.owner.user as any).phone}`}
+                    className="p-2 rounded bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                  >
+                    <Phone className="size-4" />
+                  </a>
                 )}
               </div>
             </div>

@@ -1,11 +1,15 @@
-"""Business logic for Parking Lots."""
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.constants import RoleName
 from app.core.exceptions import ForbiddenException, NotFoundException
+from app.models.parking_floor import ParkingFloor
 from app.models.parking_lot import ParkingLot
+from app.models.parking_session import ParkingSession
+from app.models.parking_slot import ParkingSlot
 from app.models.parking_staff import ParkingStaff
+from app.models.payment import Payment
+from app.models.pending_payment import PendingWalletPayment
 from app.models.user import User
 from app.repositories.parking_lot_repository import ParkingLotRepository
 from app.repositories.parking_owner_repository import ParkingOwnerRepository
@@ -127,6 +131,41 @@ class ParkingLotService:
             owner = self.owner_repo.get_by_user_id(current_user.id)
             if owner:
                 self.sub_service.check_subscription_required(owner.id)
+
+        # 1. Collect child IDs under this lot
+        floor_ids = list(self.db.scalars(select(ParkingFloor.id).where(ParkingFloor.parking_lot_id == lot_id)).all())
+        slot_ids = list(self.db.scalars(select(ParkingSlot.id).where(ParkingSlot.floor_id.in_(floor_ids))).all()) if floor_ids else []
+        session_ids = list(self.db.scalars(select(ParkingSession.id).where(ParkingSession.slot_id.in_(slot_ids))).all()) if slot_ids else []
+        staff_user_ids = list(self.db.scalars(select(ParkingStaff.user_id).where(ParkingStaff.parking_lot_id == lot_id)).all())
+
+        # 2. Delete pending wallet payments referencing sessions or slots
+        if session_ids or slot_ids:
+            conds = []
+            if session_ids:
+                conds.append(PendingWalletPayment.session_id.in_(session_ids))
+            if slot_ids:
+                conds.append(PendingWalletPayment.pending_slot_id.in_(slot_ids))
+            self.db.execute(delete(PendingWalletPayment).where(or_(*conds)))
+
+        # 3. Delete payments & sessions
+        if session_ids:
+            self.db.execute(delete(Payment).where(Payment.session_id.in_(session_ids)))
+            self.db.execute(delete(ParkingSession).where(ParkingSession.id.in_(session_ids)))
+
+        # 4. Delete slots & floors
+        if slot_ids:
+            self.db.execute(delete(ParkingSlot).where(ParkingSlot.id.in_(slot_ids)))
+        if floor_ids:
+            self.db.execute(delete(ParkingFloor).where(ParkingFloor.id.in_(floor_ids)))
+
+        # 5. Delete staff & staff user accounts
+        self.db.execute(delete(ParkingStaff).where(ParkingStaff.parking_lot_id == lot_id))
+        if staff_user_ids:
+            self.db.execute(delete(PendingWalletPayment).where(PendingWalletPayment.user_id.in_(staff_user_ids)))
+            self.db.execute(delete(Payment).where(Payment.user_id.in_(staff_user_ids)))
+            self.db.execute(delete(User).where(User.id.in_(staff_user_ids)))
+
+        # 6. Delete lot
         self.lot_repo.delete(lot)
 
     def toggle_lot_status(self, lot_id: int, current_user: User) -> ParkingLot:

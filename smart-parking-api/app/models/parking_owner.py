@@ -24,5 +24,5 @@ class ParkingOwner(Base):
         "OwnerSubscription", back_populates="owner", cascade="all, delete-orphan"
     )
     wallet_account: Mapped[Optional["WalletAccount"]] = relationship(
-        "WalletAccount", back_populates="owner", uselist=False
+        "WalletAccount", back_populates="owner", uselist=False, cascade="all, delete-orphan"
     )

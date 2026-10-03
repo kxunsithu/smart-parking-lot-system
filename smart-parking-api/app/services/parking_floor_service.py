@@ -1,10 +1,13 @@
-"""Business logic for Parking Floors."""
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.core.constants import RoleName
 from app.core.exceptions import ForbiddenException, NotFoundException
 from app.models.parking_floor import ParkingFloor
+from app.models.parking_session import ParkingSession
+from app.models.parking_slot import ParkingSlot
+from app.models.payment import Payment
+from app.models.pending_payment import PendingWalletPayment
 from app.models.user import User
 from app.repositories.parking_floor_repository import ParkingFloorRepository
 from app.repositories.parking_lot_repository import ParkingLotRepository
@@ -64,4 +67,15 @@ class ParkingFloorService:
     def delete_floor(self, floor_id: int, current_user: User) -> None:
         floor = self.get_by_id(floor_id)
         self._assert_lot_ownership(floor.parking_lot_id, current_user)
+        
+        slot_ids = list(self.db.scalars(select(ParkingSlot.id).where(ParkingSlot.floor_id == floor_id)).all())
+        if slot_ids:
+            session_ids = list(self.db.scalars(select(ParkingSession.id).where(ParkingSession.slot_id.in_(slot_ids))).all())
+            if session_ids:
+                self.db.execute(delete(PendingWalletPayment).where(PendingWalletPayment.session_id.in_(session_ids)))
+                self.db.execute(delete(Payment).where(Payment.session_id.in_(session_ids)))
+                self.db.execute(delete(ParkingSession).where(ParkingSession.id.in_(session_ids)))
+            self.db.execute(delete(PendingWalletPayment).where(PendingWalletPayment.pending_slot_id.in_(slot_ids)))
+            self.db.execute(delete(ParkingSlot).where(ParkingSlot.id.in_(slot_ids)))
+
         self.floor_repo.delete(floor)

@@ -486,18 +486,24 @@ export default function ParkingDetail() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 text-muted-foreground text-xs pt-2 sm:pt-0 border-t sm:border-t-0 border-border/40">
+                <div className="flex items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/40">
                   {lot.owner.user?.email && (
-                    <div className="flex items-center gap-1.5 bg-background/80 px-2.5 py-1 rounded-lg border border-border/60">
-                      <Mail className="size-3.5 text-primary" />
-                      <span>{lot.owner.user.email}</span>
-                    </div>
+                    <a
+                      href={`mailto:${lot.owner.user.email}`}
+                      title={`Email ${lot.owner.user.email}`}
+                      className="p-2 rounded-lg bg-background/80 border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                    >
+                      <Mail className="size-4" />
+                    </a>
                   )}
                   {lot.owner.user?.phone && (
-                    <div className="flex items-center gap-1.5 bg-background/80 px-2.5 py-1 rounded-lg border border-border/60">
-                      <Phone className="size-3.5 text-primary" />
-                      <span>{lot.owner.user.phone}</span>
-                    </div>
+                    <a
+                      href={`tel:${lot.owner.user.phone}`}
+                      title={`Call ${lot.owner.user.phone}`}
+                      className="p-2 rounded-lg bg-background/80 border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                    >
+                      <Phone className="size-4" />
+                    </a>
                   )}
                 </div>
               </div>

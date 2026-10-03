@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Loader2, Plus, Edit, Trash2, Power, Building2 } from "lucide-react"
+import { Loader2, Plus, Edit, Trash2, Power, Building2, Eye, Mail, Phone } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { SearchInput } from "@/components/common/SearchInput"
 import { DataPagination } from "@/components/common/DataPagination"
@@ -14,6 +14,7 @@ import { FormField } from "@/components/common/FormField"
 import { StatusBadge } from "@/components/common/StatusBadge"
 import { activeStatusTone } from "@/utils/statusColors"
 import { ConfirmDialog } from "@/components/common/ConfirmDialog"
+import { UserDetailModal, type UserDetailTarget } from "@/components/common/UserDetailModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -56,6 +57,7 @@ export function StaffPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<ParkingStaffOut | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ParkingStaffOut | null>(null)
+  const [viewTarget, setViewTarget] = useState<UserDetailTarget | null>(null)
   const [ownerProfile, setOwnerProfile] = useState<ParkingOwnerOut | null>(null)
   const [lotsData, setLotsData] = useState<ListResult<ParkingLotOut> | null>(null)
   const [isLoadingLots, setIsLoadingLots] = useState(true)
@@ -274,8 +276,29 @@ export function StaffPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div>{member.user?.email}</div>
-                        <div className="text-xs text-muted-foreground">{member.user?.phone}</div>
+                        <div className="flex items-center gap-2">
+                          {member.user?.email && (
+                            <a
+                              href={`mailto:${member.user.email}`}
+                              title={`Email ${member.user.email}`}
+                              className="p-1.5 rounded bg-muted border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                            >
+                              <Mail className="size-3.5" />
+                            </a>
+                          )}
+                          {member.user?.phone && (
+                            <a
+                              href={`tel:${member.user.phone}`}
+                              title={`Call ${member.user.phone}`}
+                              className="p-1.5 rounded bg-muted border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                            >
+                              <Phone className="size-3.5" />
+                            </a>
+                          )}
+                          {!member.user?.email && !member.user?.phone && (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <StatusBadge
@@ -295,6 +318,15 @@ export function StaffPage() {
                             variant="ghost"
                             size="icon"
                             className="size-8"
+                            title="View Details"
+                            onClick={() => setViewTarget({ type: "staff", staff: member })}
+                          >
+                            <Eye className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
                             onClick={() => handleToggleActive(member)}
                             disabled={isToggling}
                             title={member.user?.is_active ? "Deactivate" : "Activate"}
@@ -303,10 +335,10 @@ export function StaffPage() {
                               className={`size-4 ${member.user?.is_active ? "text-emerald-500" : "text-muted-foreground"}`}
                             />
                           </Button>
-                          <Button variant="ghost" size="icon" className="size-8" onClick={() => setEditTarget(member)}>
+                          <Button variant="ghost" size="icon" className="size-8" onClick={() => setEditTarget(member)} title="Edit Staff">
                             <Edit className="size-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="size-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(member)}>
+                          <Button variant="ghost" size="icon" className="size-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(member)} title="Delete Staff">
                             <Trash2 className="size-4" />
                           </Button>
                         </div>
@@ -321,6 +353,18 @@ export function StaffPage() {
           <DataPagination meta={data?.meta} onPageChange={setPage} />
         </CardContent>
       </Card>
+
+      <UserDetailModal
+        open={Boolean(viewTarget)}
+        onOpenChange={(open) => !open && setViewTarget(null)}
+        target={viewTarget}
+        onToggleActive={async () => {
+          if (viewTarget?.type === "staff" && viewTarget.staff) {
+            await handleToggleActive(viewTarget.staff)
+            setViewTarget(null)
+          }
+        }}
+      />
 
       <CreateStaffDialog
         open={createOpen}

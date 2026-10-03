@@ -34,4 +34,6 @@ class ParkingSession(Base):
 
     car: Mapped["Car"] = relationship("Car", back_populates="sessions")
     slot: Mapped["ParkingSlot"] = relationship("ParkingSlot", back_populates="sessions")
-    payments: Mapped[list["Payment"]] = relationship("Payment", back_populates="session")
+    payments: Mapped[list["Payment"]] = relationship(
+        "Payment", back_populates="session", cascade="all, delete-orphan"
+    )

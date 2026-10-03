@@ -8,6 +8,7 @@ import { X, Printer, CheckCircle2, Clock, XCircle, AlertCircle } from "lucide-re
 import { Button } from "@/components/ui/button"
 import { formatDateTime } from "@/lib/datetime"
 import type { PaymentListOut } from "@/api/types"
+import { useLanguage } from "@/lib/i18n"
 
 interface ReceiptModalProps {
   payment: PaymentListOut | null
@@ -18,7 +19,7 @@ function formatCurrency(value: number): string {
   return `${value.toLocaleString()} MMK`
 }
 
-function statusMeta(status: string): {
+function statusMeta(status: string, t: (key: string, fallback?: string) => string): {
   label: string
   icon: React.ReactNode
   color: string
@@ -27,21 +28,21 @@ function statusMeta(status: string): {
   switch (status) {
     case "COMPLETED":
       return {
-        label: "Paid",
+        label: t("receipt.paid", "Paid"),
         icon: <CheckCircle2 className="w-4 h-4" />,
         color: "text-green-600 dark:text-green-400",
         bg: "bg-green-500/10 border-green-500/20",
       }
     case "PENDING":
       return {
-        label: "Pending",
+        label: t("receipt.pending", "Pending"),
         icon: <Clock className="w-4 h-4" />,
         color: "text-amber-600 dark:text-amber-400",
         bg: "bg-amber-500/10 border-amber-500/20",
       }
     case "FAILED":
       return {
-        label: "Failed",
+        label: t("receipt.failed", "Failed"),
         icon: <XCircle className="w-4 h-4" />,
         color: "text-red-600 dark:text-red-400",
         bg: "bg-red-500/10 border-red-500/20",
@@ -173,6 +174,8 @@ function printReceipt(payment: PaymentListOut) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
+  const { t } = useLanguage()
+
   // Close on Escape key
   useEffect(() => {
     if (!payment) return
@@ -185,7 +188,7 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
 
   if (!payment) return null
 
-  const meta = statusMeta(payment.status)
+  const meta = statusMeta(payment.status, t)
   const detail =
     payment.kind === "subscription"
       ? payment.package_name ?? "Subscription"
@@ -206,7 +209,7 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
         {/* Header */}
         <div className="flex items-start justify-between p-5 border-b border-border">
           <div>
-            <p className="text-base font-semibold leading-tight">Transaction Receipt</p>
+            <p className="text-base font-semibold leading-tight">{t("receipt.modal_title", "Transaction Receipt")}</p>
             <p className="text-xs text-muted-foreground mt-0.5">Smart Parking</p>
           </div>
           <div className="flex items-center gap-2">
@@ -231,37 +234,37 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
           {/* Meta grid */}
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <div>
-              <p className="text-xs text-muted-foreground">Receipt No.</p>
+              <p className="text-xs text-muted-foreground">{t("receipt.no", "Receipt No.")}</p>
               <p className="font-mono text-xs font-medium break-all">{payment.reference}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Date</p>
+              <p className="text-xs text-muted-foreground">{t("receipt.date", "Date")}</p>
               <p className="text-xs">{formatDateTime(payment.paid_at ?? payment.created_at)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Type</p>
+              <p className="text-xs text-muted-foreground">{t("receipt.type", "Type")}</p>
               <p className="capitalize">{payment.kind}</p>
             </div>
             {detail && (
               <div>
-                <p className="text-xs text-muted-foreground">Detail</p>
+                <p className="text-xs text-muted-foreground">{t("receipt.detail", "Detail")}</p>
                 <p>{detail}</p>
               </div>
             )}
             <div className="col-span-2">
-              <p className="text-xs text-muted-foreground">Transaction No.</p>
+              <p className="text-xs text-muted-foreground">{t("receipt.tx_no", "Transaction No.")}</p>
               <p className="font-mono text-xs break-all">{ref || "—"}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Payer</p>
+              <p className="text-xs text-muted-foreground">{t("receipt.payer", "Payer")}</p>
               <p>{payment.payer_name ?? "—"}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Payer Phone</p>
+              <p className="text-xs text-muted-foreground">{t("receipt.payer_phone", "Payer Phone")}</p>
               <p>{payment.payer_phone ?? "—"}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Receiver Phone</p>
+              <p className="text-xs text-muted-foreground">{t("receipt.receiver_phone", "Receiver Phone")}</p>
               <p>{payment.receiver_phone ?? "—"}</p>
             </div>
           </div>
@@ -269,15 +272,15 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
           {/* Totals */}
           <div className="space-y-1.5 border-t pt-3 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Amount</span>
+              <span className="text-muted-foreground">{t("parking.parking_fee", "Parking Fee")}</span>
               <span className="tabular-nums">{formatCurrency(payment.amount)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Service Fee</span>
+              <span className="text-muted-foreground">{t("parking.wallet_fee", "Service Fee")}</span>
               <span className="tabular-nums">{formatCurrency(payment.fee)}</span>
             </div>
             <div className="flex items-center justify-between border-t pt-1.5 text-base font-semibold">
-              <span>Total</span>
+              <span>{t("parking.total", "Total")}</span>
               <span className="tabular-nums text-primary">{formatCurrency(payment.total)}</span>
             </div>
           </div>
@@ -285,18 +288,18 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
           {/* Footer note */}
           <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t">
             <span>{payment.owner_name ?? "Smart Parking"}</span>
-            <span>Thank you for your payment.</span>
+            <span>Thank you.</span>
           </div>
         </div>
 
         {/* Actions */}
         <div className="flex gap-3 px-5 pb-5">
           <Button variant="outline" className="flex-1" onClick={onClose}>
-            Close
+            {t("common.close", "Close")}
           </Button>
           <Button className="flex-1" onClick={() => printReceipt(payment)}>
             <Printer className="w-4 h-4 mr-2" />
-            Print / PDF
+            {t("receipt.print", "Print / PDF")}
           </Button>
         </div>
       </div>

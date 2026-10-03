@@ -174,25 +174,31 @@ export function SlotsBoardPage() {
                       {(parkingLot.owner.company_name || parkingLot.owner.user?.name || "C").charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="font-bold text-foreground truncate flex items-center gap-1">
                       <Briefcase className="size-3 text-primary shrink-0" />
                       <span className="truncate">{parkingLot.owner.company_name || "Company Not Set"}</span>
                     </p>
-                    <p className="text-[11px] text-muted-foreground truncate flex items-center gap-2 mt-0.5">
+                    <div className="flex items-center gap-2 mt-1">
                       {parkingLot.owner.user?.email && (
-                        <span className="flex items-center gap-1">
-                          <Mail className="size-3 text-muted-foreground shrink-0" />
-                          <span>{parkingLot.owner.user.email}</span>
-                        </span>
+                        <a
+                          href={`mailto:${parkingLot.owner.user.email}`}
+                          title={`Email ${parkingLot.owner.user.email}`}
+                          className="p-1 rounded bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                        >
+                          <Mail className="size-3.5" />
+                        </a>
                       )}
                       {(parkingLot.owner.user as any)?.phone && (
-                        <span className="flex items-center gap-1">
-                          <Phone className="size-3 text-muted-foreground shrink-0" />
-                          <span>{(parkingLot.owner.user as any).phone}</span>
-                        </span>
+                        <a
+                          href={`tel:${(parkingLot.owner.user as any).phone}`}
+                          title={`Call ${(parkingLot.owner.user as any).phone}`}
+                          className="p-1 rounded bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                        >
+                          <Phone className="size-3.5" />
+                        </a>
                       )}
-                    </p>
+                    </div>
                   </div>
                 </div>
               )}

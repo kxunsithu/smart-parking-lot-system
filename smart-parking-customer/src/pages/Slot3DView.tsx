@@ -815,18 +815,24 @@ export default function Slot3DView() {
                       </p>
                     </div>
                   </div>
-                  <div className="space-y-1.5 pt-1 text-xs text-muted-foreground border-t border-border/50">
+                  <div className="flex items-center gap-2 pt-1 border-t border-border/50">
                     {lot.owner.user?.email && (
-                      <p className="flex items-center gap-2 truncate">
-                        <Mail className="size-3.5 text-muted-foreground shrink-0" />
-                        <span className="truncate">{lot.owner.user.email}</span>
-                      </p>
+                      <a
+                        href={`mailto:${lot.owner.user.email}`}
+                        title={`Email ${lot.owner.user.email}`}
+                        className="p-1.5 rounded-md bg-muted border border-border text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                      >
+                        <Mail className="size-3.5" />
+                      </a>
                     )}
                     {lot.owner.user?.phone && (
-                      <p className="flex items-center gap-2">
-                        <Phone className="size-3.5 text-muted-foreground shrink-0" />
-                        <span>{lot.owner.user.phone}</span>
-                      </p>
+                      <a
+                        href={`tel:${lot.owner.user.phone}`}
+                        title={`Call ${lot.owner.user.phone}`}
+                        className="p-1.5 rounded-md bg-muted border border-border text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                      >
+                        <Phone className="size-3.5" />
+                      </a>
                     )}
                   </div>
                 </CardContent>

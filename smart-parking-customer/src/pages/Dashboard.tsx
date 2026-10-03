@@ -428,18 +428,26 @@ export default function Dashboard() {
                               </div>
                             </div>
                             {/* Contact details */}
-                            <div className="space-y-1">
+                            <div className="flex items-center gap-2 pt-1">
                               {lot.owner.user?.email && (
-                                <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 truncate">
-                                  <Mail className="size-3 shrink-0 text-primary/60" />
-                                  {lot.owner.user.email}
-                                </p>
+                                <a
+                                  href={`mailto:${lot.owner.user.email}`}
+                                  title={`Email ${lot.owner.user.email}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="p-1.5 rounded-md bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                                >
+                                  <Mail className="size-3.5" />
+                                </a>
                               )}
                               {lot.owner.user?.phone && (
-                                <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                                  <Phone className="size-3 shrink-0 text-primary/60" />
-                                  {lot.owner.user.phone}
-                                </p>
+                                <a
+                                  href={`tel:${lot.owner.user.phone}`}
+                                  title={`Call ${lot.owner.user.phone}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="p-1.5 rounded-md bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                                >
+                                  <Phone className="size-3.5" />
+                                </a>
                               )}
                             </div>
                           </div>

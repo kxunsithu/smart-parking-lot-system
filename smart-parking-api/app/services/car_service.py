@@ -1,10 +1,13 @@
 """Business logic for Cars."""
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.core.constants import RoleName
 from app.core.exceptions import ConflictException, ForbiddenException, NotFoundException
 from app.models.car import Car
+from app.models.parking_session import ParkingSession
+from app.models.payment import Payment
+from app.models.pending_payment import PendingWalletPayment
 from app.models.user import User
 from app.repositories.car_repository import CarRepository
 from app.repositories.customer_repository import CustomerRepository
@@ -94,4 +97,13 @@ class CarService:
     def delete_car(self, car_id: int, current_user: User) -> None:
         car = self.get_by_id(car_id)
         self._assert_can_manage(car, current_user)
+
+        # Cascade delete: sessions → payments/pending first, then the car itself
+        session_ids = list(self.db.scalars(select(ParkingSession.id).where(ParkingSession.car_id == car_id)).all())
+        if session_ids:
+            self.db.execute(delete(PendingWalletPayment).where(PendingWalletPayment.session_id.in_(session_ids)))
+            self.db.execute(delete(Payment).where(Payment.session_id.in_(session_ids)))
+            self.db.execute(delete(ParkingSession).where(ParkingSession.id.in_(session_ids)))
+        self.db.execute(delete(PendingWalletPayment).where(PendingWalletPayment.pending_car_id == car_id))
+
         self.car_repo.delete(car)

@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from "react"
 import { toast } from "sonner"
-import { Trash2, RotateCcw } from "lucide-react"
+import { Trash2, RotateCcw, Eye } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { SearchInput } from "@/components/common/SearchInput"
 import { DataPagination } from "@/components/common/DataPagination"
 import { EmptyState } from "@/components/common/EmptyState"
 import { TableSkeleton } from "@/components/common/LoadingBlock"
 import { ConfirmDialog } from "@/components/common/ConfirmDialog"
+import { UserDetailModal, type UserDetailTarget } from "@/components/common/UserDetailModal"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -36,6 +37,7 @@ export function OwnersPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [verifiedFilter, setVerifiedFilter] = useState("all")
   const [deleteTarget, setDeleteTarget] = useState<ParkingOwnerOut | null>(null)
+  const [viewTarget, setViewTarget] = useState<UserDetailTarget | null>(null)
   const [data, setData] = useState<ListResult<ParkingOwnerOut> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isFetching, setIsFetching] = useState(false)
@@ -197,14 +199,26 @@ export function OwnersPage() {
                         />
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-8 text-destructive hover:text-destructive"
-                          onClick={() => setDeleteTarget(owner)}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            title="View Details"
+                            onClick={() => setViewTarget({ type: "owner", owner })}
+                          >
+                            <Eye className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 text-destructive hover:text-destructive"
+                            title="Delete Owner"
+                            onClick={() => setDeleteTarget(owner)}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -216,6 +230,18 @@ export function OwnersPage() {
           <DataPagination meta={data?.meta} onPageChange={setPage} />
         </CardContent>
       </Card>
+
+      <UserDetailModal
+        open={Boolean(viewTarget)}
+        onOpenChange={(open) => !open && setViewTarget(null)}
+        target={viewTarget}
+        onToggleActive={async () => {
+          if (viewTarget?.type === "owner" && viewTarget.owner.id) {
+            await handleToggleStatus(viewTarget.owner.id)
+            setViewTarget(null)
+          }
+        }}
+      />
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

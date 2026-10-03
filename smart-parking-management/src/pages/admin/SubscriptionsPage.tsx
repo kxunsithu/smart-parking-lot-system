@@ -137,23 +137,31 @@ export function AdminSubscriptionsPage() {
                           <span>{sub.owner?.company_name || "Independent Owner"}</span>
                         </div>
                         {sub.owner?.user && (
-                          <div className="space-y-0.5 pl-5 text-xs text-muted-foreground">
+                          <div className="pl-5 text-xs text-muted-foreground">
                             <div className="flex items-center gap-1.5 font-medium text-foreground/80">
                               <User className="size-3.5 text-muted-foreground shrink-0" />
                               <span>{sub.owner.user.name} <span className="text-muted-foreground font-mono">(Owner #{sub.owner_id})</span></span>
                             </div>
-                            {sub.owner.user.email && (
-                              <div className="flex items-center gap-1.5">
-                                <Mail className="size-3.5 text-muted-foreground shrink-0" />
-                                <span>{sub.owner.user.email}</span>
-                              </div>
-                            )}
-                            {sub.owner.user.phone && (
-                              <div className="flex items-center gap-1.5">
-                                <Phone className="size-3.5 text-muted-foreground shrink-0" />
-                                <span>{sub.owner.user.phone}</span>
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2 mt-1.5">
+                              {sub.owner.user.email && (
+                                <a
+                                  href={`mailto:${sub.owner.user.email}`}
+                                  title={`Email ${sub.owner.user.email}`}
+                                  className="p-1.5 rounded bg-muted border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                                >
+                                  <Mail className="size-3.5" />
+                                </a>
+                              )}
+                              {sub.owner.user.phone && (
+                                <a
+                                  href={`tel:${sub.owner.user.phone}`}
+                                  title={`Call ${sub.owner.user.phone}`}
+                                  className="p-1.5 rounded bg-muted border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                                >
+                                  <Phone className="size-3.5" />
+                                </a>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>

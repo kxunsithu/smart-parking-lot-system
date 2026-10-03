@@ -4,8 +4,10 @@ import Navbar from "@/components/layout/Navbar"
 import Footer from "@/components/layout/Footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { useLanguage } from "@/lib/i18n"
 
 export default function WalletPaymentResult() {
+  const { t } = useLanguage()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const status = searchParams.get("status")
@@ -34,27 +36,29 @@ export default function WalletPaymentResult() {
 
             <div>
               <h3 className="text-lg font-bold">
-                {success ? "Payment Successful!" : "Payment Not Completed"}
+                {success
+                  ? t("wallet_result.success_title", "Payment Successful!")
+                  : t("wallet_result.failed_title", "Payment Not Completed")}
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
                 {success
-                  ? "Your wallet payment was completed and your parking session is now ACTIVE."
-                  : "The payment could not be completed. Please try again from your parking booking."}
+                  ? t("wallet_result.success_desc", "Your wallet payment was completed and your parking session is now ACTIVE.")
+                  : t("wallet_result.failed_desc", "The payment could not be completed. Please try again from your parking booking.")}
               </p>
               {reference && (
                 <p className="text-xs text-muted-foreground mt-2">
-                  Reference: <span className="font-mono font-medium text-foreground">{reference}</span>
+                  {t("wallet_result.reference", "Reference")}: <span className="font-mono font-medium text-foreground">{reference}</span>
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-2">
               <Button className="w-full" onClick={() => navigate("/sessions")}>
-                View My Sessions
+                {t("parking.view_sessions", "View My Sessions")}
               </Button>
               {!success && (
                 <Button variant="outline" className="w-full" onClick={() => navigate("/dashboard")}>
-                  Back to Parking Lots
+                  {t("parking.back_to_lots", "Back to Parking Lots")}
                 </Button>
               )}
             </div>

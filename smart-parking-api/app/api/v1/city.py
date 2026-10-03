@@ -13,9 +13,11 @@ from app.core.constants import RoleName
 from app.database.session import get_db
 from app.dependencies.auth import get_current_user, require_roles
 from app.models.city import City
+from app.models.parking_lot import ParkingLot
 from app.models.user import User
 from app.schemas.city import CityCreate, CityOut, CityUpdate
 from app.schemas.common import SuccessResponse
+from app.services.parking_lot_service import ParkingLotService
 
 router = APIRouter(prefix="/cities", tags=["Cities"])
 
@@ -112,11 +114,13 @@ def update_city(
     if not city:
         raise HTTPException(status_code=404, detail="City not found.")
 
-    if name is not None:
+    if name is not None and name != city.name:
         # check uniqueness
         existing = db.query(City).filter(City.name == name, City.id != city_id).first()
         if existing:
             raise HTTPException(status_code=400, detail=f"City '{name}' already exists.")
+        # Cascade update city name in parking lots
+        db.query(ParkingLot).filter(ParkingLot.city == city.name).update({"city": name}, synchronize_session=False)
         city.name = name
     if name_mm is not None:
         city.name_mm = name_mm
@@ -155,12 +159,22 @@ def delete_city_image(
 def delete_city(
     city_id: int,
     db: Session = Depends(get_db),
-    _: User = Depends(require_roles(RoleName.ADMIN)),
+    current_user: User = Depends(require_roles(RoleName.ADMIN)),
 ):
-    """Delete a city. Admin only."""
+    """Delete a city. Admin only. Cascades to delete all parking lots in this city and their dependent data."""
     city = db.query(City).filter(City.id == city_id).first()
     if not city:
         raise HTTPException(status_code=404, detail="City not found.")
+
+    # Find all parking lots associated with this city (by English or Myanmar name)
+    lots = db.query(ParkingLot).filter(
+        (ParkingLot.city == city.name) | (city.name_mm and ParkingLot.city == city.name_mm)
+    ).all()
+
+    lot_service = ParkingLotService(db)
+    for lot in lots:
+        lot_service.delete_lot(lot.id, current_user)
+
     _delete_city_image(city.image_url)
     db.delete(city)
     db.commit()

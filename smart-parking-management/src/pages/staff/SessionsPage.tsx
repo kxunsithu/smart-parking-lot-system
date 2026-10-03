@@ -27,6 +27,7 @@ import {
   SessionCardGrid,
   SessionCardSkeleton,
 } from "@/components/sessions/SessionCard"
+import { UserDetailModal, type UserDetailTarget } from "@/components/common/UserDetailModal"
 import type { ParkingSessionOut, ParkingSessionFinish as FinishSessionPayload } from "@/types"
 import type { ListResult } from "@/api/types"
 
@@ -49,6 +50,7 @@ export function StaffSessionsPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [finishTarget, setFinishTarget] = useState<ParkingSessionOut | null>(null)
+  const [viewCustomerTarget, setViewCustomerTarget] = useState<UserDetailTarget | null>(null)
   const [data, setData] = useState<ListResult<ParkingSessionOut> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isFetching, setIsFetching] = useState(false)
@@ -188,11 +190,32 @@ export function StaffSessionsPage() {
           sessions={sessions}
           isFetching={isFetching}
           onFinish={setFinishTarget}
+          onViewCustomer={(cust) =>
+            setViewCustomerTarget({
+              type: "customer",
+              user: {
+                id: cust.id,
+                name: cust.name,
+                email: cust.email,
+                phone: cust.phone,
+                role_id: 4,
+                is_active: true,
+                is_verified: true,
+                created_at: new Date().toISOString(),
+              },
+            })
+          }
           className="xl:grid-cols-2"
         />
       )}
 
       <DataPagination meta={data?.meta} onPageChange={setPage} />
+
+      <UserDetailModal
+        open={Boolean(viewCustomerTarget)}
+        onOpenChange={(open) => !open && setViewCustomerTarget(null)}
+        target={viewCustomerTarget}
+      />
 
       <FinishSessionDialog
         open={Boolean(finishTarget)}

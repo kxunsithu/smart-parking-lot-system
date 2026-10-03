@@ -21,4 +21,6 @@ class Car(Base):
     color: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
 
     customer: Mapped["Customer"] = relationship("Customer", back_populates="cars")
-    sessions: Mapped[List["ParkingSession"]] = relationship("ParkingSession", back_populates="car")
+    sessions: Mapped[List["ParkingSession"]] = relationship(
+        "ParkingSession", back_populates="car", cascade="all, delete-orphan"
+    )

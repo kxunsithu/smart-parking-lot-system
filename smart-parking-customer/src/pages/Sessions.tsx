@@ -3,6 +3,7 @@ import {
   Clock,
   DollarSign,
   Car,
+  User,
   CheckCircle2,
   XCircle,
   ParkingCircle,
@@ -539,6 +540,13 @@ function SessionCard({
             label="Car"
             value={carPlate || `#${session.car_id}`}
           />
+          {session.customer && (
+            <DetailItem
+              icon={<User className="w-3.5 h-3.5" />}
+              label="Customer"
+              value={session.customer.name}
+            />
+          )}
           <DetailItem
             icon={<Clock className="w-3.5 h-3.5" />}
             label="Start time"

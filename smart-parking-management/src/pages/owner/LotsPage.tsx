@@ -301,18 +301,26 @@ export function LotsPage() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 gap-1 text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+                          <div className="flex items-center gap-2 pt-1 border-t border-border/40">
                             {ownerObj?.user?.email && (
-                              <span className="flex items-center gap-1.5 truncate">
-                                <Mail className="size-3 text-muted-foreground shrink-0" />
-                                <span className="truncate">{ownerObj.user.email}</span>
-                              </span>
+                              <a
+                                href={`mailto:${ownerObj.user.email}`}
+                                title={`Email ${ownerObj.user.email}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="p-1 rounded bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                              >
+                                <Mail className="size-3.5" />
+                              </a>
                             )}
                             {(ownerObj?.user as any)?.phone && (
-                              <span className="flex items-center gap-1.5 truncate">
-                                <Phone className="size-3 text-muted-foreground shrink-0" />
-                                <span className="truncate">{(ownerObj?.user as any).phone}</span>
-                              </span>
+                              <a
+                                href={`tel:${(ownerObj?.user as any).phone}`}
+                                title={`Call ${(ownerObj?.user as any).phone}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="p-1 rounded bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                              >
+                                <Phone className="size-3.5" />
+                              </a>
                             )}
                           </div>
                         </div>

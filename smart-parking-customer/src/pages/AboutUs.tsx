@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import Navbar from "@/components/layout/Navbar"
 import Footer from "@/components/layout/Footer"
+import { useLanguage } from "@/lib/i18n"
 
 /* ─── Social Icons ──────────────────────────────────────────────── */
 function TelegramIcon({ className = "size-4" }: { className?: string }) {
@@ -53,7 +54,6 @@ function FloatingOrbs() {
     </div>
   )
 }
-
 
 /* ─── Team Member Data ──────────────────────────────────────────── */
 interface TeamMember {
@@ -153,6 +153,7 @@ const teamMembers: TeamMember[] = [
 
 /* ─── Team Member Card ──────────────────────────────────────────── */
 function TeamMemberCard({ member, index }: { member: TeamMember; index: number }) {
+  const { t } = useLanguage()
   const [imgError, setImgError] = useState(false)
   const BadgeIcon = member.badgeIcon
 
@@ -166,7 +167,7 @@ function TeamMemberCard({ member, index }: { member: TeamMember; index: number }
         <div className="absolute top-4 right-4 z-10">
           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 shadow-sm">
             <Sparkles className="size-2.5" />
-            Leader
+            {t("about.leader", "Leader")}
           </span>
         </div>
       )}
@@ -237,25 +238,27 @@ function TeamMemberCard({ member, index }: { member: TeamMember; index: number }
 
 /* ─── About Us Page ─────────────────────────────────────────────── */
 export default function AboutUs() {
+  const { t } = useLanguage()
+
   const values = [
     {
       icon: Target,
-      title: "Our Mission",
-      desc: "To simplify parking in Kayin State (ကရင်ပြည်နယ်) by providing a smart, digital-first parking management ecosystem that saves time, reduces congestion, and improves the daily commute for every driver.",
+      title: t("about.mission_title", "Our Mission"),
+      desc: t("about.mission_desc", "To simplify parking in Kayin State by providing a smart, digital-first parking management ecosystem."),
       color: "text-amber-500",
       bg: "bg-amber-500/10 border-amber-500/20",
     },
     {
       icon: Lightbulb,
-      title: "Our Vision",
-      desc: "A Kayin State where every parking lot is connected, every driver can find a spot in seconds, and every transaction is seamless — powered by technology built right here for our community.",
+      title: t("about.vision_title", "Our Vision"),
+      desc: t("about.vision_desc", "A Kayin State where every parking lot is connected, every driver can find a spot in seconds, and every transaction is seamless."),
       color: "text-emerald-500",
       bg: "bg-emerald-500/10 border-emerald-500/20",
     },
     {
       icon: Users,
-      title: "Our Team",
-      desc: "We are 6 Computer Science students passionate about solving real-world problems with modern technology. This project represents our commitment to innovation and engineering excellence.",
+      title: t("about.team_title", "Our Team"),
+      desc: t("about.team_desc", "We are 6 Computer Science students passionate about solving real-world problems with modern technology."),
       color: "text-blue-500",
       bg: "bg-blue-500/10 border-blue-500/20",
     },
@@ -283,28 +286,21 @@ export default function AboutUs() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/25 text-primary rounded-full px-4 py-1.5 text-xs font-semibold shadow-2xs">
             <GraduationCap className="size-3.5" />
-            <span>Computer Science Capstone Project</span>
+            <span>{t("about.badge", "Computer Science Capstone Project")}</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight tracking-tight">
-            <span className="text-foreground">About </span>
-            <span
-              className="text-transparent bg-clip-text inline-block py-1"
-              style={{ backgroundImage: "linear-gradient(135deg, #FF8F00 0%, #fbbf24 100%)" }}
-            >
-              Smart Parking
-            </span>
+            <span className="text-foreground">{t("about.title", "About Smart Parking")}</span>
           </h1>
 
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            A full-stack smart parking lot management system designed and built by 6 passionate
-            Computer Science students — built to serve Kayin State's (ကရင်ပြည်နယ်) growing urban parking needs.
+            {t("about.hero_subtitle", "A full-stack smart parking lot management system designed and built by 6 passionate Computer Science students.")}
           </p>
 
           {/* Location */}
           <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="size-4 text-primary" />
-            <span>Kayin State · ကရင်ပြည်နယ် · Computer Science Department</span>
+            <span>{t("about.location", "Kayin State · ကရင်ပြည်နယ် · Computer Science Department")}</span>
           </div>
         </div>
       </section>
@@ -315,9 +311,9 @@ export default function AboutUs() {
         {/* ── Mission / Vision / Team ─────────────────────────── */}
         <section className="space-y-10">
           <div className="text-center space-y-2">
-            <p className="text-primary text-xs font-bold uppercase tracking-widest">What We Stand For</p>
+            <p className="text-primary text-xs font-bold uppercase tracking-widest">{t("about.stand_for", "What We Stand For")}</p>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-              Driven by Purpose, Built with Passion
+              {t("about.driven_by", "Driven by Purpose, Built with Passion")}
             </h2>
           </div>
 
@@ -340,12 +336,12 @@ export default function AboutUs() {
         {/* ── Team Section ────────────────────────────────────── */}
         <section className="space-y-10" id="team">
           <div className="text-center space-y-2">
-            <p className="text-primary text-xs font-bold uppercase tracking-widest">The People Behind It</p>
+            <p className="text-primary text-xs font-bold uppercase tracking-widest">{t("about.people_behind", "The People Behind It")}</p>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-              Meet Our Team
+              {t("about.meet_team", "Meet Our Team")}
             </h2>
             <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-              Six dedicated Computer Science students working together to build a smarter future for parking in Kayin State.
+              {t("about.team_sub", "Six dedicated Computer Science students working together to build a smarter future for parking in Kayin State.")}
             </p>
           </div>
 
@@ -356,7 +352,6 @@ export default function AboutUs() {
             ))}
           </div>
         </section>
-
 
       </main>
 

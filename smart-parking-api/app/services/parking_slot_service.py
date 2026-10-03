@@ -1,11 +1,14 @@
 """Business logic for Parking Slots."""
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.core.constants import RoleName, SlotStatus
 from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
 from app.models.parking_floor import ParkingFloor
+from app.models.parking_session import ParkingSession
 from app.models.parking_slot import ParkingSlot
+from app.models.payment import Payment
+from app.models.pending_payment import PendingWalletPayment
 from app.models.user import User
 from app.repositories.parking_floor_repository import ParkingFloorRepository
 from app.repositories.parking_lot_repository import ParkingLotRepository
@@ -138,5 +141,13 @@ class ParkingSlotService:
     def delete_slot(self, slot_id: int, current_user: User) -> None:
         slot = self.get_by_id(slot_id)
         self._assert_floor_ownership(slot.floor_id, current_user)
-        floor_id = slot.floor_id
+
+        # Cascade delete: sessions → payments first, then the slot itself
+        session_ids = list(self.db.scalars(select(ParkingSession.id).where(ParkingSession.slot_id == slot_id)).all())
+        if session_ids:
+            self.db.execute(delete(PendingWalletPayment).where(PendingWalletPayment.session_id.in_(session_ids)))
+            self.db.execute(delete(Payment).where(Payment.session_id.in_(session_ids)))
+            self.db.execute(delete(ParkingSession).where(ParkingSession.id.in_(session_ids)))
+        self.db.execute(delete(PendingWalletPayment).where(PendingWalletPayment.pending_slot_id == slot_id))
+
         self.slot_repo.delete(slot)

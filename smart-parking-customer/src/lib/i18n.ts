@@ -276,6 +276,67 @@ export const translations: Record<Language, Record<string, string>> = {
     "profile.wallet_balance": "Wallet Balance",
     "profile.top_up": "Top Up",
     "profile.account_status": "Account Status",
+
+    // About Us
+    "about.title": "About Smart Parking",
+    "about.badge": "Computer Science Capstone Project",
+    "about.hero_subtitle": "A full-stack smart parking lot management system designed and built by 6 passionate Computer Science students — built to serve Kayin State's (ကရင်ပြည်နယ်) growing urban parking needs.",
+    "about.location": "Kayin State · ကရင်ပြည်နယ် · Computer Science Department",
+    "about.stand_for": "What We Stand For",
+    "about.driven_by": "Driven by Purpose, Built with Passion",
+    "about.mission_title": "Our Mission",
+    "about.mission_desc": "To simplify parking in Kayin State (ကရင်ပြည်နယ်) by providing a smart, digital-first parking management ecosystem that saves time, reduces congestion, and improves the daily commute for every driver.",
+    "about.vision_title": "Our Vision",
+    "about.vision_desc": "A Kayin State where every parking lot is connected, every driver can find a spot in seconds, and every transaction is seamless — powered by technology built right here for our community.",
+    "about.team_title": "Our Team",
+    "about.team_desc": "We are 6 Computer Science students passionate about solving real-world problems with modern technology. This project represents our commitment to innovation and engineering excellence.",
+    "about.people_behind": "The People Behind It",
+    "about.meet_team": "Meet Our Team",
+    "about.team_sub": "Six dedicated Computer Science students working together to build a smarter future for parking in Kayin State.",
+    "about.leader": "Leader",
+
+    // Wallet Payment Result
+    "wallet_result.success_title": "Payment Successful!",
+    "wallet_result.failed_title": "Payment Not Completed",
+    "wallet_result.success_desc": "Your wallet payment was completed and your parking session is now ACTIVE.",
+    "wallet_result.failed_desc": "The payment could not be completed. Please try again from your parking booking.",
+    "wallet_result.reference": "Reference",
+
+    // 3D View
+    "view3d.interactive_info": "Interactive 3D parking lot",
+    "view3d.day_mode": "Day Mode",
+    "view3d.night_mode": "Night Mode",
+    "view3d.rotate": "Rotate",
+    "view3d.stop": "Stop",
+    "view3d.fullscreen": "Fullscreen",
+    "view3d.exit": "Exit",
+    "view3d.unavailable": "3D View Unavailable",
+
+    // Receipt Modal
+    "receipt.modal_title": "Transaction Receipt",
+    "receipt.paid": "Paid",
+    "receipt.pending": "Pending",
+    "receipt.failed": "Failed",
+    "receipt.no": "Receipt No.",
+    "receipt.date": "Date",
+    "receipt.type": "Type",
+    "receipt.detail": "Detail",
+    "receipt.tx_no": "Transaction No.",
+    "receipt.payer": "Payer",
+    "receipt.payer_phone": "Payer Phone",
+    "receipt.receiver_phone": "Receiver Phone",
+    "receipt.print": "Print / Save PDF",
+
+    // Parking Track Navigation
+    "track.nav_to": "Live Routing to Slot",
+    "track.locating": "Locating you...",
+    "track.active": "Auto-Directions Active",
+    "track.exit": "Exit Navigation",
+    "track.navigating": "Navigating to Slot",
+
+    // Footer
+    "footer.subtitle": "Smart Parking Lot Management System. Built for Kayin State.",
+    "footer.about_us": "About Us",
   },
 
   mm: {
@@ -551,6 +612,67 @@ export const translations: Record<Language, Record<string, string>> = {
     "profile.wallet_balance": "ဝပ်လပ် လက်ကျန်ငွေ",
     "profile.top_up": "ငွေဖြည့်မည်",
     "profile.account_status": "အကောင့် အဆင့်",
+
+    // About Us
+    "about.title": "Smart Parking အကြောင်း",
+    "about.badge": "ကွန်ပျူတာသိပ္ပံ ကျောင်းဆင်းပရောဂျက်",
+    "about.hero_subtitle": "ကရင်ပြည်နယ်၏ မြို့ပြ ယာဉ်ရပ်နားမှု လိုအပ်ချက်များကို ဖြည့်ဆည်းရန် ကွန်ပျူတာသိပ္ပံ ကျောင်းသား ၆ ဦးမှ ဒီဇိုင်းဆွဲ တည်ဆောက်ထားသော စမတ်ယာဉ်ရပ်နားစနစ် ဖြစ်ပါသည်။",
+    "about.location": "ကရင်ပြည်နယ် · ကွန်ပျူတာသိပ္ပံဌာန",
+    "about.stand_for": "ကျွန်ုပ်တို့၏ ရည်ရွယ်ချက်",
+    "about.driven_by": "စိတ်အားထက်သန်မှု၊ ခိုင်မာသော ရည်မှန်းချက်ဖြင့် တည်ဆောက်ထားသည်",
+    "about.mission_title": "ကျွန်ုပ်တို့၏ ရည်မှန်းချက်",
+    "about.mission_desc": "ကရင်ပြည်နယ်အတွင်း ဒစ်ဂျစ်တယ် ယာဉ်ရပ်နားမှု စနစ်ဖြင့် ယာဉ်မောင်းသူတိုင်း အချိန်ကုန်သက်သာ စေရန်နှင့် ယာဉ်ကြော ပိတ်ဆို့မှုကို လျှော့ချပေးရန် ဖြစ်ပါသည်။",
+    "about.vision_title": "ကျွန်ုပ်တို့၏ မျှော်မှန်းချက်",
+    "about.vision_desc": "ကရင်ပြည်နယ်အတွင်းရှိ ယာဉ်ရပ်နားစခန်းတိုင်း ချိတ်ဆက်ထားပြီး ယာဉ်မောင်းသူတိုင်း စက္ကန့်ပိုင်းအတွင်း နေရာရှာဖွေ ငွေချေနိုင်မည့် နည်းပညာအခြေပြု လူ့အသိုင်းအဝိုင်း ဖြစ်လာစေရန် ဖြစ်ပါသည်။",
+    "about.team_title": "ကျွန်ုပ်တို့၏ အဖွဲ့",
+    "about.team_desc": "ကျွန်ုပ်တို့သည် ခေတ်မီ နည်းပညာဖြင့် လက်တွေ့ ပြဿနာများကို ဖြေရှင်းပေးလိုသော ကွန်ပျူတာသိပ္ပံ ကျောင်းသား ၆ ဦး ဖြစ်ပါသည်။",
+    "about.people_behind": "စနစ်နောက်ကွယ်မှ အဖွဲ့ဝင်များ",
+    "about.meet_team": "ကျွန်ုပ်တို့၏ အဖွဲ့ဝင်များနှင့် မိတ်ဆက်ခြင်း",
+    "about.team_sub": "ကရင်ပြည်နယ်အတွက် စမတ်ကျသော ယာဉ်ရပ်နားမှု အနာဂတ် တည်ဆောက်နေကြသည့် ကွန်ပျူတာသိပ္ပံ ကျောင်းသား ၆ ဦး။",
+    "about.leader": "အဖွဲ့ခေါင်းဆောင်",
+
+    // Wallet Payment Result
+    "wallet_result.success_title": "ငွေပေးချေမှု အောင်မြင်ပါသည်!",
+    "wallet_result.failed_title": "ငွေပေးချေမှု မပြီးစီးပါ",
+    "wallet_result.success_desc": "သင့်ဝပ်လပ် ငွေပေးချေမှု ပြီးစီးပြီး ယာဉ်ရပ်နားမှု စက်ရှင် စတင်ပါပြီ။",
+    "wallet_result.failed_desc": "ငွေပေးချေမှု မအောင်မြင်ပါ။ ယာဉ်ရပ်နားမှု ဘွတ်ကင်မှ ပြန်လည် ကြိုးစားပါ။",
+    "wallet_result.reference": "ကိုးကားနံပါတ်",
+
+    // 3D View
+    "view3d.interactive_info": "3D ယာဉ်ရပ်နားစခန်း ပြကွက်",
+    "view3d.day_mode": "နေ့မြင်ကွင်း",
+    "view3d.night_mode": "ညမြင်ကွင်း",
+    "view3d.rotate": "လှည့်မည်",
+    "view3d.stop": "ရပ်မည်",
+    "view3d.fullscreen": "မျက်နှာပြင်အပြည့်",
+    "view3d.exit": "ထွက်မည်",
+    "view3d.unavailable": "3D မြင်ကွင်း မရနိုင်ပါ",
+
+    // Receipt Modal
+    "receipt.modal_title": "ငွေပေးချေမှု လက်ခံဖြတ်ပိုင်း",
+    "receipt.paid": "ပေးချေပြီး",
+    "receipt.pending": "စောင့်ဆိုင်းဆဲ",
+    "receipt.failed": "မအောင်မြင်ပါ",
+    "receipt.no": "ဖြတ်ပိုင်း နံပါတ်",
+    "receipt.date": "ရက်စွဲ",
+    "receipt.type": "အမျိုးအစား",
+    "receipt.detail": "အသေးစိတ်",
+    "receipt.tx_no": "ငွေလွှဲ နံပါတ်",
+    "receipt.payer": "ပေးချေသူ",
+    "receipt.payer_phone": "ပေးချေသူ ဖုန်း",
+    "receipt.receiver_phone": "လက်ခံသူ ဖုန်း",
+    "receipt.print": "ပုံနှိပ်မည် / PDF သိမ်းမည်",
+
+    // Parking Track Navigation
+    "track.nav_to": "နေရာသို့ လမ်းကြောင်းပြခြင်း",
+    "track.locating": "တည်နေရာ ရှာဖွေနေသည်...",
+    "track.active": "လမ်းညွှန်ချက် အသက်ဝင်နေသည်",
+    "track.exit": "လမ်းညွှန်မှ ထွက်မည်",
+    "track.navigating": "နေရာသို့ သွားနေသည်",
+
+    // Footer
+    "footer.subtitle": "Smart Parking Lot Management System. ကရင်ပြည်နယ်အတွက် တည်ဆောက်ထားသည်။",
+    "footer.about_us": "ကျွန်ုပ်တို့အကြောင်း",
   },
 };
 

@@ -9,6 +9,7 @@ import {
   Square,
   Clock3,
   LogOut,
+  Eye,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -23,14 +24,15 @@ import {
 import { sessionStatusTone } from "@/utils/statusColors"
 import { formatCurrency, formatDateTime, formatDuration, initials } from "@/utils/formatters"
 import { cn } from "@/lib/utils"
-import type { ParkingSessionOut } from "@/types"
+import type { ParkingSessionOut, SessionCustomerInfo } from "@/types"
 
 interface SessionCardProps {
   session: ParkingSessionOut
   onFinish?: (session: ParkingSessionOut) => void
+  onViewCustomer?: (customer: SessionCustomerInfo) => void
 }
 
-export function SessionCard({ session, onFinish }: SessionCardProps) {
+export function SessionCard({ session, onFinish, onViewCustomer }: SessionCardProps) {
   const car = session.car
   const customer = session.customer
 
@@ -85,27 +87,50 @@ export function SessionCard({ session, onFinish }: SessionCardProps) {
       <div className="p-4 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Customer */}
-          <div className="rounded bg-muted/30 border border-border/40 p-3 space-y-1.5 min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-              <User className="size-3 text-primary" /> Customer
-            </p>
+          <div
+            className={cn(
+              "rounded bg-muted/30 border border-border/40 p-3 space-y-1.5 min-w-0 transition-colors",
+              onViewCustomer && customer && "cursor-pointer hover:bg-primary/5 hover:border-primary/30"
+            )}
+            onClick={() => customer && onViewCustomer?.(customer)}
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                <User className="size-3 text-primary" /> Customer
+              </p>
+              {customer && onViewCustomer && (
+                <span className="text-[10px] text-primary flex items-center gap-0.5 font-medium">
+                  <Eye className="size-3" /> Details
+                </span>
+              )}
+            </div>
             {customer ? (
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="size-8 shrink-0 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-[11px] font-bold text-primary">
                   {initials(customer.name)}
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="font-semibold text-sm text-foreground truncate">{customer.name}</p>
-                  <p className="text-[11px] text-muted-foreground flex items-center gap-1 truncate">
-                    <Mail className="size-3 shrink-0" />
-                    <span className="truncate">{customer.email}</span>
-                  </p>
-                  {customer.phone && (
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <Phone className="size-3 shrink-0" />
-                      {customer.phone}
-                    </p>
-                  )}
+                  <div className="flex items-center gap-1.5 mt-1" onClick={(e) => e.stopPropagation()}>
+                    {customer.email && (
+                      <a
+                        href={`mailto:${customer.email}`}
+                        title={`Email ${customer.email}`}
+                        className="p-1 rounded bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                      >
+                        <Mail className="size-3" />
+                      </a>
+                    )}
+                    {customer.phone && (
+                      <a
+                        href={`tel:${customer.phone}`}
+                        title={`Call ${customer.phone}`}
+                        className="p-1 rounded bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                      >
+                        <Phone className="size-3" />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -161,10 +186,11 @@ export function SessionCard({ session, onFinish }: SessionCardProps) {
   )
 }
 
-export function SessionCardGrid({ sessions, isFetching, onFinish, className }: {
+export function SessionCardGrid({ sessions, isFetching, onFinish, onViewCustomer, className }: {
   sessions: ParkingSessionOut[]
   isFetching?: boolean
   onFinish?: (session: ParkingSessionOut) => void
+  onViewCustomer?: (customer: SessionCustomerInfo) => void
   className?: string
 }) {
   return (
@@ -174,6 +200,7 @@ export function SessionCardGrid({ sessions, isFetching, onFinish, className }: {
           key={session.id}
           session={session}
           onFinish={onFinish}
+          onViewCustomer={onViewCustomer}
         />
       ))}
     </div>
