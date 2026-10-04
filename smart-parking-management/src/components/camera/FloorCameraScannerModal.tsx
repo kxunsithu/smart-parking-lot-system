@@ -12,6 +12,8 @@ import {
   Pause,
   Layers,
   Zap,
+  Maximize2,
+  Minimize2,
 } from "lucide-react"
 import {
   Dialog,
@@ -66,8 +68,29 @@ export function FloorCameraScannerModal({
   const [isApplying, setIsApplying] = useState(false)
   const [selectedRoiIndex, setSelectedRoiIndex] = useState<number | null>(null)
   const [detectedVehicleCount, setDetectedVehicleCount] = useState(0)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const modalContentRef = useRef<HTMLDivElement | null>(null)
   const animFrameId = useRef<number | null>(null)
   const lastSyncTimeRef = useRef<number>(0)
+
+  // ── Fullscreen toggle ───────────────────────────────────────────────────────
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {})
+      setIsFullscreen(true)
+    } else {
+      document.exitFullscreen?.().catch(() => {})
+      setIsFullscreen(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    document.addEventListener("fullscreenchange", handleFsChange)
+    return () => document.removeEventListener("fullscreenchange", handleFsChange)
+  }, [])
 
   // ── 1. Load COCO-SSD Model ─────────────────────────────────────────────────
   useEffect(() => {
@@ -87,29 +110,41 @@ export function FloorCameraScannerModal({
     return () => { isMounted = false }
   }, [open])
 
-  // ── 2. Fetch Floor Slots → build grid ROIs ─────────────────────────────────
+  // ── 2. Fetch Floor Slots → build 3D-matched vertical grid ROIs ──────────────
   const fetchFloorSlots = useCallback(async () => {
     if (!floor?.id) return
     try {
       const res = await parkingSlotsApi.list({ floor_id: floor.id, limit: 100 })
       const total = res.items.length
-      const cols = total <= 4 ? 2 : total <= 9 ? 3 : 4
+      const cols = total <= 6 ? 3 : total <= 10 ? 4 : 5
       const rows = Math.ceil(total / cols)
-      const gridW = 90 / cols
-      const gridH = 80 / rows
+      
+      const slotW = Math.min(22, 78 / cols - 3)
+      const slotH = Math.min(34, 76 / rows - 10)
+      const gapX = 4
+      const laneH = 14
+      const startX = (100 - (cols * slotW + (cols - 1) * gapX)) / 2
+      const startY = 8
+
       setSlotROIs(
-        res.items.map((slot, i) => ({
-          slotId: slot.id,
-          slotNumber: slot.slot_number,
-          section: slot.section,
-          currentStatus: slot.status as SlotStatus,
-          detectedStatus: slot.status as SlotStatus,
-          x: 5 + (i % cols) * gridW + 2,
-          y: 8 + Math.floor(i / cols) * gridH + 2,
-          width: gridW - 4,
-          height: gridH - 4,
-          confidence: 0,
-        }))
+        res.items.map((slot, i) => {
+          const col = i % cols
+          const row = Math.floor(i / cols)
+          const x = startX + col * (slotW + gapX)
+          const y = startY + row * (slotH + laneH)
+          return {
+            slotId: slot.id,
+            slotNumber: slot.slot_number,
+            section: slot.section,
+            currentStatus: slot.status as SlotStatus,
+            detectedStatus: slot.status as SlotStatus,
+            x,
+            y,
+            width: slotW,
+            height: slotH,
+            confidence: 0,
+          }
+        })
       )
     } catch {
       toast.error("Failed to load floor slots from database.")
@@ -176,10 +211,13 @@ export function FloorCameraScannerModal({
         return
       }
 
-      const W = video.clientWidth || video.videoWidth || 640
-      const H = video.clientHeight || video.videoHeight || 360
-      canvas.width = W
-      canvas.height = H
+      const rect = video.getBoundingClientRect()
+      const W = Math.round(rect.width || video.clientWidth || video.videoWidth || 640)
+      const H = Math.round(rect.height || video.clientHeight || video.videoHeight || 360)
+      if (canvas.width !== W || canvas.height !== H) {
+        canvas.width = W
+        canvas.height = H
+      }
       const ctx = canvas.getContext("2d")!
       ctx.clearRect(0, 0, W, H)
 
@@ -229,24 +267,56 @@ export function FloorCameraScannerModal({
           return changed ? next : prev
         })
 
-        // Draw slot ROI overlays
+        // Draw driving lane dashed center lines (3D View floor plan style)
+        const rowYPositions = Array.from(new Set(slotROIs.map((r) => r.y))).sort((a, b) => a - b)
+        for (let r = 0; r < rowYPositions.length; r++) {
+          const rowTop = rowYPositions[r]
+          const roiHeight = slotROIs[0]?.height || 30
+          const laneY = ((rowTop + roiHeight + 7) / 100) * H
+          ctx.setLineDash([16, 12])
+          ctx.lineWidth = 3
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.85)"
+          ctx.beginPath()
+          ctx.moveTo(W * 0.06, laneY)
+          ctx.lineTo(W * 0.94, laneY)
+          ctx.stroke()
+        }
+
+        // Draw 3D-styled slot ROI overlays (Solid white frames + centered labels)
         slotROIs.forEach((roi, idx) => {
           const rx = (roi.x / 100) * W, ry = (roi.y / 100) * H
           const rw = (roi.width / 100) * W, rh = (roi.height / 100) * H
           const isOcc = roi.detectedStatus === "OCCUPIED"
           const isRes = roi.detectedStatus === "RESERVED"
           const isSel = selectedRoiIndex === idx
-          ctx.setLineDash([])
-          ctx.lineWidth = isSel ? 3 : 2
-          ctx.strokeStyle = isSel ? "#f59e0b" : isRes ? "#d97706" : isOcc ? "#ef4444" : "#10b981"
-          ctx.fillStyle = isRes ? "rgba(217,119,6,0.15)" : isOcc ? "rgba(239,68,68,0.18)" : "rgba(16,185,129,0.12)"
+
+          // Solid slate background fill with status tint
+          ctx.fillStyle = isRes
+            ? "rgba(217, 119, 6, 0.35)"
+            : isOcc
+            ? "rgba(225, 29, 72, 0.40)"
+            : "rgba(51, 65, 85, 0.55)"
           ctx.fillRect(rx, ry, rw, rh)
+
+          // White rectangular frame border (3D View style)
+          ctx.setLineDash([])
+          ctx.lineWidth = isSel ? 4 : 3
+          ctx.strokeStyle = isSel ? "#f59e0b" : "#ffffff"
           ctx.strokeRect(rx, ry, rw, rh)
-          ctx.fillStyle = isRes ? "#d97706" : isOcc ? "#ef4444" : "#10b981"
-          ctx.fillRect(rx, ry, Math.min(80, rw), 18)
-          ctx.fillStyle = "#fff"
-          ctx.font = "bold 10px sans-serif"
-          ctx.fillText(roi.slotNumber, rx + 4, ry + 13)
+
+          // Top status pill indicator inside slot
+          const statusColor = isRes ? "#d97706" : isOcc ? "#ef4444" : "#10b981"
+          ctx.fillStyle = statusColor
+          ctx.fillRect(rx + 3, ry + 3, rw - 6, 6)
+
+          // Slot number label centered inside the vertical slot box (crisp white text)
+          ctx.fillStyle = "#ffffff"
+          ctx.font = "bold 13px sans-serif"
+          ctx.textAlign = "center"
+          ctx.textBaseline = "middle"
+          ctx.fillText(roi.slotNumber, rx + rw / 2, ry + rh / 2)
+          ctx.textAlign = "left"
+          ctx.textBaseline = "alphabetic"
         })
 
         // Auto-sync
@@ -294,8 +364,13 @@ export function FloorCameraScannerModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        ref={modalContentRef}
         showCloseButton={false}
-        className="max-w-[92vw] xl:max-w-6xl w-full p-0 gap-0 overflow-hidden rounded-xl bg-background border border-border/70 shadow-2xl"
+        className={`w-full p-0 gap-0 overflow-hidden bg-background border border-border/70 shadow-2xl transition-all duration-200 ${
+          isFullscreen
+            ? "!fixed !inset-0 !top-0 !left-0 !transform-none !translate-x-0 !translate-y-0 !z-[999999] !max-w-none !w-screen !h-screen !rounded-none !border-none !m-0"
+            : "max-w-[92vw] xl:max-w-6xl rounded-xl"
+        }`}
       >
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between gap-4 px-5 py-3.5 border-b border-border/60 bg-muted/20 shrink-0">
@@ -325,6 +400,18 @@ export function FloorCameraScannerModal({
                 size="sm"
               />
             </div>
+
+            {/* Fullscreen Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs font-medium border-border/80 hover:bg-muted"
+              onClick={toggleFullscreen}
+            >
+              {isFullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+              <span className="hidden sm:inline">{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
+            </Button>
+
             <Button
               variant="ghost"
               size="icon"
@@ -337,7 +424,9 @@ export function FloorCameraScannerModal({
         </div>
 
         {/* ── Body: Camera | Sidebar ───────────────────────────────────────── */}
-        <div className="flex flex-col lg:flex-row h-[72vh] min-h-[440px] overflow-hidden">
+        <div className={`flex flex-col lg:flex-row overflow-hidden transition-all ${
+          isFullscreen ? "h-[calc(100vh-60px)]" : "h-[72vh] min-h-[440px]"
+        }`}>
 
           {/* ── Camera Panel ────────────────────────────────────────────────── */}
           <div className="relative flex-1 bg-slate-950 flex items-center justify-center overflow-hidden min-h-[240px]">
@@ -420,6 +509,16 @@ export function FloorCameraScannerModal({
                     >
                       {isScanning ? <Pause className="size-3" /> : <Play className="size-3" />}
                       {isScanning ? "Pause" : "Resume"}
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={toggleFullscreen}
+                      className="h-7 text-[11px] gap-1 text-white hover:bg-white/15 px-2"
+                    >
+                      {isFullscreen ? <Minimize2 className="size-3" /> : <Maximize2 className="size-3" />}
+                      {isFullscreen ? "Exit" : "Fullscreen"}
                     </Button>
                   </div>
                 </div>
