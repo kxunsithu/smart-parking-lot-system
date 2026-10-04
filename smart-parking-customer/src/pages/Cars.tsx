@@ -109,11 +109,11 @@ export default function Cars() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {cars.map((car) => (
-              <Card key={car.id} className="group relative overflow-hidden rounded-2xl border border-border/80 hover:border-primary/60 hover:shadow-xl transition-all duration-300">
+              <Card key={car.id} className="group relative overflow-hidden rounded border border-border/80 hover:border-primary/60 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <div className="size-10 rounded bg-primary/10 flex items-center justify-center shrink-0">
                         <CarIcon className="size-5 text-primary" />
                       </div>
                       <div>
@@ -126,7 +126,7 @@ export default function Cars() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0 space-y-4">
-                  <div className="space-y-2 text-sm bg-muted/40 rounded-xl p-3.5 border border-border/40">
+                  <div className="space-y-2 text-sm bg-muted/40 rounded p-3.5 border border-border/40">
                     {car.brand && (
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-xs text-muted-foreground shrink-0">{t("cars.brand", "Brand / Model")}</span>
@@ -144,7 +144,7 @@ export default function Cars() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 dark:text-rose-400 border border-rose-500/20 font-semibold rounded-xl gap-1.5 cursor-pointer"
+                      className="w-full bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 dark:text-rose-400 border border-rose-500/20 font-semibold rounded gap-1.5 cursor-pointer"
                       onClick={() => setDeleteTarget(car)}
                     >
                       <Trash2 className="h-4 w-4" />

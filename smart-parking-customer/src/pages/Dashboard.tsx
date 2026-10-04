@@ -221,7 +221,7 @@ export default function Dashboard() {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-56 rounded-2xl bg-muted/60 animate-pulse" />
+                  <div key={i} className="h-56 rounded bg-muted/60 animate-pulse" />
                 ))}
               </div>
             ) : (
@@ -237,7 +237,7 @@ export default function Dashboard() {
                       onClick={() => handleSelectCity(city.name)}
                       className={`
                         group relative flex flex-col justify-between overflow-hidden
-                        rounded-2xl border border-border/80 bg-card
+                        rounded border border-border/80 bg-card
                         hover:border-primary/60 hover:shadow-xl hover:-translate-y-1
                         active:translate-y-0 transition-all duration-300 text-left
                         ${count === 0 ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
@@ -357,7 +357,7 @@ export default function Dashboard() {
             {isFetching ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-64 rounded-2xl bg-muted/60 animate-pulse" />
+                  <div key={i} className="h-64 rounded bg-muted/60 animate-pulse" />
                 ))}
               </div>
             ) : lots.length === 0 ? (
@@ -380,7 +380,7 @@ export default function Dashboard() {
                 {lots.map((lot) => (
                   <Card
                     key={lot.id}
-                    className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-border/80 hover:border-primary/60 hover:shadow-xl transition-all duration-300"
+                    className="group flex flex-col justify-between overflow-hidden rounded border border-border/80 hover:border-primary/60 hover:shadow-xl transition-all duration-300"
                   >
                     <div>
                       <CardHeader className="pb-3">
@@ -392,7 +392,7 @@ export default function Dashboard() {
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3 pb-4">
-                        <div className="flex items-center justify-between text-sm py-2.5 px-3.5 bg-muted/40 rounded-xl border border-border/40">
+                        <div className="flex items-center justify-between text-sm py-2.5 px-3.5 bg-muted/40 rounded border border-border/40">
                           <span className="text-muted-foreground text-xs font-medium">Hourly Rate</span>
                           <span className="font-bold text-primary">
                             {lot.rate_per_hour != null ? `${lot.rate_per_hour.toLocaleString()} MMK / hr` : "—"}
@@ -401,7 +401,7 @@ export default function Dashboard() {
 
                         {/* Company Info Snippet */}
                         {lot.owner ? (
-                          <div className="rounded-xl bg-muted/40 border border-border/50 p-3 space-y-2">
+                          <div className="rounded bg-muted/40 border border-border/50 p-3 space-y-2">
                             {/* Avatar + Company name row */}
                             <div className="flex items-center gap-2.5">
                               {lot.owner.user?.profile_image ? (
@@ -434,7 +434,7 @@ export default function Dashboard() {
                                   href={`mailto:${lot.owner.user.email}`}
                                   title={`Email ${lot.owner.user.email}`}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="p-1.5 rounded-md bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                                  className="p-1.5 rounded bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
                                 >
                                   <Mail className="size-3.5" />
                                 </a>
@@ -444,7 +444,7 @@ export default function Dashboard() {
                                   href={`tel:${lot.owner.user.phone}`}
                                   title={`Call ${lot.owner.user.phone}`}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="p-1.5 rounded-md bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                                  className="p-1.5 rounded bg-background border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
                                 >
                                   <Phone className="size-3.5" />
                                 </a>
@@ -457,7 +457,7 @@ export default function Dashboard() {
 
                     <div className="p-4 pt-0">
                       <Button
-                        className="w-full rounded-xl font-bold shadow-md cursor-pointer"
+                        className="w-full rounded font-bold shadow-md cursor-pointer"
                         onClick={() => navigate(`/parking/${lot.id}`)}
                       >
                         View &amp; Book Slots

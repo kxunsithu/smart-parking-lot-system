@@ -820,7 +820,7 @@ export default function Slot3DView() {
                       <a
                         href={`mailto:${lot.owner.user.email}`}
                         title={`Email ${lot.owner.user.email}`}
-                        className="p-1.5 rounded-md bg-muted border border-border text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                        className="p-1.5 rounded bg-muted border border-border text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
                       >
                         <Mail className="size-3.5" />
                       </a>
@@ -829,7 +829,7 @@ export default function Slot3DView() {
                       <a
                         href={`tel:${lot.owner.user.phone}`}
                         title={`Call ${lot.owner.user.phone}`}
-                        className="p-1.5 rounded-md bg-muted border border-border text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                        className="p-1.5 rounded bg-muted border border-border text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
                       >
                         <Phone className="size-3.5" />
                       </a>

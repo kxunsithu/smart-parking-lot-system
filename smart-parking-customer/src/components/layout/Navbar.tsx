@@ -100,8 +100,8 @@ export default function Navbar() {
                   key={item.path}
                   onClick={() => navigate(item.path)}
                   className={`px-3.5 py-2 text-sm cursor-pointer transition-colors ${isActive
-                      ? "font-bold text-primary"
-                      : "font-medium text-muted-foreground hover:text-foreground"
+                    ? "font-bold text-primary"
+                    : "font-medium text-muted-foreground hover:text-foreground"
                     }`}
                 >
                   {item.label}
@@ -140,7 +140,7 @@ export default function Navbar() {
 
                 {/* Dropdown panel */}
                 {profileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-52 rounded-xl border border-border bg-card shadow-xl py-1 z-50 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150">
+                  <div className="absolute right-0 mt-2 w-52 rounded border border-border bg-card shadow-xl py-1 z-50 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150">
                     {/* User info */}
                     <div className="px-3 py-2.5 border-b border-border">
                       <p className="font-semibold text-sm truncate">{user.name}</p>
@@ -238,9 +238,9 @@ export default function Navbar() {
                     navigate(item.path)
                     setMobileMenuOpen(false)
                   }}
-                  className={`w-full text-left px-3 py-2 text-sm transition-colors rounded-md ${isActive
-                      ? "font-bold text-primary"
-                      : "font-medium text-muted-foreground hover:text-foreground"
+                  className={`w-full text-left px-3 py-2 text-sm transition-colors rounded ${isActive
+                    ? "font-bold text-primary"
+                    : "font-medium text-muted-foreground hover:text-foreground"
                     }`}
                 >
                   {item.label}
@@ -250,7 +250,7 @@ export default function Navbar() {
           </div>
 
           {/* Preferences Row (Language & Dark Mode Toggles inside mobile dropdown) */}
-          <div className="pt-2 border-t flex items-center justify-between px-3 py-2.5 rounded-lg bg-muted/40 border border-border/60">
+          <div className="pt-2 border-t flex items-center justify-between px-3 py-2.5 rounded bg-muted/40 border border-border/60">
             <span className="text-xs font-semibold text-muted-foreground">
               {t("nav.preferences", "Language & Theme")}
             </span>
@@ -268,7 +268,7 @@ export default function Navbar() {
                     setMobileMenuOpen(false)
                     navigate("/profile")
                   }}
-                  className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md"
+                  className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded"
                 >
                   <User className="size-4" />
                   {t("nav.profile", "Profile")}
@@ -278,7 +278,7 @@ export default function Navbar() {
                     setMobileMenuOpen(false)
                     navigate("/cars")
                   }}
-                  className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md"
+                  className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded"
                 >
                   <CarFront className="size-4" />
                   {t("nav.cars", "My Vehicles")}

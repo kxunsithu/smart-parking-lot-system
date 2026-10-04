@@ -257,7 +257,7 @@ export default function Home() {
           {citiesLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-56 bg-card/60 rounded-2xl animate-pulse border border-border/80" />
+                <div key={i} className="h-56 bg-card/60 rounded animate-pulse border border-border/80" />
               ))}
             </div>
           ) : cities.length > 0 ? (
@@ -270,7 +270,7 @@ export default function Home() {
                   <button
                     key={city.id}
                     onClick={() => handleCityClick(city.name)}
-                    className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/80 bg-card hover:border-primary/60 hover:shadow-xl hover:-translate-y-1 active:translate-y-0 transition-all duration-300 text-left cursor-pointer"
+                    className="group relative flex flex-col justify-between overflow-hidden rounded border border-border/80 bg-card hover:border-primary/60 hover:shadow-xl hover:-translate-y-1 active:translate-y-0 transition-all duration-300 text-left cursor-pointer"
                   >
                     {/* Image Cover Container */}
                     <div className="relative h-64 w-full bg-gradient-to-br from-slate-800 to-slate-900 overflow-hidden">
@@ -326,7 +326,7 @@ export default function Home() {
               })}
             </div>
           ) : (
-            <div className="text-center py-16 border border-dashed border-border/80 rounded-2xl bg-card/40">
+            <div className="text-center py-16 border border-dashed border-border/80 rounded bg-card/40">
               <Building2 className="size-12 mx-auto text-muted-foreground/40 mb-3" />
               <p className="text-muted-foreground font-medium">No cities available right now.</p>
             </div>

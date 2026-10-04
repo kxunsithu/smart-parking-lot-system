@@ -159,7 +159,7 @@ function TeamMemberCard({ member, index }: { member: TeamMember; index: number }
 
   return (
     <div
-      className="group relative bg-card/80 backdrop-blur-md border border-border/80 rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-2 flex flex-col items-center text-center p-6"
+      className="group relative bg-card/80 backdrop-blur-md border border-border/80 rounded overflow-hidden hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-2 flex flex-col items-center text-center p-6"
       style={{ animationDelay: `${index * 100}ms` }}
     >
       {/* Leader badge */}
@@ -321,7 +321,7 @@ export default function AboutUs() {
             {values.map(({ icon: Icon, title, desc, color, bg }) => (
               <div
                 key={title}
-                className="group p-6 rounded-xl border border-border/80 bg-card/70 backdrop-blur-md hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 space-y-4"
+                className="group p-6 rounded border border-border/80 bg-card/70 backdrop-blur-md hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 space-y-4"
               >
                 <div className={`size-12 rounded border ${bg} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-xs`}>
                   <Icon className={`size-6 ${color}`} />

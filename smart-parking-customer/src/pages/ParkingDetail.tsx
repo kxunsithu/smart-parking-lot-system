@@ -449,7 +449,7 @@ export default function ParkingDetail() {
                   )}
                 </CardDescription>
               </div>
-              <div className="bg-primary/10 px-4 py-2 rounded-xl border border-primary/20 shrink-0">
+              <div className="bg-primary/10 px-4 py-2 rounded border border-primary/20 shrink-0">
                 <p className="text-[10px] uppercase font-bold text-muted-foreground">{t("parking.rate_per_hour", "Hourly Rate")}</p>
                 <p className="text-base font-extrabold text-primary">
                   {lot.rate_per_hour != null
@@ -461,7 +461,7 @@ export default function ParkingDetail() {
 
             {/* Company / Operating Business Info */}
             {lot.owner && (
-              <div className="mt-4 pt-3 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs bg-muted/30 p-3 rounded-xl">
+              <div className="mt-4 pt-3 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs bg-muted/30 p-3 rounded">
                 <div className="flex items-center gap-3">
                   {lot.owner.user?.profile_image_url || (lot.owner.user as any)?.profile_image ? (
                     <img
@@ -491,7 +491,7 @@ export default function ParkingDetail() {
                     <a
                       href={`mailto:${lot.owner.user.email}`}
                       title={`Email ${lot.owner.user.email}`}
-                      className="p-2 rounded-lg bg-background/80 border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                      className="p-2 rounded bg-background/80 border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
                     >
                       <Mail className="size-4" />
                     </a>
@@ -500,7 +500,7 @@ export default function ParkingDetail() {
                     <a
                       href={`tel:${lot.owner.user.phone}`}
                       title={`Call ${lot.owner.user.phone}`}
-                      className="p-2 rounded-lg bg-background/80 border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
+                      className="p-2 rounded bg-background/80 border border-border/60 text-primary hover:bg-primary/10 transition-colors inline-flex items-center justify-center"
                     >
                       <Phone className="size-4" />
                     </a>
@@ -514,7 +514,7 @@ export default function ParkingDetail() {
         {/* ── 2-Column Layout: Left Panel = Location Map | Right Panel = Interactive 3D View ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Panel: Location Map View */}
-          <Card className="flex flex-col h-full border border-border/80 shadow-sm overflow-hidden rounded-2xl">
+          <Card className="flex flex-col h-full border border-border/80 shadow-sm overflow-hidden rounded">
             <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b border-border/60 bg-muted/30">
               <div className="flex items-center gap-2">
                 <MapPin className="size-4 text-primary" />
@@ -525,7 +525,7 @@ export default function ParkingDetail() {
                   size="sm"
                   variant="outline"
                   onClick={() => setMapFullscreen(true)}
-                  className="h-7 text-xs gap-1.5 px-2.5 rounded-lg border-border/80 hover:bg-accent"
+                  className="h-7 text-xs gap-1.5 px-2.5 rounded border-border/80 hover:bg-accent"
                 >
                   <Maximize2 className="size-3.5" />
                   {t("common.full_view", "Full View")}
@@ -555,7 +555,7 @@ export default function ParkingDetail() {
           </Card>
 
           {/* Right Panel: Interactive 3D View */}
-          <Card className="flex flex-col h-full border border-border/80 shadow-sm overflow-hidden rounded-2xl">
+          <Card className="flex flex-col h-full border border-border/80 shadow-sm overflow-hidden rounded">
             <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b border-border/60 bg-muted/30">
               <div className="flex items-center gap-2">
                 <RotateCw className="size-4 text-primary" />
@@ -592,7 +592,7 @@ export default function ParkingDetail() {
                 <X className="size-6" />
               </Button>
             </div>
-            <div className="flex-1 w-full rounded-2xl overflow-hidden border border-white/20 shadow-2xl">
+            <div className="flex-1 w-full rounded overflow-hidden border border-white/20 shadow-2xl">
               <iframe
                 src={getEmbedUrl(lot.google_map_url)!}
                 width="100%"
@@ -712,7 +712,7 @@ export default function ParkingDetail() {
           />
 
           {/* Modal Panel */}
-          <div className="relative z-10 w-full max-w-md bg-background border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="relative z-10 w-full max-w-md bg-background border border-border rounded shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
               <div className="flex items-center gap-3">
@@ -740,7 +740,7 @@ export default function ParkingDetail() {
               {step !== "pay" && (
                 <button
                   onClick={handleCloseModal}
-                  className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                   aria-label="Close"
                 >
                   <X className="h-4 w-4" />
@@ -765,35 +765,35 @@ export default function ParkingDetail() {
                   </div>
 
                   {selectedSlotDetails && (
-                    <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm flex items-center justify-between">
+                    <div className="rounded border border-primary/30 bg-primary/5 px-4 py-3 text-sm flex items-center justify-between">
                       <span className="text-muted-foreground text-xs">{t("parking.selected_slot", "Selected Slot")}</span>
                       <span className="font-bold text-primary">{selectedSlotDetails.slotNumber}</span>
                     </div>
                   )}
 
                   <div className="space-y-2">
-                    <div className="flex gap-3 p-3 rounded-lg border border-border bg-muted/30">
+                    <div className="flex gap-3 p-3 rounded border border-border bg-muted/30">
                       <Clock className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
                       <div>
                         <p className="text-sm font-semibold">{t("parking.rule_time_title", "Future Time Only")}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{t("parking.rule_time_desc", "Start time must be in the future. End time must be after start time.")}</p>
                       </div>
                     </div>
-                    <div className="flex gap-3 p-3 rounded-lg border border-border bg-muted/30">
+                    <div className="flex gap-3 p-3 rounded border border-border bg-muted/30">
                       <Car className="h-4 w-4 text-orange-500 mt-0.5 shrink-0" />
                       <div>
                         <p className="text-sm font-semibold">{t("parking.rule_car_title", "No Overlapping Car Sessions")}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{t("parking.rule_car_desc", "The same car cannot have two bookings that overlap in time.")}</p>
                       </div>
                     </div>
-                    <div className="flex gap-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
+                    <div className="flex gap-3 p-3 rounded border border-amber-500/30 bg-amber-500/5">
                       <ShieldAlert className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
                       <div>
                         <p className="text-sm font-semibold">{t("parking.rule_buffer_title", "2-Hour Slot Gap Required")}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{t("parking.rule_buffer_desc", "Each parking slot requires a 2-hour gap before and after any existing booking.")}</p>
                       </div>
                     </div>
-                    <div className="flex gap-3 p-3 rounded-lg border border-border bg-muted/30">
+                    <div className="flex gap-3 p-3 rounded border border-border bg-muted/30">
                       <Calculator className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
                       <div>
                         <p className="text-sm font-semibold">{t("parking.rule_fee_title", "Fee Calculation")}</p>

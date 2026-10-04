@@ -626,16 +626,15 @@ export default function Embedded3DView({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full rounded-2xl overflow-hidden border shadow-lg transition-colors duration-300 ${
-        isFullscreen ? "fixed inset-0 z-50 h-screen w-screen rounded-none border-none" : "h-[340px] sm:h-[400px]"
-      } ${isNightMode ? "bg-[#09090b] border-zinc-800" : "bg-card border-border"}`}
+      className={`relative w-full rounded overflow-hidden border shadow-lg transition-colors duration-300 ${isFullscreen ? "fixed inset-0 z-50 h-screen w-screen rounded-none border-none" : "h-[340px] sm:h-[400px]"
+        } ${isNightMode ? "bg-[#09090b] border-zinc-800" : "bg-card border-border"}`}
     >
       {/* Top Floating Controls */}
-      <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 backdrop-blur-md bg-background/60 p-1.5 rounded-xl border border-border/60 shadow-sm">
+      <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 backdrop-blur-md bg-background/60 p-1.5 rounded border border-border/60 shadow-sm">
         <Button
           size="icon"
           variant="ghost"
-          className="size-7 rounded-lg text-foreground hover:bg-accent"
+          className="size-7 rounded text-foreground hover:bg-accent"
           onClick={() => setTheme(isNightMode ? "light" : "dark")}
           title={isNightMode ? "Day Mode" : "Night Mode"}
         >
@@ -644,7 +643,7 @@ export default function Embedded3DView({
         <Button
           size="icon"
           variant="ghost"
-          className={`size-7 rounded-lg text-foreground hover:bg-accent ${isAutoRotate ? "text-primary" : ""}`}
+          className={`size-7 rounded text-foreground hover:bg-accent ${isAutoRotate ? "text-primary" : ""}`}
           onClick={() => setIsAutoRotate(!isAutoRotate)}
           title={isAutoRotate ? "Stop Rotation" : "Auto Rotate"}
         >
@@ -653,7 +652,7 @@ export default function Embedded3DView({
         <Button
           size="icon"
           variant="ghost"
-          className="size-7 rounded-lg text-foreground hover:bg-accent"
+          className="size-7 rounded text-foreground hover:bg-accent"
           onClick={toggleFullscreen}
           title={isFullscreen ? "Exit Fullscreen" : "Full View"}
         >
@@ -694,11 +693,10 @@ export default function Embedded3DView({
 
       {/* Bottom Floating Legend */}
       <div
-        className={`absolute bottom-3 left-3 z-10 flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[11px] font-medium backdrop-blur-md border transition-colors duration-300 ${
-          isNightMode
-            ? "bg-[#09090b]/85 border-zinc-800 text-zinc-100 shadow-md"
-            : "bg-white/85 border-slate-200 text-slate-800 shadow-sm"
-        }`}
+        className={`absolute bottom-3 left-3 z-10 flex items-center gap-2.5 px-3 py-1.5 rounded text-[11px] font-medium backdrop-blur-md border transition-colors duration-300 ${isNightMode
+          ? "bg-[#09090b]/85 border-zinc-800 text-zinc-100 shadow-md"
+          : "bg-white/85 border-slate-200 text-slate-800 shadow-sm"
+          }`}
       >
         <span className="flex items-center gap-1">
           <span className={`size-2.5 rounded-full ${isNightMode ? "bg-[#dc2626]" : "bg-[#ef4444]"}`} />

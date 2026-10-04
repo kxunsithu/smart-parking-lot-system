@@ -57,8 +57,8 @@ export function UserDetailModal({
     ? target.type === "owner"
       ? target.owner.user ?? null
       : target.type === "staff"
-      ? target.staff.user ?? null
-      : target.user
+        ? target.staff.user ?? null
+        : target.user
     : null
 
   const roleName = user?.role?.name ?? (target?.type === "owner" ? "OWNER" : target?.type === "staff" ? "STAFF" : "CUSTOMER")
@@ -123,7 +123,7 @@ export function UserDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-0 gap-0 rounded-2xl shadow-2xl border border-border/80 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-0 gap-0 rounded shadow-2xl border border-border/80 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {/* Modal Top Header Banner */}
         <div className="relative bg-gradient-to-r from-primary/10 via-muted/40 to-muted/10 p-5 border-b border-border/60">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -141,9 +141,8 @@ export function UserDetailModal({
                 </div>
               )}
               <span
-                className={`absolute bottom-0 right-0 size-3.5 rounded-full border-2 border-background ${
-                  user.is_active ? "bg-emerald-500" : "bg-muted-foreground"
-                }`}
+                className={`absolute bottom-0 right-0 size-3.5 rounded-full border-2 border-background ${user.is_active ? "bg-emerald-500" : "bg-muted-foreground"
+                  }`}
                 title={user.is_active ? "Active account" : "Inactive account"}
               />
             </div>
@@ -193,7 +192,7 @@ export function UserDetailModal({
               User Information
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-              <div className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-card/60">
+              <div className="flex items-center justify-between p-2.5 rounded border border-border/60 bg-card/60">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Mail className="size-4 text-muted-foreground shrink-0" />
                   <p className="text-xs font-semibold text-foreground">Email</p>
@@ -202,7 +201,7 @@ export function UserDetailModal({
                   <a
                     href={`mailto:${user.email}`}
                     title={`Email ${user.email}`}
-                    className="p-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors inline-flex items-center justify-center"
+                    className="p-1.5 rounded bg-primary/10 hover:bg-primary/20 text-primary transition-colors inline-flex items-center justify-center"
                   >
                     <Mail className="size-4" />
                   </a>
@@ -211,7 +210,7 @@ export function UserDetailModal({
                 )}
               </div>
 
-              <div className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-card/60">
+              <div className="flex items-center justify-between p-2.5 rounded border border-border/60 bg-card/60">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Phone className="size-4 text-muted-foreground shrink-0" />
                   <p className="text-xs font-semibold text-foreground">Phone</p>
@@ -220,7 +219,7 @@ export function UserDetailModal({
                   <a
                     href={`tel:${user.phone}`}
                     title={`Call ${user.phone}`}
-                    className="p-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors inline-flex items-center justify-center"
+                    className="p-1.5 rounded bg-primary/10 hover:bg-primary/20 text-primary transition-colors inline-flex items-center justify-center"
                   >
                     <Phone className="size-4" />
                   </a>
@@ -229,7 +228,7 @@ export function UserDetailModal({
                 )}
               </div>
 
-              <div className="flex items-center gap-2.5 p-2.5 rounded-xl border border-border/60 bg-card/60">
+              <div className="flex items-center gap-2.5 p-2.5 rounded border border-border/60 bg-card/60">
                 <Calendar className="size-4 text-muted-foreground shrink-0" />
                 <div className="min-w-0">
                   <p className="text-[11px] text-muted-foreground">Account Created</p>
@@ -237,7 +236,7 @@ export function UserDetailModal({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 p-2.5 rounded-xl border border-border/60 bg-card/60">
+              <div className="flex items-center gap-2.5 p-2.5 rounded border border-border/60 bg-card/60">
                 <Briefcase className="size-4 text-muted-foreground shrink-0" />
                 <div className="min-w-0">
                   <p className="text-[11px] text-muted-foreground">Email Status</p>
@@ -270,12 +269,12 @@ export function UserDetailModal({
               </div>
 
               {loadingExtra ? (
-                <div className="flex items-center justify-center p-4 border border-border/60 rounded-xl">
+                <div className="flex items-center justify-center p-4 border border-border/60 rounded">
                   <Loader2 className="size-4 animate-spin text-primary mr-2" />
                   <span className="text-xs text-muted-foreground">Loading parking lots...</span>
                 </div>
               ) : lots.length === 0 ? (
-                <div className="text-center p-4 border border-border/60 rounded-xl bg-muted/20 text-xs text-muted-foreground">
+                <div className="text-center p-4 border border-border/60 rounded bg-muted/20 text-xs text-muted-foreground">
                   No parking lots registered yet for this owner.
                 </div>
               ) : (
@@ -283,10 +282,10 @@ export function UserDetailModal({
                   {lots.map((lot) => (
                     <div
                       key={lot.id}
-                      className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-card/60 text-xs"
+                      className="flex items-center justify-between p-2.5 rounded border border-border/60 bg-card/60 text-xs"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="size-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                        <div className="size-7 rounded bg-primary/10 flex items-center justify-center text-primary shrink-0">
                           <ParkingSquare className="size-3.5" />
                         </div>
                         <div className="min-w-0">
@@ -322,10 +321,10 @@ export function UserDetailModal({
               </h4>
 
               {staffLot ? (
-                <div className="p-3.5 rounded-xl border border-border/60 bg-card/60 space-y-2">
+                <div className="p-3.5 rounded border border-border/60 bg-card/60 space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                      <div className="size-8 rounded bg-primary/10 flex items-center justify-center text-primary shrink-0">
                         <ParkingSquare className="size-4" />
                       </div>
                       <div>
@@ -352,7 +351,7 @@ export function UserDetailModal({
                   )}
                 </div>
               ) : (
-                <div className="p-3.5 rounded-xl border border-border/60 bg-muted/20 text-xs text-muted-foreground">
+                <div className="p-3.5 rounded border border-border/60 bg-muted/20 text-xs text-muted-foreground">
                   Parking lot assignment details not specified (Lot ID: #{target.staff.parking_lot_id}).
                 </div>
               )}
@@ -367,12 +366,12 @@ export function UserDetailModal({
               </h4>
 
               {loadingExtra ? (
-                <div className="flex items-center justify-center p-4 border border-border/60 rounded-xl">
+                <div className="flex items-center justify-center p-4 border border-border/60 rounded">
                   <Loader2 className="size-4 animate-spin text-primary mr-2" />
                   <span className="text-xs text-muted-foreground">Loading vehicles...</span>
                 </div>
               ) : cars.length === 0 ? (
-                <div className="text-center p-4 border border-border/60 rounded-xl bg-muted/20 text-xs text-muted-foreground">
+                <div className="text-center p-4 border border-border/60 rounded bg-muted/20 text-xs text-muted-foreground">
                   No vehicles registered yet for this customer.
                 </div>
               ) : (
@@ -380,9 +379,9 @@ export function UserDetailModal({
                   {cars.map((c) => (
                     <div
                       key={c.id}
-                      className="flex items-center gap-2.5 p-2.5 rounded-xl border border-border/60 bg-card/60 text-xs"
+                      className="flex items-center gap-2.5 p-2.5 rounded border border-border/60 bg-card/60 text-xs"
                     >
-                      <div className="size-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                      <div className="size-7 rounded bg-primary/10 flex items-center justify-center text-primary shrink-0">
                         <Car className="size-3.5" />
                       </div>
                       <div className="min-w-0">

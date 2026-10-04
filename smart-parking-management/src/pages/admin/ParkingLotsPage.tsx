@@ -117,7 +117,7 @@ export function ParkingLotsPage() {
               id="admin-city-filter-btn"
               type="button"
               onClick={() => setCityDropdownOpen((o) => !o)}
-              className={`flex items-center gap-2 h-9 px-3 rounded-md border text-sm font-medium transition-colors whitespace-nowrap
+              className={`flex items-center gap-2 h-9 px-3 rounded border text-sm font-medium transition-colors whitespace-nowrap
                 ${selectedCity
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-input bg-background text-foreground hover:bg-muted/60"
@@ -140,7 +140,7 @@ export function ParkingLotsPage() {
             </button>
 
             {cityDropdownOpen && (
-              <div className="absolute z-50 top-full mt-1 left-0 min-w-[210px] rounded-md border border-border bg-popover shadow-lg overflow-hidden">
+              <div className="absolute z-50 top-full mt-1 left-0 min-w-[210px] rounded border border-border bg-popover shadow-lg overflow-hidden">
                 <div className="py-1">
                   <button
                     type="button"

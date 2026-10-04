@@ -220,7 +220,7 @@ export function CitiesPage() {
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total Cities</p>
               <p className="text-2xl font-bold text-foreground mt-1">{totalCities}</p>
             </div>
-            <div className="p-3 bg-primary/10 rounded-xl text-primary">
+            <div className="p-3 bg-primary/10 rounded text-primary">
               <Globe className="w-6 h-6" />
             </div>
           </CardContent>
@@ -231,7 +231,7 @@ export function CitiesPage() {
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Active Cities</p>
               <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{activeCount}</p>
             </div>
-            <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-500">
+            <div className="p-3 bg-emerald-500/10 rounded text-emerald-500">
               <CheckCircle2 className="w-6 h-6" />
             </div>
           </CardContent>
@@ -242,7 +242,7 @@ export function CitiesPage() {
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Inactive Cities</p>
               <p className="text-2xl font-bold text-muted-foreground mt-1">{inactiveCount}</p>
             </div>
-            <div className="p-3 bg-muted rounded-xl text-muted-foreground">
+            <div className="p-3 bg-muted rounded text-muted-foreground">
               <EyeOff className="w-6 h-6" />
             </div>
           </CardContent>
@@ -250,7 +250,7 @@ export function CitiesPage() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-3 rounded-xl border border-border shadow-sm">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-3 rounded border border-border shadow-sm">
         <div className="relative w-full sm:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -266,7 +266,7 @@ export function CitiesPage() {
             size="sm"
             variant={activeFilter === "all" ? "default" : "outline"}
             onClick={() => setActiveFilter("all")}
-            className="rounded-lg"
+            className="rounded"
           >
             All ({totalCities})
           </Button>
@@ -274,7 +274,7 @@ export function CitiesPage() {
             size="sm"
             variant={activeFilter === "active" ? "default" : "outline"}
             onClick={() => setActiveFilter("active")}
-            className="rounded-lg text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+            className="rounded text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
           >
             Active ({activeCount})
           </Button>
@@ -282,7 +282,7 @@ export function CitiesPage() {
             size="sm"
             variant={activeFilter === "inactive" ? "default" : "outline"}
             onClick={() => setActiveFilter("inactive")}
-            className="rounded-lg text-muted-foreground"
+            className="rounded text-muted-foreground"
           >
             Inactive ({inactiveCount})
           </Button>
@@ -468,7 +468,7 @@ export function CitiesPage() {
               </div>
 
               {/* Active Toggle */}
-              <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/40">
+              <div className="flex items-center justify-between p-3 rounded border border-border bg-muted/40">
                 <div>
                   <p className="text-sm font-medium">Active Status</p>
                   <p className="text-xs text-muted-foreground">Allow parking lots to be registered in this city</p>
@@ -481,12 +481,12 @@ export function CitiesPage() {
                 <Label className="text-xs font-semibold">City Cover Image</Label>
 
                 {imagePreviewUrl ? (
-                  <div className="relative rounded-lg overflow-hidden border border-border h-40 group">
+                  <div className="relative rounded overflow-hidden border border-border h-40 group">
                     <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                       <Label
                         htmlFor="city-image-file"
-                        className="cursor-pointer bg-white text-black px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1 shadow"
+                        className="cursor-pointer bg-white text-black px-3 py-1.5 rounded text-xs font-medium flex items-center gap-1 shadow"
                       >
                         <Upload className="w-3.5 h-3.5" /> Change
                       </Label>
@@ -507,7 +507,7 @@ export function CitiesPage() {
                 ) : (
                   <Label
                     htmlFor="city-image-file"
-                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors border-border"
+                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded cursor-pointer hover:bg-muted/50 transition-colors border-border"
                   >
                     <div className="flex flex-col items-center justify-center pt-5 pb-6 text-muted-foreground">
                       <Upload className="w-8 h-8 mb-2 text-muted-foreground/60" />

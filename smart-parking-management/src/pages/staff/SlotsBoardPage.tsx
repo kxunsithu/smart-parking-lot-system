@@ -162,7 +162,7 @@ export function SlotsBoardPage() {
               </div>
 
               {parkingLot.owner && (
-                <div className="flex items-center gap-3 bg-muted/40 p-2.5 rounded-lg border border-border/60">
+                <div className="flex items-center gap-3 bg-muted/40 p-2.5 rounded border border-border/60">
                   {(parkingLot.owner.user as any)?.profile_image || (parkingLot.owner.user as any)?.profile_image_url ? (
                     <img
                       src={(parkingLot.owner.user as any)?.profile_image || (parkingLot.owner.user as any)?.profile_image_url}

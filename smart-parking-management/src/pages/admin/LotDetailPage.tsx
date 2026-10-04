@@ -64,26 +64,26 @@ export function LotDetailPage() {
     const items = floorsData?.items ?? []
     if (items.length === 0) return
     let cancelled = false
-    ;(async () => {
-      try {
-        const results = await Promise.all(
-          items.map((f) => parkingSlotsApi.list({ floor_id: f.id, limit: 100 }))
-        )
-        if (cancelled) return
-        setLotSections(
-          Array.from(
-            new Set(
-              results
-                .flatMap((r) => r.items)
-                .map((s) => s.section?.trim())
-                .filter((s): s is string => Boolean(s))
-            )
-          ).sort((a, b) => a.localeCompare(b))
-        )
-      } catch (error) {
-        console.error("Failed to fetch sections:", error)
-      }
-    })()
+      ; (async () => {
+        try {
+          const results = await Promise.all(
+            items.map((f) => parkingSlotsApi.list({ floor_id: f.id, limit: 100 }))
+          )
+          if (cancelled) return
+          setLotSections(
+            Array.from(
+              new Set(
+                results
+                  .flatMap((r) => r.items)
+                  .map((s) => s.section?.trim())
+                  .filter((s): s is string => Boolean(s))
+              )
+            ).sort((a, b) => a.localeCompare(b))
+          )
+        } catch (error) {
+          console.error("Failed to fetch sections:", error)
+        }
+      })()
     return () => {
       cancelled = true
     }
@@ -135,7 +135,7 @@ export function LotDetailPage() {
 
           {/* Operating Company / Owner Details */}
           {lot.owner && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-muted/40 border border-border/60 p-3.5 rounded-lg text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-muted/40 border border-border/60 p-3.5 rounded text-xs">
               <div className="flex items-center gap-3">
                 {(lot.owner.user as any)?.profile_image || (lot.owner.user as any)?.profile_image_url ? (
                   <img

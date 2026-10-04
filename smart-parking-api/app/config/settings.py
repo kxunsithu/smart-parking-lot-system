@@ -70,6 +70,16 @@ class Settings(BaseSettings):
     SMTP_FROM_NAME: str = "Smart Parking System"
     SMTP_USE_TLS: bool = True
 
+    @model_validator(mode="after")
+    def _strip_smtp_password_quotes(self) -> "Settings":
+        """Strip accidental surrounding single/double quotes from SMTP_PASSWORD.
+        Some editors or shell configs wrap passwords in quotes in .env files,
+        which get passed literally to aiosmtplib and cause auth failures."""
+        pwd = self.SMTP_PASSWORD
+        if len(pwd) >= 2 and pwd[0] == pwd[-1] and pwd[0] in ("'", '"'):
+            self.SMTP_PASSWORD = pwd[1:-1]
+        return self
+
     # OTP Configuration
     OTP_EXPIRE_MINUTES: int
     OTP_LENGTH: int
