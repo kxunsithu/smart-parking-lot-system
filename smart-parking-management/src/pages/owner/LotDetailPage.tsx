@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Loader2, Pencil, Plus, Box, Edit, Trash2, Filter, RotateCcw, Search, Layers, MapPin, Maximize2, X, RotateCw, Briefcase, User, Mail, Phone } from "lucide-react"
+import { Loader2, Pencil, Plus, Box, Edit, Trash2, Filter, RotateCcw, Search, Layers, MapPin, Maximize2, X, RotateCw, Briefcase, User, Mail, Phone, Camera } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { EmptyState } from "@/components/common/EmptyState"
 import { LoadingSpinner } from "@/components/common/LoadingBlock"
@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FloorCameraScannerModal } from "@/components/camera/FloorCameraScannerModal"
 import {
   Dialog,
   DialogContent,
@@ -127,6 +128,7 @@ export function LotDetailPage() {
   const [isCreatingFloor, setIsCreatingFloor] = useState(false)
   const [isUpdatingFloor, setIsUpdatingFloor] = useState(false)
   const [isDeletingFloor, setIsDeletingFloor] = useState(false)
+
 
   // Filter States
   const [selectedFloorId, setSelectedFloorId] = useState<string>("all")
@@ -660,6 +662,7 @@ function FloorSection({
   const [isUpdating, setIsUpdating] = useState(false)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [cameraOpen, setCameraOpen] = useState(false)
 
   const fetchSlots = async () => {
     try {
@@ -783,6 +786,15 @@ function FloorSection({
           )}
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setCameraOpen(true)}
+            className="h-8 text-xs gap-1.5 border-primary/40 text-primary hover:bg-primary/10 font-bold"
+          >
+            <Camera className="size-3.5" />
+            Camera Scan AI
+          </Button>
           <Button size="sm" onClick={() => setCreateSlotOpen(true)}>
             <Plus className="size-4" />
             New Slot
@@ -948,6 +960,13 @@ function FloorSection({
         destructive
         loading={isDeleting}
         onConfirm={() => deleteSlotTarget && handleDeleteSlot(deleteSlotTarget.id)}
+      />
+
+      <FloorCameraScannerModal
+        open={cameraOpen}
+        onOpenChange={setCameraOpen}
+        floor={floor}
+        onSlotsUpdated={fetchSlots}
       />
     </Card>
   )

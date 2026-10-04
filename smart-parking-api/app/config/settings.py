@@ -84,6 +84,10 @@ class Settings(BaseSettings):
     OTP_EXPIRE_MINUTES: int
     OTP_LENGTH: int
 
+    # Camera Detection Service — shared secret key used by the camera
+    # detection script to authenticate against the /camera/detect endpoint.
+    CAMERA_API_KEY: str = "change-this-camera-api-key"
+
     # Digital Wallet Integration (external system API)
     # API keys are configured per WalletAccount (admin platform + per-owner), not globally.
     WALLET_API_BASE_URL: str = ""

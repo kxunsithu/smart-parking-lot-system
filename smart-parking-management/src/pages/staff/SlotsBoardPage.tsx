@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { ParkingSquare, Box, Filter, RotateCcw, Search, Layers, MapPin, Car, Briefcase, Mail, Phone, Building2 } from "lucide-react"
+import { ParkingSquare, Box, Filter, RotateCcw, Search, Layers, MapPin, Car, Briefcase, Mail, Phone, Building2, Camera, Sparkles } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { EmptyState } from "@/components/common/EmptyState"
 import { CardGridSkeleton } from "@/components/common/LoadingBlock"
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FloorCameraScannerModal } from "@/components/camera/FloorCameraScannerModal"
 import { dashboardApi } from "@/api/dashboard"
 import { parkingFloorsApi } from "@/api/parkingFloors"
 import { parkingLotsApi } from "@/api/parkingLots"
@@ -25,6 +26,7 @@ export function SlotsBoardPage() {
   const [slotData, setSlotData] = useState<ListResult<ParkingSlotOut>[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [scannerFloor, setScannerFloor] = useState<ParkingFloorOut | null>(null)
 
   // Filter States
   const [selectedFloorId, setSelectedFloorId] = useState<string>("all")
@@ -355,7 +357,7 @@ export function SlotsBoardPage() {
 
               return (
                 <Card key={floor.id} className="border border-border/80 shadow-sm rounded overflow-hidden">
-                  <CardHeader className="flex-row items-center justify-between pb-3 border-b border-border/40">
+                  <CardHeader className="flex-row items-center justify-between pb-3 border-b border-border/40 flex-wrap gap-2">
                     <div className="flex items-center gap-3">
                       <CardTitle className="text-base font-bold text-foreground">
                         {floor.floor_name || `Floor ${floor.id}`}
@@ -371,6 +373,16 @@ export function SlotsBoardPage() {
                         </div>
                       )}
                     </div>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setScannerFloor(floor)}
+                      className="h-8 text-xs gap-1.5 border-primary/40 text-primary hover:bg-primary/10 shadow-xs font-bold"
+                    >
+                      <Camera className="size-3.5" />
+                      <span>Camera Scan AI</span>
+                    </Button>
                   </CardHeader>
 
                   <CardContent className="pt-4 space-y-6">
@@ -486,6 +498,17 @@ export function SlotsBoardPage() {
             })}
         </div>
       )}
+
+      <FloorCameraScannerModal
+        open={Boolean(scannerFloor)}
+        onOpenChange={(open) => !open && setScannerFloor(null)}
+        floor={scannerFloor}
+        parkingLotName={parkingLot?.name}
+        onSlotsUpdated={() => {
+          fetchSlots()
+          fetchDashboard()
+        }}
+      />
     </div>
   )
 }

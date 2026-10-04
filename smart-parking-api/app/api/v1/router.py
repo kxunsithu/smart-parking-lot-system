@@ -3,6 +3,9 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     auth,
+    camera_detection,
+    car,
+    city,
     customer,
     dashboard,
     package,
@@ -12,13 +15,11 @@ from app.api.v1 import (
     parking_session,
     parking_slot,
     parking_staff,
+    payments,
     subscription,
     users,
-    car,
     wallet_account,
     wallet_payment,
-    payments,
-    city,
 )
 
 api_router = APIRouter()
@@ -40,3 +41,4 @@ api_router.include_router(wallet_account.router)
 api_router.include_router(wallet_payment.router)
 api_router.include_router(payments.router)
 api_router.include_router(city.router)
+api_router.include_router(camera_detection.router)
