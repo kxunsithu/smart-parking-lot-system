@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { ParkingSquare, Box, Filter, RotateCcw, Search, Layers, MapPin, Car, Briefcase, Mail, Phone, Building2, Camera, Sparkles } from "lucide-react"
+import { ParkingSquare, Box, Filter, RotateCcw, Search, Layers, MapPin, Car, Briefcase, Mail, Phone, Building2, Camera } from "lucide-react"
 import { PageHeader } from "@/components/common/PageHeader"
 import { EmptyState } from "@/components/common/EmptyState"
 import { CardGridSkeleton } from "@/components/common/LoadingBlock"
