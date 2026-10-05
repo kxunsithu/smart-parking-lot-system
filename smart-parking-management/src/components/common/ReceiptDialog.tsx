@@ -38,7 +38,6 @@ function escapeHtml(value: string): string {
 
 function buildReceiptHtml(payment: PaymentListOut, isOwner: boolean): string {
   const detail = payment.kind === "subscription" ? (payment.package_name ?? "Subscription") : [payment.lot_name, payment.plate_number].filter(Boolean).join(" · ")
-  const ref = payment.wallet_transaction_number ?? payment.wallet_payment_reference ?? payment.reference
   const date = formatDateTime(payment.paid_at ?? payment.created_at)
   const statusLabel = statusMeta(payment.status).label
 
@@ -196,7 +195,6 @@ export function ReceiptDialog({ payment, onOpenChange, isOwner }: ReceiptDialogP
 
   const meta = statusMeta(payment.status)
   const detail = payment.kind === "subscription" ? (payment.package_name ?? "Subscription") : [payment.lot_name, payment.plate_number].filter(Boolean).join(" · ")
-  const ref = payment.wallet_transaction_number ?? payment.wallet_payment_reference ?? payment.reference
 
   return (
     <Dialog open onOpenChange={onOpenChange}>

@@ -8,7 +8,6 @@ import {
   Zap,
   Building2,
   Users,
-  RefreshCw,
   ShoppingCart,
   Loader2,
   AlertTriangle,

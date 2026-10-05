@@ -42,6 +42,7 @@ interface SlotROI {
 }
 
 const VEHICLE_CLASSES = ["car", "truck", "bus", "motorcycle"]
+const DEMO_CLASSES = ["car", "truck", "bus", "motorcycle", "bicycle", "person", "cat", "dog", "bottle", "cup", "book", "cell phone", "remote", "keyboard", "mouse", "clock", "vase", "sports ball", "toy"]
 
 function getSectionName(slot: { section?: string | null; slot_number: string }): string {
   if (slot.section && slot.section.trim()) {
@@ -79,6 +80,7 @@ export function FloorCameraScannerModal({
   const [slotROIs, setSlotROIs] = useState<SlotROI[]>([])
   const [isScanning, setIsScanning] = useState(true)
   const [autoSync, setAutoSync] = useState(false)
+  const [isDemoMode, setIsDemoMode] = useState(false)
   const [isApplying, setIsApplying] = useState(false)
   const [selectedRoiIndex, setSelectedRoiIndex] = useState<number | null>(null)
   const [detectedVehicleCount, setDetectedVehicleCount] = useState(0)
@@ -289,8 +291,10 @@ export function FloorCameraScannerModal({
       ctx.clearRect(0, 0, W, H)
 
       try {
-        const preds = await model.detect(video, 10, 0.35)
-        const vehicles = preds.filter((p) => VEHICLE_CLASSES.includes(p.class.toLowerCase()))
+        const threshold = isDemoMode ? 0.10 : 0.35
+        const activeClasses = isDemoMode ? DEMO_CLASSES : VEHICLE_CLASSES
+        const preds = await model.detect(video, 20, threshold)
+        const vehicles = preds.filter((p) => activeClasses.includes(p.class.toLowerCase()))
         setDetectedVehicleCount(vehicles.length)
 
         if (vehicles.length > 0) {
@@ -438,7 +442,7 @@ export function FloorCameraScannerModal({
       if (animFrameId.current) cancelAnimationFrame(animFrameId.current)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, isCameraActive, model, isScanning, autoSync, selectedRoiIndex, slotROIs, selectedSectionFilter, roisBySection])
+  }, [open, isCameraActive, model, isScanning, isDemoMode, autoSync, selectedRoiIndex, slotROIs, selectedSectionFilter, roisBySection])
 
   // 5. Apply to DB
   const applyDetectedStatuses = async (silent = false) => {
@@ -511,6 +515,29 @@ export function FloorCameraScannerModal({
               {soundEnabled ? <Volume2 className="size-3.5 text-emerald-500" /> : <VolumeX className="size-3.5 text-muted-foreground" />}
               <span className="hidden sm:inline">{soundEnabled ? "Sound On" : "Muted"}</span>
             </Button>
+
+            {/* Demo Mode Toggle */}
+            <div
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs cursor-pointer transition-all ${
+                isDemoMode
+                  ? "bg-violet-500/15 border-violet-500/40 text-violet-400"
+                  : "bg-background border-border/70 text-muted-foreground hover:border-violet-400/40"
+              }`}
+              onClick={() => setIsDemoMode((v) => !v)}
+              title="Demo mode: lower confidence threshold so toy cars / small objects are detected"
+            >
+              <Sparkles className={`size-3 shrink-0 ${isDemoMode ? "text-violet-400" : "text-muted-foreground"}`} />
+              <span className="text-[11px] font-semibold whitespace-nowrap">
+                {isDemoMode ? "Demo ON" : "Demo"}
+              </span>
+              <Switch
+                id="demo-mode"
+                checked={isDemoMode}
+                onCheckedChange={setIsDemoMode}
+                size="sm"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
 
             {/* Auto-Sync Switch */}
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background border border-border/70 text-xs">
@@ -586,6 +613,11 @@ export function FloorCameraScannerModal({
                     <span className="text-white text-[11px] font-semibold">
                       {isScanning ? "AI Scanning Active" : "Paused"}
                     </span>
+                    {isDemoMode && (
+                      <Badge className="border-violet-500/40 text-violet-300 bg-violet-500/15 text-[10px] py-0 h-5 border">
+                        Demo Mode
+                      </Badge>
+                    )}
                     <Badge className="border-blue-500/40 text-blue-300 bg-blue-500/15 text-[10px] py-0 h-5 border">
                       {detectedVehicleCount} vehicle{detectedVehicleCount !== 1 ? "s" : ""}
                     </Badge>
