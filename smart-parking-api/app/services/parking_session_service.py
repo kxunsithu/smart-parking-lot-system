@@ -210,9 +210,52 @@ class ParkingSessionService:
     def start_session(self, payload: ParkingSessionStart, current_user: User) -> ParkingSession:
         raise ForbiddenException("Only customers can create parking sessions.")
 
+    def _resolve_slot_status_after_finish(self, slot_id: int, exclude_session_id: int) -> str:
+        """After a session ends, determine what the slot status should become.
+
+        Rules:
+        - If another ACTIVE session is already booked for this slot in the future
+          → RESERVED (that slot is spoken for)
+        - Otherwise → AVAILABLE
+        """
+        now = datetime.now(timezone.utc)
+        stmt = select(ParkingSession).where(
+            ParkingSession.slot_id == slot_id,
+            ParkingSession.id != exclude_session_id,
+            ParkingSession.status == SessionStatus.ACTIVE.value,
+            ParkingSession.start_time > now,  # future session
+        )
+        future_session = self.db.scalars(stmt).first()
+        return SlotStatus.RESERVED.value if future_session else SlotStatus.AVAILABLE.value
+
+    def auto_finish_expired_sessions(self) -> int:
+        """Automatically complete (FINISH) any ACTIVE session whose end_time has passed (<= now)."""
+        now = datetime.now(timezone.utc)
+        stmt = select(ParkingSession).where(
+            ParkingSession.status == SessionStatus.ACTIVE.value,
+            ParkingSession.end_time.isnot(None),
+            ParkingSession.end_time <= now,
+        )
+        expired = list(self.db.scalars(stmt).all())
+        if not expired:
+            return 0
+
+        count = 0
+        for session in expired:
+            session.status = SessionStatus.FINISHED.value
+            slot = self.slot_repo.get(session.slot_id)
+            if slot and slot.status in (SlotStatus.RESERVED.value, SlotStatus.OCCUPIED.value):
+                slot.status = self._resolve_slot_status_after_finish(session.slot_id, session.id)
+            count += 1
+
+        if count > 0:
+            self.db.commit()
+        return count
+
     # ─── Common ───────────────────────────────────────────────────────────────
 
     def get_by_id(self, session_id: int) -> ParkingSession:
+        self.auto_finish_expired_sessions()
         stmt = (
             select(ParkingSession)
             .options(*_session_loading_options())
@@ -237,6 +280,7 @@ class ParkingSessionService:
         plate_number: str | None = None,
         current_user: User | None = None,
     ):
+        self.auto_finish_expired_sessions()
         stmt = select(ParkingSession).options(*_session_loading_options())
         if status:
             stmt = stmt.where(ParkingSession.status == status)
@@ -300,14 +344,33 @@ class ParkingSessionService:
         if session.status != SessionStatus.ACTIVE.value:
             raise BadRequestException("Only ACTIVE sessions can be finished.")
 
-        exit_time = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc)
+
         entry_time = session.start_time
         if entry_time.tzinfo is None:
             entry_time = entry_time.replace(tzinfo=timezone.utc)
 
+        # If the session is finished before its scheduled end_time,
+        # keep the original end_time — payment was already collected for
+        # the full booked duration.  Only use `now` when the car leaves
+        # after (or exactly at) the scheduled end.
+        booked_end = session.end_time
+        if booked_end is not None and booked_end.tzinfo is None:
+            booked_end = booked_end.replace(tzinfo=timezone.utc)
+
+        if booked_end is not None and now < booked_end:
+            # Early exit — honour the original booking window
+            exit_time = booked_end
+        else:
+            # On-time or late exit — use actual departure
+            exit_time = now
+
         duration_minutes = max(1, math.ceil((exit_time - entry_time).total_seconds() / 60))
-        rate_per_hour = payload.rate_per_hour or self._get_lot_rate(session.slot_id)
-        fee = round((duration_minutes / 60) * rate_per_hour, 2)
+        # Never override the fee that was already paid; only recalculate
+        # when the session has no prior fee stored (e.g. legacy cash flows).
+        rate_per_hour = self._get_lot_rate(session.slot_id)
+        stored_fee = session.fee  # fee set at payment time
+        fee = stored_fee if stored_fee not in (None, 0) else round((duration_minutes / 60) * rate_per_hour, 2)
 
         session.end_time = exit_time
         session.duration = duration_minutes
@@ -316,7 +379,7 @@ class ParkingSessionService:
 
         slot = self.slot_repo.get(session.slot_id)
         if slot:
-            slot.status = SlotStatus.AVAILABLE.value
+            slot.status = self._resolve_slot_status_after_finish(session.slot_id, session.id)
 
         self.db.commit()
 

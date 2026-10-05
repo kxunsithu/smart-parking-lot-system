@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import { walletAccountsApi } from "@/api/walletAccounts"
 import { getErrorMessage } from "@/api/client"
+import { formatDate } from "@/utils/formatters"
 import type { WalletAccountOut, WalletAccountResolveOut } from "@/types"
 
 export function AdminPaymentsPage() {
@@ -322,7 +323,7 @@ export function AdminPaymentsPage() {
                       <ShieldCheck className="size-3.5" />
                       Connected Since
                     </div>
-                    <p className="font-medium text-sm">{new Date(platform.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
+                    <p className="font-medium text-sm">{formatDate(platform.created_at)}</p>
                   </div>
                 </div>
 

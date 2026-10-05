@@ -159,15 +159,17 @@ def db_session(db_engine):
         session.close()
 
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def seed_roles(db_session):
     roles = {}
     for role_name in RoleName:
-        role = Role(name=role_name.value, description=role_name.value.title())
-        db_session.add(role)
-        db_session.commit()
-        db_session.refresh(role)
-        roles[role_name.value] = role
+        existing = db_session.query(Role).filter_by(name=role_name.value).first()
+        if not existing:
+            role = Role(name=role_name.value, description=role_name.value.title())
+            db_session.add(role)
+    db_session.commit()
+    for role_name in RoleName:
+        roles[role_name.value] = db_session.query(Role).filter_by(name=role_name.value).first()
     return roles
 
 

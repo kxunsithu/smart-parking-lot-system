@@ -177,3 +177,58 @@ def test_only_available_slot_can_start_session(client, admin_user):
         json={"car_id": car_id, "slot_id": slot_id},
     )
     assert session_resp.status_code == 403
+
+
+def test_auto_finish_expired_session(client, admin_user, db_session):
+    from datetime import datetime, timedelta, timezone
+    from app.models.parking_session import ParkingSession
+    from tests.conftest import book_and_pay_session
+
+    admin_headers = auth_headers(client, "admin@test.com", "Admin@12345")
+    pkg_id = _create_basic_package(client, admin_headers)
+
+    client.post(
+        "/api/v1/auth/register-owner",
+        json={
+            "name": "AutoOwner",
+            "email": "autoowner@test.com",
+            "password": "Owner@1234",
+            "confirm_password": "Owner@1234",
+            "company_name": "AutoCo",
+        },
+    )
+    owner_headers = auth_headers(client, "autoowner@test.com", "Owner@1234")
+    _subscribe_owner(client, owner_headers, pkg_id)
+
+    lot_id = client.post("/api/v1/parking-lots", headers=owner_headers, json={"name": "Auto Lot"}).json()["data"]["id"]
+    floor_id = client.post("/api/v1/parking-floors", headers=owner_headers, json={"parking_lot_id": lot_id, "floor_name": "F1"}).json()["data"]["id"]
+    slot_id = client.post("/api/v1/parking-slots", headers=owner_headers, json={"floor_id": floor_id, "slot_number": "AUTO-1"}).json()["data"]["id"]
+
+    client.post("/api/v1/auth/register", json={"name": "AutoCust", "email": "autocust@test.com", "password": "Customer@1234"})
+    cust_headers = auth_headers(client, "autocust@test.com", "Customer@1234")
+    car_id = client.post("/api/v1/cars", headers=cust_headers, json={"plate_number": "AUTO-999"}).json()["data"]["id"]
+
+    now_dt = datetime.now(timezone.utc)
+    start_time = (now_dt + timedelta(minutes=1)).isoformat()
+    end_time = (now_dt + timedelta(minutes=61)).isoformat()
+
+    sess_dict = book_and_pay_session(client, cust_headers, car_id, slot_id, owner_headers, start_time, end_time)
+    session_id = sess_dict["id"]
+
+    # Backdate end_time in DB to simulate expiry
+    sess = db_session.get(ParkingSession, session_id)
+    sess.end_time = datetime.now(timezone.utc) - timedelta(minutes=1)
+    db_session.commit()
+
+    # Listing sessions should trigger auto_finish
+    list_res = client.get("/api/v1/parking-sessions", headers=cust_headers)
+    assert list_res.status_code == 200
+    sessions = list_res.json()["data"]
+    target = next((s for s in sessions if s["id"] == session_id), None)
+    assert target is not None
+    assert target["status"] == "FINISHED"
+
+    # Slot should now be AVAILABLE
+    slot_res = client.get(f"/api/v1/parking-slots/{slot_id}", headers=owner_headers)
+    assert slot_res.status_code == 200
+    assert slot_res.json()["data"]["status"] == "AVAILABLE"

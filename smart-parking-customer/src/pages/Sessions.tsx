@@ -42,9 +42,17 @@ import { useLanguage } from "@/lib/i18n"
 
 type FilterTab = "all" | "active" | "finished"
 
+/** Backend stores datetimes as naive UTC strings (no Z). Force-parse as UTC. */
+function parseUtc(value: string): Date {
+  const trimmed = value.trim()
+  if (/Z$|[+-]\d{2}:\d{2}$/.test(trimmed)) return new Date(trimmed)
+  const normalized = trimmed.includes("T") ? trimmed : trimmed.replace(" ", "T")
+  return new Date(`${normalized}Z`)
+}
+
 function formatDuration(start: string, end?: string | null): string {
-  const startDate = new Date(start)
-  const endDate = end ? new Date(end) : new Date()
+  const startDate = parseUtc(start)
+  const endDate = end ? parseUtc(end) : new Date()
   const totalMins = differenceInMinutes(endDate, startDate)
   const hrs = Math.floor(totalMins / 60)
   const mins = totalMins % 60
@@ -80,9 +88,10 @@ function EndSessionModal({
   loading: boolean
 }) {
   const { t } = useLanguage()
-  const durationMins = differenceInMinutes(new Date(), new Date(session.start_time))
-  const hours = Math.floor(durationMins / 60)
-  const mins = durationMins % 60
+  const bookedEnd = session.end_time ? parseUtc(session.end_time) : null
+  const bookedDurationMins = bookedEnd ? differenceInMinutes(bookedEnd, parseUtc(session.start_time)) : null
+  const bookedHours = bookedDurationMins != null ? Math.floor(bookedDurationMins / 60) : 0
+  const bookedMins = bookedDurationMins != null ? bookedDurationMins % 60 : 0
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -106,18 +115,35 @@ function EndSessionModal({
               <span className="font-medium">{carPlate || `#${session.car_id}`}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Started</span>
-              <span className="font-medium">{format(new Date(session.start_time), "hh:mm a")}</span>
+              <span className="text-muted-foreground">Start Time</span>
+              <span className="font-medium">{format(parseUtc(session.start_time), "hh:mm a")}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{t("sessions.duration", "Duration")}</span>
-              <span className="font-medium text-primary">
-                {hours > 0 ? `${hours}h ` : ""}{mins}m
-              </span>
-            </div>
+            {bookedEnd && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Booked Until</span>
+                <span className="font-medium">{format(bookedEnd, "hh:mm a")}</span>
+              </div>
+            )}
+            {bookedDurationMins != null && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{t("sessions.duration", "Duration")}</span>
+                <span className="font-medium text-primary">
+                  {bookedHours > 0 ? `${bookedHours}h ` : ""}{bookedMins}m
+                </span>
+              </div>
+            )}
+            {session.fee != null && (
+              <div className="flex justify-between text-sm border-t border-border/60 pt-2">
+                <span className="text-muted-foreground">Paid Fee</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                  {session.fee.toLocaleString()} MMK
+                </span>
+              </div>
+            )}
           </div>
           <p className="text-sm text-muted-foreground text-center">
-            Your fee will be calculated based on the parking rate when you end the session.
+            Payment was already collected for the full booked duration.
+            The booked end time will be kept as your session end time.
           </p>
         </div>
 
@@ -471,7 +497,7 @@ function SessionCard({
   loadingReceipt: number | null
 }) {
   const isActive = session.status === "ACTIVE"
-  const startDate = new Date(session.start_time)
+  const startDate = parseUtc(session.start_time)
 
   const [location, setLocation] = useState<SlotTrackContext | null>(null)
 
@@ -549,35 +575,37 @@ function SessionCard({
           )}
           <DetailItem
             icon={<Clock className="w-3.5 h-3.5" />}
-            label="Start time"
-            value={format(startDate, "hh:mm a")}
+            label="Start Time"
+            value={format(startDate, "MMM d, yyyy, hh:mm a")}
           />
+          {session.end_time && (
+            <DetailItem
+              icon={<CalendarDays className="w-3.5 h-3.5" />}
+              label={isActive ? "Booked Until" : "Booked End"}
+              value={format(parseUtc(session.end_time), "MMM d, yyyy, hh:mm a")}
+            />
+          )}
           <DetailItem
             icon={<Timer className="w-3.5 h-3.5" />}
             label="Duration"
             value={
-              isActive ? (
-                <span className="font-semibold text-primary">
-                  <LiveTimer startTime={session.start_time} />
-                </span>
-              ) : (
-                formatDuration(session.start_time, session.end_time)
-              )
+              session.duration != null
+                ? `${Math.floor(session.duration / 60) > 0 ? `${Math.floor(session.duration / 60)}h ` : ""}${session.duration % 60}m`
+                : session.end_time
+                ? formatDuration(session.start_time, session.end_time)
+                : (
+                  <span className="font-semibold text-primary">
+                    <LiveTimer startTime={session.start_time} />
+                  </span>
+                )
             }
           />
-          {session.end_time && !isActive && (
-            <DetailItem
-              icon={<CalendarDays className="w-3.5 h-3.5" />}
-              label="End time"
-              value={format(new Date(session.end_time), "hh:mm a")}
-            />
-          )}
           {session.fee != null && (
             <DetailItem
               icon={<DollarSign className="w-3.5 h-3.5" />}
-              label="Fee"
+              label="Paid Fee"
               value={
-                <span className="font-semibold text-foreground">{session.fee.toLocaleString()} MMK</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">{session.fee.toLocaleString()} MMK</span>
               }
             />
           )}

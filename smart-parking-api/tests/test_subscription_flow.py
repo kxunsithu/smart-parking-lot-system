@@ -189,7 +189,7 @@ def test_max_lots_limit_enforced(client, admin_user):
     assert resp2.status_code == 403
 
 
-def test_owner_can_renew_subscription(client, admin_user):
+def test_owner_cannot_repurchase_same_active_package(client, admin_user):
     admin_headers = auth_headers(client, "admin@test.com", "Admin@12345")
 
     pkg_resp = client.post(
@@ -211,15 +211,58 @@ def test_owner_can_renew_subscription(client, admin_user):
     )
     owner_headers = auth_headers(client, "renew@test.com", "Owner@12345")
 
-    # Purchase + pay
-    first = purchase_and_activate(client, owner_headers, pkg_id)
-    original_expires = first["expires_at"]
+    # Purchase package for first time -> succeeds
+    purchase_and_activate(client, owner_headers, pkg_id)
 
-    # Renew + pay
+    # Trying to repurchase/renew the SAME package while active -> should fail (400 Bad Request)
     set_phone(client, owner_headers)
     init = client.post(
         "/api/v1/subscriptions/pay/initiate",
         json={"package_id": pkg_id, "is_renewal": True},
+        headers=owner_headers,
+    )
+    assert init.status_code == 400
+    msg = init.json().get("message") or init.json().get("detail", "")
+    assert "already have an active subscription for this package" in msg
+
+
+def test_owner_can_switch_to_different_package(client, admin_user):
+    admin_headers = auth_headers(client, "admin@test.com", "Admin@12345")
+
+    pkg1_resp = client.post(
+        "/api/v1/packages",
+        json={"name": "Basic Plan", "price": 9900.0, "duration_days": 30, "max_lots": 1, "max_staff": 5},
+        headers=admin_headers,
+    )
+    pkg1_id = pkg1_resp.json()["data"]["id"]
+
+    pkg2_resp = client.post(
+        "/api/v1/packages",
+        json={"name": "Pro Plan", "price": 19900.0, "duration_days": 30, "max_lots": 5, "max_staff": 15},
+        headers=admin_headers,
+    )
+    pkg2_id = pkg2_resp.json()["data"]["id"]
+
+    client.post(
+        "/api/v1/auth/register-owner",
+        json={
+            "name": "Switch Owner",
+            "email": "switch@test.com",
+            "password": "Owner@12345",
+            "confirm_password": "Owner@12345",
+            "company_name": "SwitchCo",
+        },
+    )
+    owner_headers = auth_headers(client, "switch@test.com", "Owner@12345")
+
+    # Purchase Package 1
+    purchase_and_activate(client, owner_headers, pkg1_id)
+
+    # Switch to Package 2 -> should succeed!
+    set_phone(client, owner_headers)
+    init = client.post(
+        "/api/v1/subscriptions/pay/initiate",
+        json={"package_id": pkg2_id},
         headers=owner_headers,
     )
     assert init.status_code == 201
@@ -231,10 +274,9 @@ def test_owner_can_renew_subscription(client, admin_user):
         headers=owner_headers,
     )
     assert conf.status_code == 200
-    new_expires = conf.json()["data"]["subscription"]["expires_at"]
-
-    # New expiry should be after original (renewal extends from previous expiry)
-    assert new_expires > original_expires
+    sub = conf.json()["data"]["subscription"]
+    assert sub["package_id"] == pkg2_id
+    assert sub["status"] == "ACTIVE"
 
 
 def test_owner_can_view_own_subscriptions(client, admin_user):

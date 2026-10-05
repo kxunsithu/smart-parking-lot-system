@@ -31,6 +31,14 @@ import type { ParkingLotOut, ParkingSlotOut, ParkingSessionOut, WalletPaymentOut
 import type { ParkingFloorOut } from "@/api/parkingFloors"
 import { toast } from "@/components/ui/toaster"
 import { format, addHours } from "date-fns"
+
+/** Backend datetimes are naive UTC strings. Force-parse as UTC so local display is correct. */
+function parseUtc(value: string): Date {
+  const trimmed = value.trim()
+  if (/Z$|[+-]\d{2}:\d{2}$/.test(trimmed)) return new Date(trimmed)
+  const normalized = trimmed.includes("T") ? trimmed : trimmed.replace(" ", "T")
+  return new Date(`${normalized}Z`)
+}
 import { trackParkingSlot, type ParkingTrackTarget, type SlotTrackDetails } from "@/lib/parkingTrack"
 import { findCarSessionOverlap } from "@/lib/sessionSchedule"
 import { useLanguage } from "@/lib/i18n"
@@ -84,7 +92,7 @@ export default function ParkingDetail() {
   const navigate = useNavigate()
   const { t } = useLanguage()
   const [searchParams] = useSearchParams()
-  const { cars } = useCarStore()
+  const { cars, setCars } = useCarStore()
   const [lot, setLot] = useState<ParkingLotOut | null>(null)
   const [floors, setFloors] = useState<ParkingFloorOut[]>([])
   const [slotsByFloor, setSlotsByFloor] = useState<Record<number, ParkingSlotOut[]>>({})
@@ -213,6 +221,8 @@ export default function ParkingDetail() {
   const loadCars = async () => {
     try {
       const response = await carsApi.list()
+      // Save to store so the vehicle dropdown is populated immediately
+      setCars(response ?? [])
       if (response?.length > 0) setSelectedCar(response[0].id)
     } catch {
       console.error("Failed to load cars")
@@ -302,7 +312,7 @@ export default function ParkingDetail() {
     const overlappingSession = findCarSessionOverlap(start, end, carSessions)
     if (overlappingSession) {
       toast.error(
-        `This car already has a session during that time (${format(new Date(overlappingSession.start_time), "MMM d, hh:mm a")}${overlappingSession.end_time ? ` – ${format(new Date(overlappingSession.end_time), "hh:mm a")}` : ""}).`
+        `This car already has a session during that time (${format(parseUtc(overlappingSession.start_time), "MMM d, hh:mm a")}${overlappingSession.end_time ? ` – ${format(parseUtc(overlappingSession.end_time), "hh:mm a")}` : ""}).`
       )
       return
     }

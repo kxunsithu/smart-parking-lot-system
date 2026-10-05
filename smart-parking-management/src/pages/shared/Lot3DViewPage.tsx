@@ -1,4 +1,4 @@
-import { useEffect, useState, Suspense, useRef, useCallback } from "react"
+import { useEffect, useState, Suspense, useRef, useCallback, useMemo } from "react"
 import { useParams, useNavigate, useSearchParams } from "react-router-dom"
 import { Canvas, useThree, useFrame } from "@react-three/fiber"
 import { OrbitControls, Text, Box } from "@react-three/drei"
@@ -605,7 +605,16 @@ export function Lot3DViewPage() {
   const [lot, setLot] = useState<ParkingLotOut | null>(null)
   const [floors, setFloors] = useState<ParkingFloorOut[]>([])
   const [slotsByFloor, setSlotsByFloor] = useState<Record<number, ParkingSlotOut[]>>({})
-  const [reservedSlotIds] = useState<Set<number>>(new Set())
+  const reservedSlotIds = useMemo(
+    () =>
+      new Set(
+        Object.values(slotsByFloor)
+          .flat()
+          .filter((s) => s.status === "RESERVED")
+          .map((s) => s.id)
+      ),
+    [slotsByFloor]
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [webGLError, setWebGLError] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)

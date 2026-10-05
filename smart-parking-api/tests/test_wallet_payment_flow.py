@@ -153,7 +153,7 @@ def test_session_payment_requires_phone(client, admin_user):
     # Customer WITHOUT a phone number.
     client.post(
         "/api/v1/auth/register",
-        json={"name": "No Phone", "email": "cust.nophone@test.com", "password": "Customer@1234"},
+        json={"name": "No Phone", "email": "cust.nophone@test.com", "password": "Customer@1234", "phone": None},
     )
     customer_headers = auth_headers(client, "cust.nophone@test.com", "Customer@1234")
     car_id = client.post("/api/v1/cars", headers=customer_headers, json={"plate_number": "WAL-456"}).json()["data"]["id"]

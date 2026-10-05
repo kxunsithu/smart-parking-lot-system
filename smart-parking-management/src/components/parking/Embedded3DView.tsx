@@ -685,7 +685,12 @@ export default function Embedded3DView({
               onSlotClick={onSlotClick}
               highlightedSlotId={highlightedSlotId}
               isAutoRotate={isAutoRotate}
-              reservedSlotIds={new Set()}
+              reservedSlotIds={new Set(
+                Object.values(slotsByFloor)
+                  .flat()
+                  .filter((s) => s.status === "RESERVED")
+                  .map((s) => s.id)
+              )}
             />
           </Canvas>
         </Suspense>

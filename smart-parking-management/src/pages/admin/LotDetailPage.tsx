@@ -13,6 +13,7 @@ import { parkingFloorsApi } from "@/api/parkingFloors"
 import { parkingSlotsApi } from "@/api/parkingSlots"
 import type { ParkingFloorOut, ParkingLotOut, ParkingSlotOut } from "@/types"
 import type { ListResult } from "@/api/types"
+import { formatDate } from "@/utils/formatters"
 
 export function LotDetailPage() {
   const { lotId } = useParams<{ lotId: string }>()
@@ -129,7 +130,7 @@ export function LotDetailPage() {
             </div>
             <div>
               <p className="text-muted-foreground font-medium">Created</p>
-              <p className="mt-1 font-bold text-foreground text-sm">{new Date(lot.created_at).toLocaleDateString()}</p>
+              <p className="mt-1 font-bold text-foreground text-sm">{formatDate(lot.created_at)}</p>
             </div>
           </div>
 

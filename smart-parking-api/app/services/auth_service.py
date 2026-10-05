@@ -59,7 +59,7 @@ class AuthService:
             name=payload.name,
             email=payload.email,
             password=hash_password(payload.password),
-            phone=payload.phone.strip(),
+            phone=payload.phone.strip() if payload.phone else None,
             role_id=role.id,
             is_verified=is_verified,
         )
@@ -99,7 +99,7 @@ class AuthService:
             name=payload.name,
             email=payload.email,
             password=hash_password(payload.password),
-            phone=payload.phone.strip(),
+            phone=payload.phone.strip() if payload.phone else None,
             role_id=role.id,
             is_verified=is_verified,
         )

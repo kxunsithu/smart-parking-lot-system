@@ -68,6 +68,8 @@ class DashboardService:
 
 
     def owner_dashboard(self, user_id: int) -> OwnerDashboardOut:
+        from app.services.parking_session_service import ParkingSessionService
+        ParkingSessionService(self.db).auto_finish_expired_sessions()
         owner = self.owner_repo.get_by_user_id(user_id)
         if not owner:
             raise NotFoundException("Owner profile not found for the current user.")
@@ -174,6 +176,8 @@ class DashboardService:
         )
 
     def staff_dashboard(self, user_id: int) -> StaffDashboardOut:
+        from app.services.parking_session_service import ParkingSessionService
+        ParkingSessionService(self.db).auto_finish_expired_sessions()
         staff = self.staff_repo.get_by_user_id(user_id)
         if not staff:
             raise NotFoundException("Staff profile not found for the current user.")

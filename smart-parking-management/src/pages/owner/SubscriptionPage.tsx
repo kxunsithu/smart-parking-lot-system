@@ -37,6 +37,7 @@ import { packagesApi } from "@/api/packages"
 import { subscriptionsApi } from "@/api/subscriptions"
 import { getErrorMessage } from "@/api/client"
 import { useAuth } from "@/hooks/useAuth"
+import { parseApiDateTime } from "@/utils/formatters"
 import type { PackageOut, SubscriptionOut, SubscriptionStatus, WalletPaymentOut } from "@/types"
 
 function formatPrice(price: number): string {
@@ -44,11 +45,11 @@ function formatPrice(price: number): string {
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+  return parseApiDateTime(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
 }
 
 function daysRemaining(expiresAt: string): number {
-  return Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  return Math.ceil((parseApiDateTime(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
 }
 
 function subscriptionStatusTone(status: SubscriptionStatus): "success" | "warning" | "danger" | "neutral" {
@@ -370,10 +371,10 @@ export function OwnerSubscriptionPage() {
                       <Button
                         className="w-full"
                         variant="outline"
-                        onClick={() => openPaymentModal(pkg, "renew")}
+                        disabled
                       >
-                        <RefreshCw className="size-4 mr-2" />
-                        Renew Plan
+                        <CheckCircle2 className="size-4 mr-2" />
+                        Current Plan
                       </Button>
                     ) : isActive ? (
                       <Button

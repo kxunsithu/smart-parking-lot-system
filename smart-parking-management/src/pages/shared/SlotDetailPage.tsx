@@ -18,6 +18,7 @@ import { parkingLotsApi } from "@/api/parkingLots"
 import { parkingSessionsApi } from "@/api/parkingSessions"
 import { SessionCardGrid } from "@/components/sessions/SessionCard"
 import { slotStatusTone } from "@/utils/statusColors"
+import { parseApiDateTime } from "@/utils/formatters"
 import type { ParkingSlotOut, ParkingFloorOut, ParkingLotOut, ParkingSessionOut } from "@/types"
 
 const CAR_PALETTE = [
@@ -639,7 +640,7 @@ export function SlotDetailPage() {
     const aActive = a.status === "ACTIVE" ? 0 : 1
     const bActive = b.status === "ACTIVE" ? 0 : 1
     if (aActive !== bActive) return aActive - bActive
-    return new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
+    return parseApiDateTime(b.start_time).getTime() - parseApiDateTime(a.start_time).getTime()
   })
   // Build reserved set from slot status for 3D view
   const reservedSlotIds = new Set<number>(

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { subscriptionsApi } from "@/api/subscriptions"
 import { getErrorMessage } from "@/api/client"
+import { parseApiDateTime } from "@/utils/formatters"
 import type { SubscriptionOut, SubscriptionStatus } from "@/types"
 import type { ApiMeta } from "@/types"
 
@@ -32,11 +33,11 @@ function subscriptionStatusTone(status: SubscriptionStatus): "success" | "warnin
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+  return parseApiDateTime(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
 }
 
 function daysRemaining(expiresAt: string): number {
-  const diff = new Date(expiresAt).getTime() - Date.now()
+  const diff = parseApiDateTime(expiresAt).getTime() - Date.now()
   return Math.ceil(diff / (1000 * 60 * 60 * 24))
 }
 

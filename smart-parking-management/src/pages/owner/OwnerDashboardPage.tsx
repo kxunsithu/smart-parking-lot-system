@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { CreditCard, ParkingSquare, Timer, UserCog, Warehouse, Car } from "lucide-react"
+import { CreditCard, Timer, UserCog, Warehouse, Car } from "lucide-react"
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 import { PageHeader } from "@/components/common/PageHeader"
 import { StatCard } from "@/components/common/StatCard"
@@ -53,7 +53,6 @@ export function OwnerDashboardPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard label="Parking Lots" value={data.total_parking_lots} icon={Warehouse} />
-          <StatCard label="Floors" value={data.total_floors} icon={ParkingSquare} />
           <StatCard label="Staff" value={data.total_staff} icon={UserCog} />
           <StatCard label="Total Sessions" value={data.total_sessions} icon={Timer} />
           <StatCard label="Active Sessions" value={data.active_sessions} icon={Car} />

@@ -48,7 +48,6 @@ function buildReceiptHtml(payment: PaymentListOut, isOwner: boolean): string {
     { label: "Type", value: payment.kind },
     { label: "Detail", value: detail },
     ...(isOwner && payment.direction ? [{ label: "Direction", value: payment.direction }] : []),
-    { label: "Transaction No.", value: ref },
     { label: "Payer", value: payment.payer_name ?? "—" },
     { label: "Payer Phone", value: payment.payer_phone ?? "—" },
     { label: "Receiver Phone", value: payment.receiver_phone ?? "—" },
@@ -238,10 +237,6 @@ export function ReceiptDialog({ payment, onOpenChange, isOwner }: ReceiptDialogP
                 <p className="capitalize">{payment.direction}</p>
               </div>
             ) : null}
-            <div>
-              <p className="text-xs text-muted-foreground">Transaction No.</p>
-              <p className="font-mono text-xs">{ref}</p>
-            </div>
             <div>
               <p className="text-xs text-muted-foreground">Payer</p>
               <p>{payment.payer_name ?? "—"}</p>

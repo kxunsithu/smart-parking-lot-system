@@ -12,14 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { ConfirmDialog } from "@/components/common/ConfirmDialog"
 import { parkingSessionsApi } from "@/api/parkingSessions"
 import { getErrorMessage } from "@/api/client"
 import { usePaginationState } from "@/hooks/usePaginationState"
@@ -28,7 +21,7 @@ import {
   SessionCardSkeleton,
 } from "@/components/sessions/SessionCard"
 import { UserDetailModal, type UserDetailTarget } from "@/components/common/UserDetailModal"
-import type { ParkingSessionOut, ParkingSessionFinish as FinishSessionPayload } from "@/types"
+import type { ParkingSessionOut } from "@/types"
 import type { ListResult } from "@/api/types"
 
 const STATUS_FILTER_OPTIONS: { label: string; value: string }[] = [
@@ -36,14 +29,6 @@ const STATUS_FILTER_OPTIONS: { label: string; value: string }[] = [
   { label: "Active", value: "ACTIVE" },
   { label: "Finished", value: "FINISHED" },
 ]
-
-const finishSessionSchema = z.object({
-  rate_per_hour: z
-    .string()
-    .optional()
-    .refine((val) => !val || (!Number.isNaN(Number(val)) && Number(val) > 0), "Must be a positive number"),
-})
-type FinishSessionFormValues = z.infer<typeof finishSessionSchema>
 
 export function StaffSessionsPage() {
   const { setPage, params } = usePaginationState()
@@ -81,13 +66,10 @@ export function StaffSessionsPage() {
     fetchData()
   }, [queryParams])
 
-  const handleFinish = async (id: number, values: FinishSessionFormValues) => {
+  const handleFinish = async (id: number) => {
     try {
       setIsSubmitting(true)
-      const payload: FinishSessionPayload = {
-        rate_per_hour: values.rate_per_hour ? Number(values.rate_per_hour) : undefined,
-      }
-      await parkingSessionsApi.finish(id, payload)
+      await parkingSessionsApi.finish(id)
       toast.success("Parking session finished.")
       setFinishTarget(null)
       fetchData()
@@ -217,68 +199,15 @@ export function StaffSessionsPage() {
         target={viewCustomerTarget}
       />
 
-      <FinishSessionDialog
+      <ConfirmDialog
         open={Boolean(finishTarget)}
         onOpenChange={(open) => !open && setFinishTarget(null)}
-        session={finishTarget}
-        onSubmit={(values) => finishTarget && handleFinish(finishTarget.id, values)}
-        submitting={isSubmitting}
+        title={`Finish session #${finishTarget?.id}?`}
+        description="Are you sure you want to finish this parking session? The parking slot will be freed up and marked as available."
+        confirmLabel="Finish session"
+        loading={isSubmitting}
+        onConfirm={() => finishTarget && handleFinish(finishTarget.id)}
       />
     </div>
-  )
-}
-
-function FinishSessionDialog({
-  open,
-  onOpenChange,
-  session,
-  onSubmit,
-  submitting,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  session: ParkingSessionOut | null
-  onSubmit: (values: FinishSessionFormValues) => void
-  submitting: boolean
-}) {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<FinishSessionFormValues>({
-    resolver: zodResolver(finishSessionSchema),
-  })
-
-  function handleOpenChange(next: boolean) {
-    if (!next) reset()
-    onOpenChange(next)
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Finish Session #{session?.id}</DialogTitle>
-          <DialogDescription>
-            Optionally override the hourly rate used to calculate the parking fee. Leave blank to use the default rate.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <FormField label="Hourly rate override" htmlFor="rate_per_hour" error={errors.rate_per_hour?.message}>
-            <Input id="rate_per_hour" type="number" step="any" {...register("rate_per_hour")} />
-          </FormField>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
-              Finish session
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   )
 }

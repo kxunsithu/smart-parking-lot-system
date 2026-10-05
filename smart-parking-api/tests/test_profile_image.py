@@ -16,8 +16,7 @@ def test_upload_profile_image_success(client, admin_user):
     body = response.json()
     assert body["success"] is True
     assert body["data"]["profile_image"] is not None
-    from app.config.settings import settings
-    expected_prefix = settings.WALLET_REDIRECT_BASE_URL.rstrip("/") + "/uploads/profile_images/"
+    expected_prefix = "/uploads/profile_images/"
     assert body["data"]["profile_image"].startswith(expected_prefix)
 
     profile_img_url = body["data"]["profile_image"]

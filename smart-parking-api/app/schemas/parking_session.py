@@ -31,7 +31,10 @@ class ParkingSessionFinish(BaseModel):
     rate_per_hour: Optional[float] = Field(
         default=None,
         gt=0,
-        description="Optional override for hourly rate; defaults to lot rate or system setting.",
+        description=(
+            "Deprecated — no longer used. Fee is preserved from the original payment. "
+            "If the session ends early, the booked end_time is kept."
+        ),
     )
 
 

@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { sessionStatusTone } from "@/utils/statusColors"
-import { formatCurrency, formatDateTime, formatDuration, initials } from "@/utils/formatters"
+import { formatCurrency, formatDateTime, formatDuration, initials, parseApiDateTime } from "@/utils/formatters"
 import { cn } from "@/lib/utils"
 import type { ParkingSessionOut, SessionCustomerInfo } from "@/types"
 
@@ -156,25 +156,43 @@ export function SessionCard({ session, onFinish, onViewCustomer }: SessionCardPr
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="rounded bg-muted/30 border border-border/40 p-2 space-y-1">
             <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
-              <Clock3 className="size-3 text-primary" /> Start
+              <Clock3 className="size-3 text-primary" /> Start Time
             </span>
             <p className="font-semibold text-foreground">{formatDateTime(session.start_time)}</p>
           </div>
           <div className="rounded bg-muted/30 border border-border/40 p-2 space-y-1">
             <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
-              <Clock3 className="size-3 text-primary" /> End
+              <Clock3 className="size-3 text-primary" />
+              {session.status === "ACTIVE" ? "Booked Until" : "Booked End"}
             </span>
-            <p className="font-semibold text-foreground">{session.end_time ? formatDateTime(session.end_time) : "—"}</p>
+            <p className="font-semibold text-foreground">
+              {session.end_time ? formatDateTime(session.end_time) : "—"}
+            </p>
           </div>
           <div className="rounded bg-muted/30 border border-border/40 p-2 space-y-1">
             <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
               <Timer className="size-3 text-primary" /> Duration
             </span>
-            <p className="font-semibold text-foreground">{session.duration != null ? formatDuration(session.duration) : "—"}</p>
+            <p className="font-semibold text-foreground">
+              {session.duration != null
+                ? formatDuration(session.duration)
+                : session.start_time && session.end_time
+                ? formatDuration(
+                    Math.max(
+                      1,
+                      Math.ceil(
+                        (parseApiDateTime(session.end_time).getTime() -
+                          parseApiDateTime(session.start_time).getTime()) /
+                          60000
+                      )
+                    )
+                  )
+                : "—"}
+            </p>
           </div>
           <div className="rounded bg-muted/30 border border-border/40 p-2 space-y-1">
             <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
-              <Wallet className="size-3 text-emerald-500" /> Fee
+              <Wallet className="size-3 text-emerald-500" /> Paid Fee
             </span>
             <p className="font-bold text-emerald-600 dark:text-emerald-400">
               {session.fee != null ? formatCurrency(session.fee) : "—"}

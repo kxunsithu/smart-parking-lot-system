@@ -53,18 +53,10 @@ class SubscriptionService:
         now = datetime.now(timezone.utc)
         existing = self.sub_repo.get_active_by_owner_id(owner_id)
 
-        if is_renewal and existing and existing.id:
-            start = existing.expires_at
-            if start is not None:
-                if start.tzinfo is None:
-                    start = start.replace(tzinfo=timezone.utc)
-                if start < now:
-                    start = now
-            else:
-                start = now
+        if existing and existing.id:
             self.sub_repo.update(existing, {"status": SubscriptionStatus.EXPIRED.value})
-        else:
-            start = now
+
+        start = now
 
         sub = OwnerSubscription(
             owner_id=owner_id,

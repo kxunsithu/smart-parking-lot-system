@@ -15,6 +15,7 @@ import Lot3DView from "@/pages/Lot3DView"
 import Slot3DView from "@/pages/Slot3DView"
 import WalletPaymentResult from "@/pages/WalletPaymentResult"
 import AboutUs from "@/pages/AboutUs"
+import { SessionEndedModalListener } from "@/components/common/SessionEndedModalListener"
 import { useAuthStore } from "@/store/authStore"
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -69,6 +70,7 @@ function App() {
           <Route path="/wallet-payment/result" element={<ProtectedRoute><WalletPaymentResult /></ProtectedRoute>} />
         </Routes>
         <Toaster />
+        <SessionEndedModalListener />
       </BrowserRouter>
     </ThemeProvider>
   )

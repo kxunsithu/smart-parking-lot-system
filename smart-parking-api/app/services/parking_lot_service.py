@@ -79,7 +79,16 @@ class ParkingLotService:
         if not owner or lot.owner_id != owner.id:
             raise ForbiddenException("You do not have permission to manage this parking lot.")
 
-    def list_lots(self, params: PaginationParams, type_: str | None = None, owner_id: int | None = None, city: str | None = None, with_staff_count: bool = False):
+    def list_lots(
+        self,
+        params: PaginationParams,
+        type_: str | None = None,
+        owner_id: int | None = None,
+        city: str | None = None,
+        is_active: bool | None = None,
+        only_active_subscription: bool = False,
+        with_staff_count: bool = False,
+    ):
         stmt = select(ParkingLot).options(joinedload(ParkingLot.owner))
         if type_:
             stmt = stmt.where(ParkingLot.type == type_)
@@ -87,6 +96,19 @@ class ParkingLotService:
             stmt = stmt.where(ParkingLot.owner_id == owner_id)
         if city:
             stmt = stmt.where(ParkingLot.city == city)
+        if is_active is not None:
+            stmt = stmt.where(ParkingLot.is_active == is_active)
+        if only_active_subscription:
+            from datetime import datetime, timezone
+            from app.core.constants import SubscriptionStatus
+            from app.models.owner_subscription import OwnerSubscription
+
+            now_naive = datetime.now(timezone.utc).replace(tzinfo=None)
+            active_owner_ids = select(OwnerSubscription.owner_id).where(
+                OwnerSubscription.status == SubscriptionStatus.ACTIVE.value,
+                OwnerSubscription.expires_at > now_naive,
+            )
+            stmt = stmt.where(ParkingLot.owner_id.in_(active_owner_ids))
 
         items, total = self.lot_repo.paginate(
             stmt,

@@ -226,7 +226,7 @@ class PaymentService:
                 start_time=pending.pending_start_time,
                 end_time=pending.pending_end_time,
                 duration=duration,
-                fee=pending.amount,
+                fee=pending.total if pending.total is not None else pending.amount,
                 status=SessionStatus.ACTIVE.value,
             )
             self.db.add(new_session)
@@ -241,6 +241,8 @@ class PaymentService:
             session = self.db.get(ParkingSession, pending.session_id)
             if session and session.status == "PENDING":
                 session.status = SessionStatus.ACTIVE.value
+                if pending.total is not None:
+                    session.fee = pending.total
         elif pending.pending_package_id is not None and pending.pending_owner_id is not None:
             # Case 3: deferred subscription – create ACTIVE subscription now
             sub = SubscriptionService(self.db).create_and_activate(
@@ -462,11 +464,18 @@ class PaymentService:
         if car.customer_id != customer.id:
             raise ForbiddenException("You can only book sessions for your own cars.")
 
-        # ── Validate slot ───────────────────────────────────────────────────
+        # ── Validate slot & lot active status ───────────────────────────────
         slot_repo = ParkingSlotRepository(self.db)
         slot = slot_repo.get(slot_id)
         if not slot:
             raise NotFoundException("Parking slot not found.")
+        floor = slot.floor
+        lot = floor.parking_lot if floor else None
+        if not lot or not lot.is_active:
+            raise BadRequestException("This parking lot is currently inactive.")
+        sub_service = SubscriptionService(self.db)
+        if not sub_service.get_active_subscription(lot.owner_id):
+            raise BadRequestException("This parking lot's owner subscription has expired or is inactive.")
 
         # ── Validate times ──────────────────────────────────────────────────
         now = datetime.now(timezone.utc)
@@ -478,6 +487,11 @@ class PaymentService:
             raise BadRequestException("Start time must be in the future.")
         if end_time <= start_time:
             raise BadRequestException("End time must be after start time.")
+
+        # ── Resolve receiver account and customer phone ─────────────────────
+        receiver = self._session_receiver_account_for_slot(slot_id)
+        user_phone = wallet_phone if wallet_phone else current_user.phone
+        customer_phone = self._require_phone(user_phone)
 
         # ── Idempotency: return existing pending for same car/slot/user ─────
         existing = self.db.scalars(
@@ -492,6 +506,10 @@ class PaymentService:
         ).first()
         if existing:
             return existing
+
+        # ── Auto-finish any expired sessions first ──────────────────────────
+        from app.services.parking_session_service import ParkingSessionService
+        ParkingSessionService(self.db).auto_finish_expired_sessions()
 
         # ── Conflict: active sessions for this car ──────────────────────────
         car_active = self.db.scalars(
@@ -567,11 +585,6 @@ class PaymentService:
         rate_per_hour = self._get_lot_rate_for_slot(slot_id)
         duration_minutes = max(1, math.ceil((end_time - start_time).total_seconds() / 60))
         fee_amount = round((duration_minutes / 60) * rate_per_hour, 2)
-
-        # ── Resolve receiver account and customer phone ─────────────────────
-        receiver = self._session_receiver_account_for_slot(slot_id)
-        user_phone = car.customer.user.phone if (car.customer and car.customer.user) else None
-        customer_phone = self._require_phone(wallet_phone if wallet_phone else user_phone)
 
         # ── Initiate wallet payment ─────────────────────────────────────────
         reference = _new_reference()
@@ -673,6 +686,18 @@ class PaymentService:
                 "Admins cannot initiate subscription payments on behalf of owners via this endpoint."
             )
         owner = self._owner_for_user(current_user)
+
+        # Enforce subscription package rules:
+        # An active subscription for the SAME package cannot be repurchased/renewed while active.
+        # Repurchasing the same package is allowed ONLY AFTER it expires.
+        # Switching to a DIFFERENT package is allowed while active.
+        active_sub = SubscriptionService(self.db).get_active_subscription(owner.id)
+        if active_sub and active_sub.package_id == package_id:
+            raise BadRequestException(
+                "You already have an active subscription for this package. "
+                "Repurchasing or renewing the same package while active is not permitted. "
+                "You can repurchase this package after it expires, or switch to a different package now."
+            )
 
         receiver = self._require_account(
             self.account_repo.get_platform_account(), "The platform administrator"

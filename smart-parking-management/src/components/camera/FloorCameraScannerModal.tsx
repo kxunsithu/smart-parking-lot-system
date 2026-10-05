@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import * as tf from "@tensorflow/tfjs"
 import * as cocoSsd from "@tensorflow-models/coco-ssd"
 import { toast } from "sonner"
@@ -14,6 +14,9 @@ import {
   Zap,
   Maximize2,
   Minimize2,
+  MapPin,
+  Volume2,
+  VolumeX,
 } from "lucide-react"
 import {
   Dialog,
@@ -28,17 +31,28 @@ import type { ParkingFloorOut, SlotStatus } from "@/types"
 interface SlotROI {
   slotId: number
   slotNumber: string
-  section?: string | null
+  section: string
   currentStatus: SlotStatus
   detectedStatus: SlotStatus
-  x: number
-  y: number
+  x: number // percentage 0..100
+  y: number // percentage 0..100
   width: number
   height: number
   confidence: number
 }
 
 const VEHICLE_CLASSES = ["car", "truck", "bus", "motorcycle"]
+
+function getSectionName(slot: { section?: string | null; slot_number: string }): string {
+  if (slot.section && slot.section.trim()) {
+    return slot.section.trim().toUpperCase()
+  }
+  const match = slot.slot_number.match(/(?:L\d+-)?([A-Z]+)/i)
+  if (match && match[1]) {
+    return match[1].toUpperCase()
+  }
+  return "MAIN"
+}
 
 interface FloorCameraScannerModalProps {
   open: boolean
@@ -69,11 +83,34 @@ export function FloorCameraScannerModal({
   const [selectedRoiIndex, setSelectedRoiIndex] = useState<number | null>(null)
   const [detectedVehicleCount, setDetectedVehicleCount] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [selectedSectionFilter, setSelectedSectionFilter] = useState<string>("ALL")
+  const [soundEnabled, setSoundEnabled] = useState(true)
+
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const lastBeepTimeRef = useRef<number>(0)
   const modalContentRef = useRef<HTMLDivElement | null>(null)
   const animFrameId = useRef<number | null>(null)
   const lastSyncTimeRef = useRef<number>(0)
 
-  // ── Fullscreen toggle ───────────────────────────────────────────────────────
+  useEffect(() => {
+    const audio = new Audio("/scanner-beep.mp3")
+    audio.volume = 0.85
+    audioRef.current = audio
+  }, [])
+
+  const triggerBeepSound = useCallback(() => {
+    if (!soundEnabled) return
+    const now = Date.now()
+    if (now - lastBeepTimeRef.current > 750) {
+      lastBeepTimeRef.current = now
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0
+        audioRef.current.play().catch(() => {})
+      }
+    }
+  }, [soundEnabled])
+
+  // Fullscreen toggle
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen?.().catch(() => {})
@@ -85,14 +122,12 @@ export function FloorCameraScannerModal({
   }, [])
 
   useEffect(() => {
-    const handleFsChange = () => {
-      setIsFullscreen(!!document.fullscreenElement)
-    }
+    const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement)
     document.addEventListener("fullscreenchange", handleFsChange)
     return () => document.removeEventListener("fullscreenchange", handleFsChange)
   }, [])
 
-  // ── 1. Load COCO-SSD Model ─────────────────────────────────────────────────
+  // 1. Load AI Model
   useEffect(() => {
     if (!open) return
     let isMounted = true
@@ -104,38 +139,52 @@ export function FloorCameraScannerModal({
         console.error("TF model load failed:", err)
         if (isMounted) {
           setIsModelLoading(false)
-          toast.error("Failed to load AI model. Check internet connection.")
+          toast.error("Failed to load AI model.")
         }
       })
     return () => { isMounted = false }
   }, [open])
 
-  // ── 2. Fetch Floor Slots → build 3D-matched vertical grid ROIs ──────────────
+  // 2. Fetch Floor Slots and group/sort by Section
   const fetchFloorSlots = useCallback(async () => {
     if (!floor?.id) return
     try {
       const res = await parkingSlotsApi.list({ floor_id: floor.id, limit: 100 })
-      const total = res.items.length
-      const cols = total <= 6 ? 3 : total <= 10 ? 4 : 5
-      const rows = Math.ceil(total / cols)
-      
-      const slotW = Math.min(22, 78 / cols - 3)
-      const slotH = Math.min(34, 76 / rows - 10)
-      const gapX = 4
-      const laneH = 14
-      const startX = (100 - (cols * slotW + (cols - 1) * gapX)) / 2
-      const startY = 8
+      const rawSlots = res.items
 
-      setSlotROIs(
-        res.items.map((slot, i) => {
+      // Group slots by section name
+      const sectionsMap: Record<string, typeof rawSlots> = {}
+      rawSlots.forEach((slot) => {
+        const sec = getSectionName(slot)
+        if (!sectionsMap[sec]) sectionsMap[sec] = []
+        sectionsMap[sec].push(slot)
+      })
+
+      const sortedSections = Object.keys(sectionsMap).sort((a, b) => a.localeCompare(b))
+      const rois: SlotROI[] = []
+
+      // Calculate row grid layout for each section
+      sortedSections.forEach((secName, secIdx) => {
+        const slotsInSec = sectionsMap[secName]
+        const cols = Math.min(slotsInSec.length, 5)
+        const slotW = Math.min(22, 76 / cols - 3)
+        const slotH = 26
+        const gapX = 4
+
+        const secBlockHeight = 34
+        const secStartY = 8 + secIdx * (secBlockHeight + 8)
+        const startX = (100 - (cols * slotW + (cols - 1) * gapX)) / 2
+
+        slotsInSec.forEach((slot, i) => {
           const col = i % cols
           const row = Math.floor(i / cols)
           const x = startX + col * (slotW + gapX)
-          const y = startY + row * (slotH + laneH)
-          return {
+          const y = secStartY + row * (slotH + 4)
+
+          rois.push({
             slotId: slot.id,
             slotNumber: slot.slot_number,
-            section: slot.section,
+            section: secName,
             currentStatus: slot.status as SlotStatus,
             detectedStatus: slot.status as SlotStatus,
             x,
@@ -143,9 +192,11 @@ export function FloorCameraScannerModal({
             width: slotW,
             height: slotH,
             confidence: 0,
-          }
+          })
         })
-      )
+      })
+
+      setSlotROIs(rois)
     } catch {
       toast.error("Failed to load floor slots from database.")
     }
@@ -155,7 +206,23 @@ export function FloorCameraScannerModal({
     if (open && floor?.id) fetchFloorSlots()
   }, [open, floor?.id, fetchFloorSlots])
 
-  // ── 3. Camera Start / Stop ──────────────────────────────────────────────────
+  // Extract unique sections
+  const availableSections = useMemo(() => {
+    const set = new Set(slotROIs.map((r) => r.section))
+    return Array.from(set).sort()
+  }, [slotROIs])
+
+  // Grouped ROIs by section
+  const roisBySection = useMemo(() => {
+    const map: Record<string, SlotROI[]> = {}
+    slotROIs.forEach((r) => {
+      if (!map[r.section]) map[r.section] = []
+      map[r.section].push(r)
+    })
+    return map
+  }, [slotROIs])
+
+  // 3. Camera Controls
   const startCamera = useCallback(async (deviceId?: string) => {
     try {
       setCameraError(null)
@@ -178,7 +245,7 @@ export function FloorCameraScannerModal({
         setIsCameraActive(true)
       }
     } catch (err: any) {
-      setCameraError(err?.message ?? "Unable to access camera. Check browser permissions.")
+      setCameraError(err?.message ?? "Unable to access camera.")
       setIsCameraActive(false)
     }
   }, [])
@@ -198,7 +265,7 @@ export function FloorCameraScannerModal({
     return stopCamera
   }, [open, startCamera, stopCamera])
 
-  // ── 4. Detection Loop ──────────────────────────────────────────────────────
+  // 4. Detection Loop & Section Canvas Overlay Rendering
   useEffect(() => {
     if (!open || !isCameraActive || !model || !isScanning) return
     let active = true
@@ -226,9 +293,14 @@ export function FloorCameraScannerModal({
         const vehicles = preds.filter((p) => VEHICLE_CLASSES.includes(p.class.toLowerCase()))
         setDetectedVehicleCount(vehicles.length)
 
-        // Draw vehicle boxes
+        if (vehicles.length > 0) {
+          triggerBeepSound()
+        }
+
         const sx = W / video.videoWidth
         const sy = H / video.videoHeight
+
+        // Draw vehicle bounding boxes detected by AI
         vehicles.forEach((pred) => {
           const [vx, vy, vw, vh] = pred.bbox
           const x = vx * sx, y = vy * sy, w = vw * sx, h = vh * sy
@@ -243,7 +315,7 @@ export function FloorCameraScannerModal({
           ctx.fillText(`${pred.class} ${Math.round(pred.score * 100)}%`, x + 4, Math.max(14, y - 5))
         })
 
-        // Update slot detections
+        // Update slot occupancy based on vehicle detection
         setSlotROIs((prev) => {
           let changed = false
           const next = prev.map((roi) => {
@@ -257,7 +329,9 @@ export function FloorCameraScannerModal({
                 occupied = true; conf = v.score; break
               }
             }
-            const ds: SlotStatus = roi.currentStatus === "RESERVED" ? "RESERVED" : occupied ? "OCCUPIED" : "AVAILABLE"
+            // If a car is detected in the slot, it becomes OCCUPIED regardless of RESERVED status.
+            // If no car detected and DB says RESERVED, keep RESERVED (active reservation exists).
+            const ds: SlotStatus = occupied ? "OCCUPIED" : roi.currentStatus === "RESERVED" ? "RESERVED" : "AVAILABLE"
             if (ds !== roi.detectedStatus || Math.abs(roi.confidence - conf) > 0.05) {
               changed = true
               return { ...roi, detectedStatus: ds, confidence: conf }
@@ -267,49 +341,78 @@ export function FloorCameraScannerModal({
           return changed ? next : prev
         })
 
-        // Draw driving lane dashed center lines (3D View floor plan style)
-        const rowYPositions = Array.from(new Set(slotROIs.map((r) => r.y))).sort((a, b) => a - b)
-        for (let r = 0; r < rowYPositions.length; r++) {
-          const rowTop = rowYPositions[r]
-          const roiHeight = slotROIs[0]?.height || 30
-          const laneY = ((rowTop + roiHeight + 7) / 100) * H
-          ctx.setLineDash([16, 12])
-          ctx.lineWidth = 3
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.85)"
-          ctx.beginPath()
-          ctx.moveTo(W * 0.06, laneY)
-          ctx.lineTo(W * 0.94, laneY)
-          ctx.stroke()
-        }
+        // Draw Section Containers
+        const sectionsInRender = Object.keys(roisBySection).sort()
 
-        // Draw 3D-styled slot ROI overlays (Solid white frames + centered labels)
+        sectionsInRender.forEach((secName) => {
+          const secSlots = roisBySection[secName]
+          if (!secSlots.length) return
+          if (selectedSectionFilter !== "ALL" && selectedSectionFilter !== secName) return
+
+          // Compute Section Bounding Box
+          let minX = 100, minY = 100, maxX = 0, maxY = 0
+          secSlots.forEach((r) => {
+            if (r.x < minX) minX = r.x
+            if (r.y < minY) minY = r.y
+            if (r.x + r.width > maxX) maxX = r.x + r.width
+            if (r.y + r.height > maxY) maxY = r.y + r.height
+          })
+
+          const padX = 2.0
+          const padY = 3.0
+          const spX = Math.max(0, ((minX - padX) / 100) * W)
+          const spY = Math.max(0, ((minY - padY) / 100) * H)
+          const spW = Math.min(W - spX, (((maxX - minX + padX * 2) / 100) * W))
+          const spH = Math.min(H - spY, (((maxY - minY + padY * 2) / 100) * H))
+
+          // Section Container Background & Dashed Outline
+          ctx.fillStyle = "rgba(15, 23, 42, 0.35)"
+          ctx.fillRect(spX, spY, spW, spH)
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.7)"
+          ctx.lineWidth = 1.5
+          ctx.setLineDash([6, 4])
+          ctx.strokeRect(spX, spY, spW, spH)
+          ctx.setLineDash([])
+
+          // Section Title Badge
+          const titleText = `✦ SECTION ${secName}`
+          ctx.font = "bold 11px sans-serif"
+          const titleWidth = ctx.measureText(titleText).width + 20
+          ctx.fillStyle = "#0284c7"
+          ctx.fillRect(spX + 6, spY - 12, titleWidth, 20)
+          ctx.fillStyle = "#ffffff"
+          ctx.fillText(titleText, spX + 14, spY + 2)
+        })
+
+        // Draw Slot ROIs (Clean Flat Rectangular Frames)
         slotROIs.forEach((roi, idx) => {
+          if (selectedSectionFilter !== "ALL" && selectedSectionFilter !== roi.section) return
+
           const rx = (roi.x / 100) * W, ry = (roi.y / 100) * H
           const rw = (roi.width / 100) * W, rh = (roi.height / 100) * H
           const isOcc = roi.detectedStatus === "OCCUPIED"
           const isRes = roi.detectedStatus === "RESERVED"
           const isSel = selectedRoiIndex === idx
 
-          // Solid slate background fill with status tint
+          // Solid Background Fill
           ctx.fillStyle = isRes
-            ? "rgba(217, 119, 6, 0.35)"
+            ? "rgba(217, 119, 6, 0.40)"
             : isOcc
-            ? "rgba(225, 29, 72, 0.40)"
-            : "rgba(51, 65, 85, 0.55)"
+            ? "rgba(225, 29, 72, 0.45)"
+            : "rgba(16, 185, 129, 0.35)"
           ctx.fillRect(rx, ry, rw, rh)
 
-          // White rectangular frame border (3D View style)
-          ctx.setLineDash([])
-          ctx.lineWidth = isSel ? 4 : 3
+          // White Frame Border
+          ctx.lineWidth = isSel ? 3.5 : 2.5
           ctx.strokeStyle = isSel ? "#f59e0b" : "#ffffff"
           ctx.strokeRect(rx, ry, rw, rh)
 
-          // Top status pill indicator inside slot
+          // Status Indicator Pill (Top edge)
           const statusColor = isRes ? "#d97706" : isOcc ? "#ef4444" : "#10b981"
           ctx.fillStyle = statusColor
-          ctx.fillRect(rx + 3, ry + 3, rw - 6, 6)
+          ctx.fillRect(rx + 2, ry + 2, rw - 4, 5)
 
-          // Slot number label centered inside the vertical slot box (crisp white text)
+          // Centered Slot Number Label
           ctx.fillStyle = "#ffffff"
           ctx.font = "bold 13px sans-serif"
           ctx.textAlign = "center"
@@ -335,13 +438,19 @@ export function FloorCameraScannerModal({
       if (animFrameId.current) cancelAnimationFrame(animFrameId.current)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, isCameraActive, model, isScanning, autoSync, selectedRoiIndex, slotROIs])
+  }, [open, isCameraActive, model, isScanning, autoSync, selectedRoiIndex, slotROIs, selectedSectionFilter, roisBySection])
 
-  // ── 5. Apply to DB ─────────────────────────────────────────────────────────
+  // 5. Apply to DB
   const applyDetectedStatuses = async (silent = false) => {
     try {
       setIsApplying(true)
-      const changed = slotROIs.filter((r) => r.detectedStatus !== r.currentStatus && r.currentStatus !== "RESERVED")
+      // Allow syncing RESERVED → OCCUPIED (car parked in reserved slot), but NOT OCCUPIED/AVAILABLE → RESERVED
+      const changed = slotROIs.filter((r) => {
+        if (r.detectedStatus === r.currentStatus) return false
+        // Block scanner from setting a slot back to RESERVED — that's only done by the booking system
+        if (r.detectedStatus === "RESERVED") return false
+        return true
+      })
       if (!changed.length) {
         if (!silent) toast.info("No slot status changes detected.")
         return
@@ -357,9 +466,11 @@ export function FloorCameraScannerModal({
     }
   }
 
-  const changedCount = slotROIs.filter(
-    (r) => r.detectedStatus !== r.currentStatus && r.currentStatus !== "RESERVED"
-  ).length
+  const changedCount = slotROIs.filter((r) => {
+    if (r.detectedStatus === r.currentStatus) return false
+    if (r.detectedStatus === "RESERVED") return false
+    return true
+  }).length
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -369,36 +480,43 @@ export function FloorCameraScannerModal({
         className={`w-full p-0 gap-0 overflow-hidden bg-background border border-border/70 shadow-2xl transition-all duration-200 ${
           isFullscreen
             ? "!fixed !inset-0 !top-0 !left-0 !transform-none !translate-x-0 !translate-y-0 !z-[999999] !max-w-none !w-screen !h-screen !rounded-none !border-none !m-0"
-            : "max-w-[92vw] xl:max-w-6xl rounded-xl"
+            : "max-w-[94vw] xl:max-w-6xl rounded-xl"
         }`}
       >
-        {/* ── Header ──────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between gap-4 px-5 py-3.5 border-b border-border/60 bg-muted/20 shrink-0">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-border/60 bg-muted/20 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="size-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-              <Sparkles className="size-3.5 text-primary" />
+            <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+              <Sparkles className="size-4 text-primary" />
             </div>
             <div className="min-w-0">
               <p className="font-bold text-sm text-foreground truncate">
                 {floor?.floor_name ?? `Floor ${floor?.id}`} — AI Camera Scan
               </p>
               <p className="text-[11px] text-muted-foreground truncate">
-                Detect vehicles in real-time · update DB in one click
+                Detect vehicles in real-time · sorted by section · update DB in one click
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {/* Auto-Sync toggle */}
+            {/* Sound Beep Toggle */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs font-medium border-border/80 hover:bg-muted"
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              title={soundEnabled ? "Mute scanner sound" : "Unmute scanner sound"}
+            >
+              {soundEnabled ? <Volume2 className="size-3.5 text-emerald-500" /> : <VolumeX className="size-3.5 text-muted-foreground" />}
+              <span className="hidden sm:inline">{soundEnabled ? "Sound On" : "Muted"}</span>
+            </Button>
+
+            {/* Auto-Sync Switch */}
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background border border-border/70 text-xs">
               <Zap className="size-3 text-amber-500 fill-amber-500 shrink-0" />
               <span className="text-[11px] font-semibold text-foreground whitespace-nowrap">Auto-Sync</span>
-              <Switch
-                id="auto-sync"
-                checked={autoSync}
-                onCheckedChange={setAutoSync}
-                size="sm"
-              />
+              <Switch id="auto-sync" checked={autoSync} onCheckedChange={setAutoSync} size="sm" />
             </div>
 
             {/* Fullscreen Button */}
@@ -409,7 +527,7 @@ export function FloorCameraScannerModal({
               onClick={toggleFullscreen}
             >
               {isFullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
-              <span className="hidden sm:inline">{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
+              <span className="hidden sm:inline">{isFullscreen ? "Exit" : "Fullscreen"}</span>
             </Button>
 
             <Button
@@ -423,27 +541,23 @@ export function FloorCameraScannerModal({
           </div>
         </div>
 
-        {/* ── Body: Camera | Sidebar ───────────────────────────────────────── */}
+        {/* Body: Camera Feed & Sidebar */}
         <div className={`flex flex-col lg:flex-row overflow-hidden transition-all ${
-          isFullscreen ? "h-[calc(100vh-60px)]" : "h-[72vh] min-h-[440px]"
+          isFullscreen ? "h-[calc(100vh-60px)]" : "h-[74vh] min-h-[460px]"
         }`}>
-
-          {/* ── Camera Panel ────────────────────────────────────────────────── */}
-          <div className="relative flex-1 bg-slate-950 flex items-center justify-center overflow-hidden min-h-[240px]">
-
-            {/* AI loading overlay */}
+          {/* Camera View */}
+          <div className="relative flex-1 bg-slate-950 flex items-center justify-center overflow-hidden min-h-[260px]">
             {isModelLoading && (
               <div className="absolute inset-0 z-20 bg-slate-950/95 flex flex-col items-center justify-center gap-3">
                 <RefreshCw className="size-7 text-primary animate-spin" />
                 <div className="text-center">
                   <p className="text-white font-semibold text-sm">Loading AI Model...</p>
-                  <p className="text-slate-400 text-xs mt-1">TensorFlow.js MobileNet initializing</p>
+                  <p className="text-slate-400 text-xs mt-1">MobileNet Object Detector initializing</p>
                 </div>
               </div>
             )}
 
             {cameraError ? (
-              /* Camera error state */
               <div className="flex flex-col items-center gap-3 p-6 text-center">
                 <div className="size-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
                   <CameraOff className="size-7 text-red-500" />
@@ -458,28 +572,19 @@ export function FloorCameraScannerModal({
                 </Button>
               </div>
             ) : (
-              /* Camera feed */
               <div className="relative w-full h-full">
-                <video
-                  ref={videoRef}
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                />
-                <canvas
-                  ref={canvasRef}
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                />
+                <video ref={videoRef} playsInline muted className="w-full h-full object-cover" />
+                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
 
-                {/* Bottom status bar */}
-                <div className="absolute bottom-0 left-0 right-0 z-10 flex items-center justify-between gap-2 px-3 py-2 bg-gradient-to-t from-slate-950/90 to-transparent">
+                {/* Bottom Status Bar */}
+                <div className="absolute bottom-0 left-0 right-0 z-10 flex items-center justify-between gap-2 px-4 py-2 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent">
                   <div className="flex items-center gap-2">
                     <span className="relative flex size-2">
                       <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isScanning ? "bg-emerald-400" : "bg-slate-500"}`} />
                       <span className={`relative inline-flex rounded-full size-2 ${isScanning ? "bg-emerald-500" : "bg-slate-500"}`} />
                     </span>
                     <span className="text-white text-[11px] font-semibold">
-                      {isScanning ? "Scanning" : "Paused"}
+                      {isScanning ? "AI Scanning Active" : "Paused"}
                     </span>
                     <Badge className="border-blue-500/40 text-blue-300 bg-blue-500/15 text-[10px] py-0 h-5 border">
                       {detectedVehicleCount} vehicle{detectedVehicleCount !== 1 ? "s" : ""}
@@ -487,7 +592,6 @@ export function FloorCameraScannerModal({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {/* Camera switcher */}
                     {availableDevices.length > 1 && (
                       <select
                         value={selectedDeviceId}
@@ -510,114 +614,162 @@ export function FloorCameraScannerModal({
                       {isScanning ? <Pause className="size-3" /> : <Play className="size-3" />}
                       {isScanning ? "Pause" : "Resume"}
                     </Button>
-
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={toggleFullscreen}
-                      className="h-7 text-[11px] gap-1 text-white hover:bg-white/15 px-2"
-                    >
-                      {isFullscreen ? <Minimize2 className="size-3" /> : <Maximize2 className="size-3" />}
-                      {isFullscreen ? "Exit" : "Fullscreen"}
-                    </Button>
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* ── Sidebar ──────────────────────────────────────────────────────── */}
-          <div className="w-full lg:w-72 xl:w-80 flex flex-col border-t lg:border-t-0 lg:border-l border-border/60 bg-muted/5 shrink-0">
+          {/* Right Sidebar: Section Grouped Slots List */}
+          <div className="w-full lg:w-80 flex flex-col border-t lg:border-t-0 lg:border-l border-border/60 bg-muted/5 shrink-0">
+            {/* Sidebar Controls Header */}
+            <div className="p-3 border-b border-border/60 space-y-2 shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Layers className="size-4 text-primary" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    Slots by Section ({slotROIs.length})
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                    {slotROIs.filter((r) => r.detectedStatus === "AVAILABLE").length} Free
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 border border-red-500/20">
+                    {slotROIs.filter((r) => r.detectedStatus === "OCCUPIED").length} Taken
+                  </span>
+                </div>
+              </div>
 
-            {/* Sidebar header */}
-            <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-1.5">
-                <Layers className="size-3.5 text-primary" />
-                <span className="text-xs font-bold uppercase tracking-wider text-foreground">
-                  Slots ({slotROIs.length})
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px] font-bold">
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                  {slotROIs.filter((r) => r.detectedStatus === "AVAILABLE").length} Free
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 border border-red-500/20">
-                  {slotROIs.filter((r) => r.detectedStatus === "OCCUPIED").length} Taken
-                </span>
-              </div>
+              {/* Section Filter Tabs */}
+              {availableSections.length > 1 && (
+                <div className="flex items-center gap-1 overflow-x-auto pt-1 pb-0.5">
+                  <button
+                    onClick={() => setSelectedSectionFilter("ALL")}
+                    className={`px-2 py-1 rounded text-[10px] font-bold transition-all shrink-0 ${
+                      selectedSectionFilter === "ALL"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-accent"
+                    }`}
+                  >
+                    All ({slotROIs.length})
+                  </button>
+                  {availableSections.map((sec) => {
+                    const secCount = slotROIs.filter((r) => r.section === sec).length
+                    return (
+                      <button
+                        key={sec}
+                        onClick={() => setSelectedSectionFilter(sec)}
+                        className={`px-2 py-1 rounded text-[10px] font-bold transition-all shrink-0 ${
+                          selectedSectionFilter === sec
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-accent"
+                        }`}
+                      >
+                        Section {sec} ({secCount})
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
-            {/* Slot list */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+            {/* Slots Sorted by Section */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-4">
               {slotROIs.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-8">
                   No slots registered for this floor.
                 </p>
               ) : (
-                slotROIs.map((roi, idx) => {
-                  const needsSync = roi.detectedStatus !== roi.currentStatus && roi.currentStatus !== "RESERVED"
-                  return (
-                    <div
-                      key={roi.slotId}
-                      onClick={() => setSelectedRoiIndex(selectedRoiIndex === idx ? null : idx)}
-                      className={`p-3 rounded-lg border text-xs cursor-pointer transition-all select-none ${
-                        selectedRoiIndex === idx
-                          ? "border-amber-500 bg-amber-500/10"
-                          : needsSync
-                          ? "border-blue-500/40 bg-blue-500/5 hover:bg-blue-500/8"
-                          : "border-border/50 bg-background hover:bg-muted/50"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        {/* Left: indicator + name */}
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className={`size-2 rounded-full shrink-0 ${
-                            roi.detectedStatus === "AVAILABLE" ? "bg-emerald-500" :
-                            roi.detectedStatus === "RESERVED" ? "bg-amber-500" : "bg-red-500"
-                          }`} />
-                          <div className="min-w-0">
-                            <p className="font-bold text-foreground leading-tight truncate">
-                              {roi.slotNumber}
-                              {roi.section && (
-                                <span className="text-muted-foreground font-normal ml-1 text-[10px]">
-                                  · {roi.section}
-                                </span>
-                              )}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">
-                              DB: <span className="font-semibold text-foreground/80">{roi.currentStatus}</span>
-                            </p>
+                Object.keys(roisBySection)
+                  .sort()
+                  .filter((sec) => selectedSectionFilter === "ALL" || selectedSectionFilter === sec)
+                  .map((secName) => {
+                    const secSlots = roisBySection[secName]
+                    const freeCount = secSlots.filter((r) => r.detectedStatus === "AVAILABLE").length
+                    const takenCount = secSlots.filter((r) => r.detectedStatus === "OCCUPIED").length
+
+                    return (
+                      <div key={secName} className="space-y-2">
+                        {/* Section Header Card */}
+                        <div className="flex items-center justify-between px-2.5 py-1.5 rounded bg-muted/60 border border-border/60 text-xs">
+                          <div className="flex items-center gap-1.5 font-bold text-foreground">
+                            <MapPin className="size-3.5 text-primary shrink-0" />
+                            <span>Section {secName}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-[10px]">
+                            <span className="text-emerald-600 font-bold">{freeCount} Free</span>
+                            <span className="text-muted-foreground">·</span>
+                            <span className="text-red-600 font-bold">{takenCount} Taken</span>
                           </div>
                         </div>
 
-                        {/* Right: detected badge */}
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${
-                            roi.detectedStatus === "AVAILABLE"
-                              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600"
-                              : roi.detectedStatus === "RESERVED"
-                              ? "bg-amber-500/10 border-amber-500/30 text-amber-600"
-                              : "bg-red-500/10 border-red-500/30 text-red-600"
-                          }`}>
-                            {roi.detectedStatus === "AVAILABLE" ? "Free" : roi.detectedStatus === "RESERVED" ? "Reserved" : "Taken"}
-                          </span>
-                          {needsSync && (
-                            <span className="text-[9px] text-blue-500 font-bold flex items-center gap-0.5">
-                              <Sparkles className="size-2.5" />
-                              Changed
-                            </span>
-                          )}
+                        {/* Section Slot Cards Grid */}
+                        <div className="space-y-1.5">
+                          {secSlots.map((roi) => {
+                            const globalIndex = slotROIs.findIndex((r) => r.slotId === roi.slotId)
+                            const needsSync = roi.detectedStatus !== roi.currentStatus && roi.detectedStatus !== "RESERVED"
+                            const isSel = selectedRoiIndex === globalIndex
+
+                            return (
+                              <div
+                                key={roi.slotId}
+                                onClick={() => setSelectedRoiIndex(isSel ? null : globalIndex)}
+                                className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all select-none ${
+                                  isSel
+                                    ? "border-amber-500 bg-amber-500/10 shadow-sm"
+                                    : needsSync
+                                    ? "border-blue-500/40 bg-blue-500/5 hover:bg-blue-500/10"
+                                    : "border-border/50 bg-background hover:bg-muted/50"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <div className={`size-2.5 rounded-full shrink-0 ${
+                                      roi.detectedStatus === "AVAILABLE" ? "bg-emerald-500" :
+                                      roi.detectedStatus === "RESERVED" ? "bg-amber-500" : "bg-red-500"
+                                    }`} />
+                                    <div className="min-w-0">
+                                      <p className="font-bold text-foreground leading-tight truncate">
+                                        {roi.slotNumber}
+                                      </p>
+                                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                                        DB: <span className="font-semibold text-foreground/80">{roi.currentStatus}</span>
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex flex-col items-end gap-0.5 shrink-0">
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${
+                                      roi.detectedStatus === "AVAILABLE"
+                                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600"
+                                        : roi.detectedStatus === "RESERVED"
+                                        ? "bg-amber-500/10 border-amber-500/30 text-amber-600"
+                                        : "bg-red-500/10 border-red-500/30 text-red-600"
+                                    }`}>
+                                      {roi.detectedStatus === "AVAILABLE" ? "Free" : roi.detectedStatus === "RESERVED" ? "Reserved" : "Taken"}
+                                    </span>
+                                    {needsSync && (
+                                      <span className="text-[9px] text-blue-500 font-bold flex items-center gap-0.5">
+                                        <Sparkles className="size-2.5" />
+                                        Changed
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
-                    </div>
-                  )
-                })
+                    )
+                  })
               )}
             </div>
 
-            {/* Action button — always pinned at bottom */}
+            {/* Apply Button */}
             <div className="p-3 border-t border-border/60 shrink-0">
-              {changedCount > 0 && (
+              {changedCount > 3 && (
                 <p className="text-[11px] text-blue-600 font-semibold text-center mb-2">
                   {changedCount} slot{changedCount !== 1 ? "s" : ""} ready to sync
                 </p>

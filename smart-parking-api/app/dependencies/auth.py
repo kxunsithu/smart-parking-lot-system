@@ -43,6 +43,28 @@ def get_current_user(
     return user
 
 
+def get_current_user_optional(
+    token: str | None = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> User | None:
+    if not token:
+        return None
+    try:
+        payload = decode_token(token)
+        if payload.get("type") != "access":
+            return None
+        user_id = payload.get("sub")
+        if user_id is None:
+            return None
+        user = UserRepository(db).get_with_role(int(user_id))
+        if not user or not user.is_active:
+            return None
+        return user
+    except Exception:
+        return None
+
+
+
 def require_roles(*roles: RoleName):
     """Dependency factory restricting an endpoint to the given roles."""
 

@@ -779,6 +779,11 @@ function FloorSection({
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium border border-emerald-500/20">
                 {slots.filter(s => s.status === "AVAILABLE").length} Available
               </span>
+              {slots.filter(s => s.status === "RESERVED").length > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 font-medium border border-amber-500/20">
+                  {slots.filter(s => s.status === "RESERVED").length} Reserved
+                </span>
+              )}
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 font-medium border border-red-500/20">
                 {slots.filter(s => s.status === "OCCUPIED").length} Occupied
               </span>
@@ -826,6 +831,7 @@ function FloorSection({
             {sortedSections.map((section) => {
               const sectionSlots = sectionMap[section]
               const available = sectionSlots.filter(s => s.status === "AVAILABLE").length
+              const reserved = sectionSlots.filter(s => s.status === "RESERVED").length
               const occupied = sectionSlots.filter(s => s.status === "OCCUPIED").length
               return (
                 <div key={section}>
@@ -843,6 +849,11 @@ function FloorSection({
                           {available} free
                         </span>
                       )}
+                      {reserved > 0 && (
+                        <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                          {reserved} reserved
+                        </span>
+                      )}
                       {occupied > 0 && (
                         <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-600 border border-red-500/20">
                           {occupied} taken
@@ -857,22 +868,35 @@ function FloorSection({
                     {sectionSlots.map((slot) => (
                       <div
                         key={slot.id}
-                        className={`group relative flex flex-col gap-1 rounded border p-2.5 transition-all cursor-default ${slot.status === "AVAILABLE"
-                          ? "border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10"
-                          : "border-red-500/30 bg-red-500/5 hover:bg-red-500/10"
-                          }`}
+                        className={`group relative flex flex-col gap-1 rounded border p-2.5 transition-all cursor-default ${
+                          slot.status === "AVAILABLE"
+                            ? "border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10"
+                            : slot.status === "RESERVED"
+                              ? "border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10"
+                              : "border-red-500/30 bg-red-500/5 hover:bg-red-500/10"
+                        }`}
                       >
                         {/* Status dot + slot number row */}
                         <div className="flex items-center gap-1.5">
-                          <span className={`size-2 rounded-full shrink-0 ${slot.status === "AVAILABLE" ? "bg-emerald-500" : "bg-red-500"
-                            }`} />
+                          <span className={`size-2 rounded-full shrink-0 ${
+                            slot.status === "AVAILABLE"
+                              ? "bg-emerald-500"
+                              : slot.status === "RESERVED"
+                                ? "bg-amber-500"
+                                : "bg-red-500"
+                          }`} />
                           <span className="text-xs font-bold text-foreground truncate leading-none">{slot.slot_number}</span>
                         </div>
 
                         {/* Status label */}
-                        <span className={`text-[9px] font-semibold uppercase tracking-wide ${slot.status === "AVAILABLE" ? "text-emerald-600" : "text-red-600"
-                          }`}>
-                          {slot.status === "AVAILABLE" ? "Free" : "Taken"}
+                        <span className={`text-[9px] font-semibold uppercase tracking-wide ${
+                          slot.status === "AVAILABLE"
+                            ? "text-emerald-600"
+                            : slot.status === "RESERVED"
+                              ? "text-amber-600"
+                              : "text-red-600"
+                        }`}>
+                          {slot.status === "AVAILABLE" ? "Free" : slot.status === "RESERVED" ? "Reserved" : "Taken"}
                         </span>
 
                         {/* Hover action row */}

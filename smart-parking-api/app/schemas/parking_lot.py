@@ -8,6 +8,8 @@ from app.schemas.user import UserOut
 
 
 class ParkingLotCreate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
     name: str = Field(..., min_length=2, max_length=100)
     google_map_url: Optional[str] = None
     city: Optional[str] = Field(default=None, max_length=100, description="City in Kayin State where the parking lot is located")
@@ -18,6 +20,8 @@ class ParkingLotCreate(BaseModel):
 
 
 class ParkingLotUpdate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
     name: Optional[str] = Field(default=None, min_length=2, max_length=100)
     google_map_url: Optional[str] = None
     city: Optional[str] = Field(default=None, max_length=100, description="City in Kayin State where the parking lot is located")

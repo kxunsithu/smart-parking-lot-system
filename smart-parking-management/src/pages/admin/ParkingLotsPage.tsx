@@ -26,6 +26,7 @@ import { parkingLotsApi } from "@/api/parkingLots"
 import { citiesApi, type CityOut } from "@/api/cities"
 import { getErrorMessage } from "@/api/client"
 import { usePaginationState } from "@/hooks/usePaginationState"
+import { formatDate } from "@/utils/formatters"
 import type { ParkingLotWithStaffOut } from "@/types"
 import type { ListResult } from "@/api/types"
 
@@ -211,7 +212,7 @@ export function ParkingLotsPage() {
                           <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
                             <span>ID: #{lot.id}</span>
                             <span>·</span>
-                            <span>Created {new Date(lot.created_at).toLocaleDateString()}</span>
+                            <span>Created {formatDate(lot.created_at)}</span>
                           </p>
                         </div>
                       </div>

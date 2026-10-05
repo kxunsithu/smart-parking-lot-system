@@ -87,7 +87,6 @@ function buildReceiptHtml(payment: PaymentListOut): string {
     { label: "Date", value: date },
     { label: "Type", value: payment.kind },
     { label: "Detail", value: detail || "—" },
-    { label: "Transaction No.", value: ref || "—" },
     { label: "Payer", value: payment.payer_name ?? "—" },
     { label: "Payer Phone", value: payment.payer_phone ?? "—" },
     { label: "Receiver Phone", value: payment.receiver_phone ?? "—" },
@@ -251,10 +250,6 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
                 <p>{detail}</p>
               </div>
             )}
-            <div className="col-span-2">
-              <p className="text-xs text-muted-foreground">{t("receipt.tx_no", "Transaction No.")}</p>
-              <p className="font-mono text-xs break-all">{ref || "—"}</p>
-            </div>
             <div>
               <p className="text-xs text-muted-foreground">{t("receipt.payer", "Payer")}</p>
               <p>{payment.payer_name ?? "—"}</p>

@@ -30,6 +30,14 @@ import {
   type SlotTrackContext,
 } from "@/lib/parkingTrack"
 
+/** Backend datetimes are naive UTC strings. Force-parse as UTC so local display is correct. */
+function parseUtc(value: string): Date {
+  const trimmed = value.trim()
+  if (/Z$|[+-]\d{2}:\d{2}$/.test(trimmed)) return new Date(trimmed)
+  const normalized = trimmed.includes("T") ? trimmed : trimmed.replace(" ", "T")
+  return new Date(`${normalized}Z`)
+}
+
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -175,7 +183,7 @@ export default function Dashboard() {
                   {t("session.active", "Active Parking Session")}
                 </Badge>
                 <span className="text-xs text-muted-foreground font-medium">
-                  {t("session.started", "Started")}: {new Date(activeSession.start_time).toLocaleTimeString()}
+                  {t("session.started", "Started")}: {parseUtc(activeSession.start_time).toLocaleTimeString()}
                 </span>
               </div>
               <CardTitle className="text-lg font-bold text-foreground mt-2">
