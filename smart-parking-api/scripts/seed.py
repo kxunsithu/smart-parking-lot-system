@@ -126,6 +126,8 @@ SEED_USERS = [
     {"name": "Naw Paw Lay",            "email": "nawpawlay.staff@gmail.com",      "role": RoleName.STAFF.value,    "phone": "+959700000010", "is_verified": True},
     {"name": "Saw Hser Gay",           "email": "sawhsergay.staff@gmail.com",     "role": RoleName.STAFF.value,    "phone": "+959700000011", "is_verified": True},
     {"name": "Naw Klee Paw",           "email": "nawkleepaw.staff@gmail.com",     "role": RoleName.STAFF.value,    "phone": "+959700000012", "is_verified": True},
+    {"name": "Saw Kyaw Swar",          "email": "sawkyawswar.staff@gmail.com",    "role": RoleName.STAFF.value,    "phone": "+959700000013", "is_verified": True},
+    {"name": "Naw Mu Eh",              "email": "nawmueh.staff@gmail.com",        "role": RoleName.STAFF.value,    "phone": "+959700000014", "is_verified": True},
 
     # Customers (15)
     {"name": "Saw Blay Htoo",          "email": "sawblayhtoo@gmail.com",          "role": RoleName.CUSTOMER.value, "phone": "+959800000001", "is_verified": True},
@@ -143,6 +145,7 @@ SEED_USERS = [
     {"name": "Maung Plaw Heh",         "email": "maungplawheh@gmail.com",         "role": RoleName.CUSTOMER.value, "phone": "+959800000013", "is_verified": True},
     {"name": "Saw Kler Gay",           "email": "sawklergay@gmail.com",           "role": RoleName.CUSTOMER.value, "phone": "+959800000014", "is_verified": True},
     {"name": "Naw Wah Lay",            "email": "nawwahlay@gmail.com",            "role": RoleName.CUSTOMER.value, "phone": "+959800000015", "is_verified": True},
+    {"name": "Khun Si Thu",            "email": "khunsithu2003@gmail.com",        "role": RoleName.CUSTOMER.value, "phone": "+959800000016", "is_verified": True},
 ]
 
 # ── Owner company profiles ────────────────────────────────────────────────────
@@ -165,21 +168,22 @@ OWNER_PROFILES = {
 # ── Customer cars ─────────────────────────────────────────────────────────────
 
 CUSTOMER_CARS = {
-    "sawblayhtoo@gmail.com":   [("1A-1111", "Toyota",      "White"),  ("1A-2222", "Suzuki",  "Silver")],
-    "nawthablue@gmail.com":    [("2B-3333", "Honda",       "Red")],
-    "maungkawlaw@gmail.com":   [("3C-4444", "Mazda",       "Blue"),   ("3C-5555", "Toyota",  "White")],
-    "sawdohhtoo@gmail.com":    [("4D-6666", "Mitsubishi",  "Black")],
-    "nawpawdoh@gmail.com":     [("5E-7777", "Hyundai",     "Grey"),   ("5E-8888", "Kia",     "Silver")],
-    "sawlerpaw@gmail.com":     [("6F-9999", "Toyota",      "Gold")],
-    "nawehkhu@gmail.com":      [("7G-0001", "Suzuki",      "White"),  ("7G-0002", "Nissan",  "Black")],
-    "maunghsawah@gmail.com":   [("8H-0003", "Honda",       "Pearl White")],
-    "sawpawtaw@gmail.com":     [("9I-0004", "Toyota",      "Silver"), ("9I-0005", "Mazda",   "Blue")],
-    "nawkhupaw@gmail.com":     [("0J-0006", "Mitsubishi",  "Grey")],
-    "sawhserdoh@gmail.com":    [("1K-0007", "Toyota",      "White"),  ("1K-0008", "Kia",     "Red")],
-    "nawgaypaw@gmail.com":     [("2L-0009", "Hyundai",     "Blue")],
-    "maungplawheh@gmail.com":  [("3M-0010", "Honda",       "Black"),  ("3M-0011", "Suzuki",  "White")],
-    "sawklergay@gmail.com":    [("4N-0012", "Toyota",      "Silver")],
-    "nawwahlay@gmail.com":     [("5O-0013", "Nissan",      "Grey"),   ("5O-0014", "Toyota",  "Blue")],
+    "sawblayhtoo@gmail.com":   [("YGN 1A-1111", "Toyota",      "White"),  ("YGN 1A-2222", "Suzuki",  "Silver")],
+    "nawthablue@gmail.com":    [("YGN 2B-3333", "Honda",       "Red")],
+    "maungkawlaw@gmail.com":   [("YGN 3C-4444", "Mazda",       "Blue"),   ("YGN 3C-5555", "Toyota",  "White")],
+    "sawdohhtoo@gmail.com":    [("YGN 4D-6666", "Mitsubishi",  "Black")],
+    "nawpawdoh@gmail.com":     [("YGN 5E-7777", "Hyundai",     "Grey"),   ("YGN 5E-8888", "Kia",     "Silver")],
+    "sawlerpaw@gmail.com":     [("YGN 6F-9999", "Toyota",      "Gold")],
+    "nawehkhu@gmail.com":      [("KYN 7G-0001", "Suzuki",      "White"),  ("KYN 7G-0002", "Nissan",  "Black")],
+    "maunghsawah@gmail.com":   [("MDY 8H-0003", "Honda",       "Pearl White")],
+    "sawpawtaw@gmail.com":     [("NPT 9I-0004", "Toyota",      "Silver"), ("NPT 9I-0005", "Mazda",   "Blue")],
+    "nawkhupaw@gmail.com":     [("KYN 0J-0006", "Mitsubishi",  "Grey")],
+    "sawhserdoh@gmail.com":    [("KYN 1K-0007", "Toyota",      "White"),  ("KYN 1K-0008", "Kia",     "Red")],
+    "nawgaypaw@gmail.com":     [("KYN 2L-0009", "Hyundai",     "Blue")],
+    "maungplawheh@gmail.com":  [("KYN 3M-0010", "Honda",       "Black"),  ("KYN 3M-0011", "Suzuki",  "White")],
+    "sawklergay@gmail.com":    [("KYN 4N-0012", "Toyota",      "Silver")],
+    "nawwahlay@gmail.com":     [("KYN 5O-0013", "Nissan",      "Grey"),   ("KYN 5O-0014", "Toyota",  "Blue")],
+    "khunsithu2003@gmail.com": [("KYN 2A-3456", "Toyota",  "Black"), ("KYN 1B-6789", "Suzuki",  "Red"), ("YGN 3C-1234", "Honda", "Blue"),],
 }
 
 # ── Cities — ONLY Hlaingbwe, Hpa-an, Kawkareik, Kyainseikgyi, Myawaddy, Payathonzu ──
@@ -610,6 +614,54 @@ PARKING_LOTS = [
             },
         ],
     },
+
+    # ── 15. Hpa-an Zwekabin Clock Tower Parking ──────────────────────────────
+    {
+        "owner_email": "hpaan.smartparking@gmail.com",
+        "name": "ဇွဲကပင် နာရီစင် ယာဉ်ရပ်နားစခန်း",
+        "city": "Hpa-an",
+        "google_map_url": "https://maps.google.com/maps?q=16.890000,97.632000&z=15&output=embed",
+        "type": LotType.PUBLIC.value,
+        "is_active": True,
+        "rate_per_hour": 500.0,
+        "staff_emails": ["sawkyawswar.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.89001, "longitude": 97.63201},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.89002, "longitude": 97.63202},
+                    {"slot_number": "G-A03", "section": "A", "latitude": 16.89003, "longitude": 97.63203},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.89004, "longitude": 97.63204},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.89005, "longitude": 97.63205},
+                ],
+            },
+        ],
+    },
+
+    # ── 16. Hpa-an Thanlwin Bridge Plaza Parking ─────────────────────────────
+    {
+        "owner_email": "hpaan.smartparking@gmail.com",
+        "name": "သံလွင်တံတား ယာဉ်ရပ်နားစခန်း",
+        "city": "Hpa-an",
+        "google_map_url": "https://maps.google.com/maps?q=16.895000,97.625000&z=15&output=embed",
+        "type": LotType.PUBLIC.value,
+        "is_active": True,
+        "rate_per_hour": 600.0,
+        "staff_emails": ["nawmueh.staff@gmail.com"],
+        "floors": [
+            {
+                "floor_name": "Ground Floor (G)",
+                "slots": [
+                    {"slot_number": "G-A01", "section": "A", "latitude": 16.89501, "longitude": 97.62501},
+                    {"slot_number": "G-A02", "section": "A", "latitude": 16.89502, "longitude": 97.62502},
+                    {"slot_number": "G-A03", "section": "A", "latitude": 16.89503, "longitude": 97.62503},
+                    {"slot_number": "G-B01", "section": "B", "latitude": 16.89504, "longitude": 97.62504},
+                    {"slot_number": "G-B02", "section": "B", "latitude": 16.89505, "longitude": 97.62505},
+                ],
+            },
+        ],
+    },
 ]
 
 
@@ -859,8 +911,10 @@ def seed():
                 for staff_email in lot_data.get("staff_emails", []):
                     staff_user = user_map.get(staff_email)
                     if staff_user:
-                        ps = ParkingStaff(user_id=staff_user.id, parking_lot_id=lot.id)
-                        db.add(ps)
+                        existing_ps = db.query(ParkingStaff).filter_by(user_id=staff_user.id).first()
+                        if not existing_ps:
+                            ps = ParkingStaff(user_id=staff_user.id, parking_lot_id=lot.id)
+                            db.add(ps)
 
                 print(f"  [{i:02d}] {lot_data['name']:<42} {lot_data['city']:<15} {int(lot_data['rate_per_hour'])}/hr  {total_slots} slots")
             else:
@@ -874,6 +928,7 @@ def seed():
         print("\n[8] Parking Sessions & Transactions (Matching Subscriptions & Sessions)")
         existing_sessions_count = db.query(ParkingSession).count()
         if existing_sessions_count == 0 and customer_car_objs and all_created_slots:
+            session_car_objs = [c for c in customer_car_objs if customer_user_map[c.id].email != "khunsithu2003@gmail.com"]
             finished_session_configs = [
                 # (days_ago, duration_mins)
                 (7, 120), (6, 180), (6, 60), (5, 240), (5, 90),
@@ -884,7 +939,7 @@ def seed():
             session_idx = 1
             # A) Seed Finished Sessions & Completed Payments
             for idx, (days_ago, duration_mins) in enumerate(finished_session_configs):
-                car = customer_car_objs[idx % len(customer_car_objs)]
+                car = session_car_objs[idx % len(session_car_objs)]
                 user = customer_user_map[car.id]
                 slot, lot, owner = all_created_slots[idx % len(all_created_slots)]
                 owner_wallet = owner_wallet_map.get(owner.id)
@@ -930,7 +985,7 @@ def seed():
             for slot_i in active_slot_indices:
                 if slot_i < len(all_created_slots):
                     slot, lot, owner = all_created_slots[slot_i]
-                    car = customer_car_objs[(slot_i + 5) % len(customer_car_objs)]
+                    car = session_car_objs[(slot_i + 5) % len(session_car_objs)]
 
                     start_time = now - timedelta(minutes=random.randint(15, 90))
                     session = ParkingSession(
