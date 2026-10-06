@@ -650,17 +650,8 @@ def seed():
 
         # 2.5 Cities (Only 6 cities)
         print("\n[2.5] Cities")
-        # Resolve the uploads directory relative to the API root (one level above scripts/)
-        api_root = Path(__file__).resolve().parents[1]
         for c_data in CITIES_DATA:
-            # Verify the image file physically exists before trusting the path
             seed_image_url = c_data.get("image_url")
-            if seed_image_url:
-                image_disk_path = api_root / seed_image_url.lstrip("/")
-                if not image_disk_path.exists():
-                    print(f"  [!] WARNING: Image file not found on disk: {image_disk_path}")
-                    print(f"      City '{c_data['name']}' will be seeded WITHOUT an image.")
-                    seed_image_url = None
 
             c_obj = db.query(City).filter_by(name=c_data["name"]).first()
             if not c_obj:
@@ -676,7 +667,7 @@ def seed():
                 print(f"  [+] City: {c_data['name']} ({c_data['name_mm']})" +
                       (f" — image: {seed_image_url}" if seed_image_url else " — no image"))
             else:
-                # Always sync image_url from seed data (overwrite stale/missing values)
+                # Always sync image_url from seed data (fixes null/stale values)
                 if c_obj.image_url != seed_image_url:
                     c_obj.image_url = seed_image_url
                     db.flush()

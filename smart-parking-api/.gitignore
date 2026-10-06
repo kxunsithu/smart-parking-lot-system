@@ -29,5 +29,8 @@ logs/
 # OS
 .DS_Store
 
-# Uploads
+# Uploads — ignore user-uploaded files but keep seed city images so they
+# are baked into the Docker image for Railway deployments.
 uploads/
+!uploads/city_images/
+!uploads/city_images/**
