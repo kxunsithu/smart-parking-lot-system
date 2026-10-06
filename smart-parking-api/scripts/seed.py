@@ -225,7 +225,7 @@ PARKING_LOTS = [
     # ── 1. Hpa-an Central Market Parking ─────────────────────────────────────
     {
         "owner_email": "cbbank.myawaddy@gmail.com",
-        "name": "Hpa-an Central Market Parking",
+        "name": "ဘားအံဈေးကြီး ယာဉ်ရပ်နားစခန်း",
         "city": "Hpa-an",
         "google_map_url": "https://maps.google.com/maps?q=16.8893,97.6322&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -263,7 +263,7 @@ PARKING_LOTS = [
     # ── 2. Hpa-an Township Office Parking ────────────────────────────────────
     {
         "owner_email": "kbz.bankingoffice@gmail.com",
-        "name": "Hpa-an Township Office Parking",
+        "name": "ဘားအံမြို့နယ်ရုံး ယာဉ်ရပ်နားစခန်း",
         "city": "Hpa-an",
         "google_map_url": "https://maps.google.com/maps?q=16.8941,97.6291&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -288,7 +288,7 @@ PARKING_LOTS = [
     # ── 3. Hpa-an General Hospital Parking ───────────────────────────────────
     {
         "owner_email": "kbz.bankingoffice@gmail.com",
-        "name": "Hpa-an General Hospital Parking",
+        "name": "ဘားအံပြည်သူ့ဆေးရုံကြီး ယာဉ်ရပ်နားစခန်း",
         "city": "Hpa-an",
         "google_map_url": "https://maps.google.com/maps?q=16.8912,97.6348&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -313,7 +313,7 @@ PARKING_LOTS = [
     # ── 4. Myawaddy Border Trade Parking ────────────────────────────────────
     {
         "owner_email": "yomabank.kayin@gmail.com",
-        "name": "Myawaddy Border Trade Parking",
+        "name": "မြဝတီနယ်စပ်ကုန်သွယ်ရေး ယာဉ်ရပ်နားစခန်း",
         "city": "Myawaddy",
         "google_map_url": "https://maps.google.com/maps?q=16.6981,98.5028&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -355,7 +355,7 @@ PARKING_LOTS = [
     # ── 5. Myawaddy Market Parking ───────────────────────────────────────────
     {
         "owner_email": "yomabank.kayin@gmail.com",
-        "name": "Myawaddy Market Parking",
+        "name": "မြဝတီဈေး ယာဉ်ရပ်နားစခန်း",
         "city": "Myawaddy",
         "google_map_url": "https://maps.google.com/maps?q=16.7010,98.4995&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -382,7 +382,7 @@ PARKING_LOTS = [
     # ── 6. Kawkareik Town Centre Parking ─────────────────────────────────────
     {
         "owner_email": "wavemoney.center@gmail.com",
-        "name": "Kawkareik Town Centre Parking",
+        "name": "ကော့ကရိတ်မြို့လယ် ယာဉ်ရပ်နားစခန်း",
         "city": "Kawkareik",
         "google_map_url": "https://maps.google.com/maps?q=16.5420,98.2550&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -407,7 +407,7 @@ PARKING_LOTS = [
     # ── 7. Kawkareik Market Parking ──────────────────────────────────────────
     {
         "owner_email": "maxmyanmar.group@gmail.com",
-        "name": "Kawkareik Market Parking",
+        "name": "ကော့ကရိတ်ဈေး ယာဉ်ရပ်နားစခန်း",
         "city": "Kawkareik",
         "google_map_url": "https://maps.google.com/maps?q=16.5448,98.2581&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -431,7 +431,7 @@ PARKING_LOTS = [
     # ── 8. Kyainseikgyi Jetty Parking ────────────────────────────────────────
     {
         "owner_email": "ayabank.hpaan@gmail.com",
-        "name": "Kyainseikgyi Jetty Parking",
+        "name": "ကြာအင်းဆိပ်ကြီးဆိပ်ကမ်း ယာဉ်ရပ်နားစခန်း",
         "city": "Kyainseikgyi",
         "google_map_url": "https://maps.google.com/maps?q=16.0985,98.1542&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -458,7 +458,7 @@ PARKING_LOTS = [
     # ── 9. Kyainseikgyi Market Parking ───────────────────────────────────────
     {
         "owner_email": "ayabank.hpaan@gmail.com",
-        "name": "Kyainseikgyi Market Parking",
+        "name": "ကြာအင်းဆိပ်ကြီးဈေး ယာဉ်ရပ်နားစခန်း",
         "city": "Kyainseikgyi",
         "google_map_url": "https://maps.google.com/maps?q=16.1025,98.1601&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -482,7 +482,7 @@ PARKING_LOTS = [
     # ── 10. Hlaingbwe Township Parking ──────────────────────────────────────
     {
         "owner_email": "shwetaung.realestate@gmail.com",
-        "name": "Hlaingbwe Township Parking",
+        "name": "လှိုင်းဘွဲ့မြို့နယ် ယာဉ်ရပ်နားစခန်း",
         "city": "Hlaingbwe",
         "google_map_url": "https://maps.google.com/maps?q=17.0821,97.5632&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -507,7 +507,7 @@ PARKING_LOTS = [
     # ── 11. Payathonzu Border Market Parking ─────────────────────────────────
     {
         "owner_email": "denko.trading@gmail.com",
-        "name": "Payathonzu Border Market Parking",
+        "name": "ဘုရားသုံးဆူနယ်စပ်ဈေး ယာဉ်ရပ်နားစခန်း",
         "city": "Payathonzu",
         "google_map_url": "https://maps.google.com/maps?q=15.2851,98.3832&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -531,7 +531,7 @@ PARKING_LOTS = [
     # ── 12. Payathonzu Town Centre Parking ───────────────────────────────────
     {
         "owner_email": "grandroyal.group@gmail.com",
-        "name": "Payathonzu Town Centre Parking",
+        "name": "ဘုရားသုံးဆူမြို့လယ် ယာဉ်ရပ်နားစခန်း",
         "city": "Payathonzu",
         "google_map_url": "https://maps.google.com/maps?q=15.2891,98.3810&z=15&output=embed",
         "type": LotType.PUBLIC.value,
@@ -556,7 +556,7 @@ PARKING_LOTS = [
     # ── 13. Myawaddy Industrial Zone Parking ─────────────────────────────────
     {
         "owner_email": "citymart.holding@gmail.com",
-        "name": "Myawaddy Industrial Zone Parking",
+        "name": "မြဝတီစက်မှုဇုန် ယာဉ်ရပ်နားစခန်း",
         "city": "Myawaddy",
         "google_map_url": "https://maps.google.com/maps?q=16.7152,98.4881&z=15&output=embed",
         "type": LotType.PRIVATE.value,
@@ -583,7 +583,7 @@ PARKING_LOTS = [
     # ── 14. Hpa-an Shwe Myo Daw Pagoda Parking ───────────────────────────────
     {
         "owner_email": "cbbank.myawaddy@gmail.com",
-        "name": "Hpa-an Shwe Myo Daw Pagoda Parking",
+        "name": "ဘားအံရွှေမျိုးတော်ဘုရား ယာဉ်ရပ်နားစခန်း",
         "city": "Hpa-an",
         "google_map_url": "https://maps.google.com/maps?q=16.8801,97.6198&z=15&output=embed",
         "type": LotType.PUBLIC.value,

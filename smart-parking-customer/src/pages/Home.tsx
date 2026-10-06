@@ -226,12 +226,12 @@ export default function Home() {
         <section className="space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <p className="text-primary text-xs font-bold uppercase tracking-widest mb-1">Explore Locations</p>
+              <p className="text-primary text-xs font-bold uppercase tracking-widest mb-1">{t("home.explore_locations", "Explore Locations")}</p>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-                Cities in Kayin State
+                {t("home.cities_title", "Cities in Kayin State")}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Select a township or city to explore available smart parking lots and reserve your slot.
+                {t("home.cities_subtitle", "Select a township or city to explore available smart parking lots and reserve your slot.")}
               </p>
             </div>
             <Button
@@ -239,7 +239,7 @@ export default function Home() {
               className="self-start sm:self-auto rounded gap-2 cursor-pointer border-border/80 hover:bg-muted/60"
               onClick={() => navigate(isAuthenticated ? "/dashboard" : "/login")}
             >
-              View all cities
+              {t("home.view_all_cities", "View all cities")}
               <ChevronRight className="size-4" />
             </Button>
           </div>
@@ -273,7 +273,7 @@ export default function Home() {
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 p-4 text-center bg-gradient-to-br from-slate-900 via-emerald-950/40 to-slate-900">
                           <Building2 className="w-12 h-12 mb-2 text-primary/40" />
-                          <span className="text-xs font-medium text-slate-400">Kayin State Township</span>
+                          <span className="text-xs font-medium text-slate-400">{t("home.township_label", "Kayin State Township")}</span>
                         </div>
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
@@ -287,7 +287,7 @@ export default function Home() {
                               : "bg-black/60 text-slate-300 border-none"
                           }
                         >
-                          {count} {count === 1 ? "Lot" : "Lots"}
+                          {count} {count === 1 ? t("home.lot_count_singular", "Lot") : t("home.lot_count_plural", "Lots")}
                         </Badge>
                       </div>
 
@@ -318,7 +318,7 @@ export default function Home() {
           ) : (
             <div className="text-center py-16 border border-dashed border-border/80 rounded bg-card/40">
               <Building2 className="size-12 mx-auto text-muted-foreground/40 mb-3" />
-              <p className="text-muted-foreground font-medium">No cities available right now.</p>
+              <p className="text-muted-foreground font-medium">{t("home.no_cities", "No cities available right now.")}</p>
             </div>
           )}
         </section>

@@ -180,16 +180,16 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <Badge variant="default" className="bg-emerald-600 text-white flex items-center gap-1">
                   <Clock className="size-3 animate-pulse" />
-                  {t("session.active", "Active Parking Session")}
+                  {t("dashboard.session_active", "Active Parking Session")}
                 </Badge>
                 <span className="text-xs text-muted-foreground font-medium">
-                  {t("session.started", "Started")}: {parseUtc(activeSession.start_time).toLocaleTimeString()}
+                  {t("dashboard.session_started", "Started")}: {parseUtc(activeSession.start_time).toLocaleTimeString()}
                 </span>
               </div>
               <CardTitle className="text-lg font-bold text-foreground mt-2">
-                {t("session.current_slot", "Currently Parked")}
+                {t("dashboard.currently_parked", "Currently Parked")}
               </CardTitle>
-              <CardDescription>Session #{activeSession.id} — track your slot or view session details.</CardDescription>
+              <CardDescription>Session #{activeSession.id} — {t("dashboard.session_desc", "track your slot or view session details.")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {activeSessionLocation && (
@@ -217,9 +217,9 @@ export default function Dashboard() {
         {!selectedCity && (
           <div className="space-y-6">
             <div>
-              <p className="text-primary text-xs font-bold uppercase tracking-widest mb-1">Explore Locations</p>
+              <p className="text-primary text-xs font-bold uppercase tracking-widest mb-1">{t("dashboard.explore_locations", "Explore Locations")}</p>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-                {t("home.find_parking", "Cities in Kayin State")}
+                {t("home.cities_title", "Cities in Kayin State")}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {t("dashboard.subtitle", "Select a township or city to explore available smart parking lots and reserve your slot.")}
@@ -261,9 +261,9 @@ export default function Dashboard() {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                         ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 p-4 text-center bg-gradient-to-br from-slate-900 via-amber-950/20 to-slate-900">
+                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 p-4 text-center bg-gradient-to-br from-slate-900 via-amber-950/20 to-slate-900">
                             <Building2 className="w-12 h-12 mb-2 text-primary/40" />
-                            <span className="text-xs font-medium text-slate-400">Kayin State Township</span>
+                            <span className="text-xs font-medium text-slate-400">{t("dashboard.township_label", "Kayin State Township")}</span>
                           </div>
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
@@ -277,7 +277,7 @@ export default function Dashboard() {
                                 : "bg-black/60 text-slate-300 border-none"
                             }
                           >
-                            {count} {count === 1 ? "Lot" : "Lots"}
+                            {count} {count === 1 ? t("dashboard.lot_singular", "Lot") : t("dashboard.lot_plural", "Lots")}
                           </Badge>
                         </div>
 
@@ -297,7 +297,7 @@ export default function Dashboard() {
                       {/* City description footer */}
                       <div className="p-4 bg-card/60 backdrop-blur-sm flex items-center justify-between">
                         <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                          {city.description || "Browse available smart parking spaces and reserve slots."}
+                          {city.description || t("dashboard.browse_desc", "Browse available smart parking spaces and reserve slots.")}
                         </p>
                         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0 ml-2" />
                       </div>
@@ -335,8 +335,8 @@ export default function Dashboard() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Showing parking lots in {selectedCity}
-                    {meta ? ` (${meta.total} total)` : ""}
+                    {t("dashboard.showing_lots", "Showing parking lots in")} {selectedCity}
+                    {meta ? ` (${meta.total} ${t("dashboard.total", "total")})` : ""}
                   </p>
                 </div>
               </div>
@@ -345,7 +345,7 @@ export default function Dashboard() {
               <div className="relative w-full sm:w-72">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search lots in this city..."
+                  placeholder={t("dashboard.search_lots", "Search lots in this city...")}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9"
@@ -401,9 +401,9 @@ export default function Dashboard() {
                       </CardHeader>
                       <CardContent className="space-y-3 pb-4">
                         <div className="flex items-center justify-between text-sm py-2.5 px-3.5 bg-muted/40 rounded border border-border/40">
-                          <span className="text-muted-foreground text-xs font-medium">Hourly Rate</span>
+                          <span className="text-muted-foreground text-xs font-medium">{t("dashboard.hourly_rate", "Hourly Rate")}</span>
                           <span className="font-bold text-primary">
-                            {lot.rate_per_hour != null ? `${lot.rate_per_hour.toLocaleString()} MMK / hr` : "—"}
+                            {lot.rate_per_hour != null ? `${lot.rate_per_hour.toLocaleString()} ${t("dashboard.mmk_per_hr", "MMK / hr")}` : "—"}
                           </span>
                         </div>
 
@@ -468,7 +468,7 @@ export default function Dashboard() {
                         className="w-full rounded font-bold shadow-md cursor-pointer"
                         onClick={() => navigate(`/parking/${lot.id}`)}
                       >
-                        View &amp; Book Slots
+                        {t("dashboard.view_book", "View & Book Slots")}
                       </Button>
                     </div>
                   </Card>

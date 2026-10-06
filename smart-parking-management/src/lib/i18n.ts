@@ -82,9 +82,9 @@ export const translations: Record<Language, Record<string, string>> = {
     "nav.logout": "အကောင့်ထွက်ရန်",
 
     // Role Headers
-    "role.admin": "စနစ်စီမံခန့်ခွဲသူ (Admin)",
-    "role.owner": "ယာဉ်ရပ်နားစခန်း ပိုင်ရှင် (Owner)",
-    "role.staff": "စခန်း တာဝန်ကျ ဝန်ထမ်း (Staff)",
+    "role.admin": "စနစ်စီမံခန့်ခွဲသူ",
+    "role.owner": "ယာဉ်ရပ်နားစခန်း ပိုင်ရှင်",
+    "role.staff": "စခန်း တာဝန်ကျ ဝန်ထမ်း",
 
     // Common Actions & UI
     "common.search": "ရှာဖွေရန်...",

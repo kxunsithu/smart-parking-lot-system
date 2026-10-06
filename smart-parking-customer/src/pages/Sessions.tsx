@@ -337,7 +337,7 @@ export default function Sessions() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-semibold">Active Session</span>
+                  <span className="text-sm font-semibold">{t("sessions.active_session_label", "Active Session")}</span>
                   <span className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-green-500/15 text-green-600 dark:text-green-400">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                     LIVE
@@ -352,7 +352,7 @@ export default function Sessions() {
                   <span className="text-sm font-bold text-primary tabular-nums">
                     <LiveTimer startTime={activeSessions[0].start_time} />
                   </span>
-                  <span className="text-xs text-muted-foreground">elapsed</span>
+                  <span className="text-xs text-muted-foreground">{t("sessions.elapsed", "elapsed")}</span>
                 </div>
                 {activeSessionLocation && (
                   <div className="mt-3">
