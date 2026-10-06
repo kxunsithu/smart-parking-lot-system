@@ -46,14 +46,10 @@ class SortOrder(str, Enum):
 
 # Kayin State (ကရင်ပြည်နယ်) cities — used for parking lot city field
 Kayin_STATE_CITIES: list[str] = [
+    "Hlaingbwe",
     "Hpa-an",
-    "Myawaddy",
     "Kawkareik",
     "Kyainseikgyi",
-    "Hlaingbwe",
-    "Thandaunggyi",
-    "Htantabin",
-    "Papun",
-    "Waw",
-    "Ler Mu Plaw",
+    "Myawaddy",
+    "Payathonzu",
 ]

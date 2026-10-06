@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { NavLink, useNavigate } from "react-router-dom"
-import { ChevronLeft, ChevronRight, LogOut, ParkingSquare } from "lucide-react"
+import { ChevronLeft, ChevronRight, LogOut } from "lucide-react"
+import appIcon from "@/assets/icon.png"
 import { cn } from "@/lib/utils"
 import { NAV_CONFIG, ROLE_LABELS } from "@/utils/navConfig"
 import type { RoleName } from "@/types"
@@ -54,8 +55,8 @@ export function AppSidebar({ role, onNavigate, collapsible = true }: AppSidebarP
             expanded ? "flex-1 min-w-0" : "hidden",
           )}
         >
-          <div className="size-9 rounded-full overflow-hidden shrink-0 border border-sidebar-border bg-primary/10 flex items-center justify-center">
-            <ParkingSquare className="size-5 text-primary" />
+          <div className="size-9 rounded overflow-hidden shrink-0 border border-sidebar-border bg-background flex items-center justify-center">
+            <img src={appIcon} alt="Smart Parking" className="w-full h-full object-contain" />
           </div>
           <div className="leading-tight min-w-0">
             <p className="text-sm font-bold text-foreground leading-tight truncate">
@@ -69,8 +70,8 @@ export function AppSidebar({ role, onNavigate, collapsible = true }: AppSidebarP
 
         {/* Logo (collapsed) */}
         {!expanded && (
-          <div className="size-9 rounded-full overflow-hidden border border-sidebar-border bg-primary/10 flex items-center justify-center">
-            <ParkingSquare className="size-5 text-primary" />
+          <div className="size-9 rounded overflow-hidden border border-sidebar-border bg-background flex items-center justify-center">
+            <img src={appIcon} alt="Smart Parking" className="w-full h-full object-contain" />
           </div>
         )}
       </div>

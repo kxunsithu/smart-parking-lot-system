@@ -14,7 +14,7 @@ export const Kayin_STATE_CITIES: KayinCity[] = [
   { value: "Myawaddy", label: "Myawaddy", labelMm: "မြဝတီ" },
   { value: "Kawkareik", label: "Kawkareik", labelMm: "ကော့ကရိတ်" },
   { value: "Kyainseikgyi", label: "Kyainseikgyi", labelMm: "ကျိုင်းဆိုင်ကြီး" },
-  { value: "Hlaingbwe", label: "Hlaingbwe", labelMm: "လှိုင်းဘွဲ" },
+  { value: "Hlaingbwe", label: "Hlaingbwe", labelMm: "လှိုင်းဘွဲ့" },
   { value: "Thandaunggyi", label: "Thandaunggyi", labelMm: "သံတောင်ကြီး" },
   { value: "Htantabin", label: "Htantabin", labelMm: "ထန်းတပင်" },
   { value: "Papun", label: "Papun", labelMm: "ဖာပွန်" },

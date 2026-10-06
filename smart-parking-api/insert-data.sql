@@ -8,75 +8,83 @@ INSERT INTO roles (id, name, description) VALUES
 (3, 'STAFF', 'Parking staff'),
 (4, 'CUSTOMER', 'End customer');
 
--- 2) Users
+-- 2) Cities (Only the 6 requested cities)
+INSERT INTO cities (id, name, name_mm, description, is_active) VALUES
+(1, 'Hlaingbwe', 'လှိုင်းဘွဲ့', 'Central township of Kayin State known for agricultural communities.', TRUE),
+(2, 'Hpa-an', 'ဘားအံ', 'Capital city of Kayin State, famous for Mount Zwekabin, Saddar Cave, and Kyaut Ka Latt Pagoda.', TRUE),
+(3, 'Kawkareik', 'ကော့ကရိတ်', 'Strategic transit city situated at the foot of the Dawna Range along the Asian Highway.', TRUE),
+(4, 'Kyainseikgyi', 'ကြာအင်းဆိပ်ကြီး', 'Southern township of Kayin State situated along the Zami and Winyaw Rivers.', TRUE),
+(5, 'Myawaddy', 'မြဝတီ', 'Major border trade hub on the Thai-Myanmar border connected to Mae Sot via the Friendship Bridge.', TRUE),
+(6, 'Payathonzu', 'ဘုရားသုံးဆူ', 'Border town famous for the Three Pagodas Pass connecting Myanmar and Thailand.', TRUE);
+
+-- 3) Users (All users have password: Admin2026@)
 INSERT INTO users (id, name, email, password, role_id, is_active, is_verified, phone) VALUES
-(1, 'Alice Admin', 'alice.admin@example.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeg6Lruj3vjPGga31lW', 1, TRUE, TRUE, '09123456789'),
-(2, 'Bob Owner', 'bob.owner@example.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeg6Lruj3vjPGga31lW', 2, TRUE, TRUE, '09234567890'),
-(3, 'Carol Staff', 'carol.staff@example.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeg6Lruj3vjPGga31lW', 3, TRUE, TRUE, '09345678901'),
-(4, 'Dave Customer', 'dave.customer@example.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeg6Lruj3vjPGga31lW', 4, TRUE, TRUE, '09456789012');
+(1, 'System Admin', 'khunsithu350@gmail.com', '$2b$12$xO.0/NqKpcYpHQd35iGp2uN2Mtwnzd2tH5VrKcC7sw0Y8QjSg/qTC', 1, TRUE, TRUE, '+959000000001'),
+(2, 'KBZ Banking Office', 'kbz.bankingoffice@gmail.com', '$2b$12$xO.0/NqKpcYpHQd35iGp2uN2Mtwnzd2tH5VrKcC7sw0Y8QjSg/qTC', 2, TRUE, TRUE, '+959600000001'),
+(3, 'Saw Kler Htoo', 'sawhklertoo.staff@gmail.com', '$2b$12$xO.0/NqKpcYpHQd35iGp2uN2Mtwnzd2tH5VrKcC7sw0Y8QjSg/qTC', 3, TRUE, TRUE, '+959700000001'),
+(4, 'Saw Blay Htoo', 'sawblayhtoo@gmail.com', '$2b$12$xO.0/NqKpcYpHQd35iGp2uN2Mtwnzd2tH5VrKcC7sw0Y8QjSg/qTC', 4, TRUE, TRUE, '+959800000001');
 
--- 3) Parking Owners
+-- 4) Parking Owners
 INSERT INTO parking_owners (id, user_id, company_name) VALUES
-(1, 2, 'Bob''s Parking LLC');
+(1, 2, 'KBZ Banking Office');
 
--- 4) Wallet Accounts (Platform Admin & Owner Wallet Accounts)
+-- 5) Wallet Accounts (Platform Admin & Owner Wallet Accounts)
 INSERT INTO wallet_accounts (id, owner_id, name, wallet_phone, api_key, is_active) VALUES
-(1, NULL, 'System Admin Platform Account', '09123456789', 'admin_platform_wallet_api_key_secret', TRUE),
-(2, 1, 'Bob''s Parking Wallet Account', '09234567890', 'bobs_parking_wallet_api_key_secret', TRUE);
+(1, NULL, 'System Admin Platform Account', '+959000000001', 'admin_platform_wallet_api_key_secret', TRUE),
+(2, 1, 'KBZ Banking Office Wallet Account', '+959600000001', 'kbz_bankingoffice_wallet_api_key_secret', TRUE);
 
--- 5) Parking Lots (Kayin State — ကရင်ပြည်နယ်)
+-- 6) Parking Lots (Kayin State — strictly allowed cities)
 INSERT INTO parking_lots (id, owner_id, name, google_map_url, type, is_active, rate_per_hour, city) VALUES
-(1, 1, 'Hpa-an Central Parking', 'https://maps.google.com/?q=Hpa-an+Central', 'PUBLIC', TRUE, 1000.0, 'Hpa-an'),
-(2, 1, 'Myawaddy Border Parking', 'https://maps.google.com/?q=Myawaddy+Border+Myanmar', 'PUBLIC', TRUE, 800.0, 'Myawaddy'),
-(3, 1, 'Kawkareik Town Lot', NULL, 'PUBLIC', TRUE, 600.0, 'Kawkareik');
+(1, 1, 'Hpa-an Central Market Parking', 'https://maps.google.com/maps?q=16.88934,97.63225&hl=en&z=16&output=embed', 'PUBLIC', TRUE, 500.0, 'Hpa-an'),
+(2, 1, 'Myawaddy Border Trade Parking', 'https://maps.google.com/maps?q=16.69170,98.50980&hl=en&z=16&output=embed', 'PUBLIC', TRUE, 800.0, 'Myawaddy'),
+(3, 1, 'Kawkareik Town Centre Parking', 'https://maps.google.com/maps?q=16.55420,98.24350&hl=en&z=16&output=embed', 'PUBLIC', TRUE, 400.0, 'Kawkareik');
 
--- 6) Parking Floors
+-- 7) Parking Floors
 INSERT INTO parking_floors (id, parking_lot_id, floor_name) VALUES
-(1, 1, 'Ground Floor'),
-(2, 1, 'Level 2');
+(1, 1, 'Ground Floor (G)'),
+(2, 1, 'Level 1 (L1)');
 
--- 7) Parking Slots (3 per floor)
+-- 8) Parking Slots
 INSERT INTO parking_slots (id, floor_id, slot_number, section, latitude, longitude, status) VALUES
-(1, 1, 'G-01', 'A', 40.71281, -74.00601, 'AVAILABLE'),
-(2, 1, 'G-02', 'A', 40.71282, -74.00602, 'AVAILABLE'),
-(3, 1, 'G-03', 'B', 40.71283, -74.00603, 'AVAILABLE'),
-(4, 2, 'L2-01', 'A', 40.71284, -74.00604, 'AVAILABLE'),
-(5, 2, 'L2-02', 'B', 40.71285, -74.00605, 'AVAILABLE'),
-(6, 2, 'L2-03', 'B', 40.71286, -74.00606, 'AVAILABLE');
+(1, 1, 'G-A01', 'A', 16.88934, 97.63225, 'AVAILABLE'),
+(2, 1, 'G-A02', 'A', 16.88935, 97.63226, 'AVAILABLE'),
+(3, 1, 'G-B01', 'B', 16.88938, 97.63229, 'AVAILABLE'),
+(4, 2, 'L1-A01', 'A', 16.88942, 97.63225, 'AVAILABLE');
 
--- 8) Parking Staff
+-- 9) Parking Staff
 INSERT INTO parking_staff (id, user_id, parking_lot_id, created_by) VALUES
 (1, 3, 1, 2);
 
--- 9) Customers
+-- 10) Customers
 INSERT INTO customers (id, user_id, current_lat, current_lng) VALUES
-(1, 4, 40.71300, -74.00650);
+(1, 4, 16.88934, 97.63225);
 
--- 10) Cars
+-- 11) Cars
 INSERT INTO cars (id, customer_id, plate_number, brand, color) VALUES
-(1, 1, 'ABC-1234', 'Toyota', 'White');
+(1, 1, '1A-1111', 'Toyota', 'White');
 
--- 11) Parking Sessions
+-- 12) Parking Sessions
 INSERT INTO parking_sessions (id, car_id, slot_id, start_time, end_time, duration, fee, status) VALUES
-(1, 1, 1, CURRENT_TIMESTAMP - INTERVAL '2 hours', CURRENT_TIMESTAMP - INTERVAL '1 hour', 60, 1000.0, 'FINISHED');
+(1, 1, 1, CURRENT_TIMESTAMP - INTERVAL '2 hours', CURRENT_TIMESTAMP - INTERVAL '1 hour', 60, 500.0, 'FINISHED');
 
--- 12) Packages (Subscription tiers defined by Admin)
+-- 13) Packages (Subscription tiers defined by Admin)
 INSERT INTO packages (id, name, description, price, duration_days, max_lots, max_staff, is_active) VALUES
 (1, 'Basic',      'Ideal for small operators — 1 lot, up to 5 staff',        9900.0,  30,  1, 5,   TRUE),
 (2, 'Pro',        'For growing businesses — up to 3 lots, 20 staff',         24900.0, 30,  3, 20,  TRUE),
 (3, 'Enterprise', 'Unlimited scale — up to 10 lots, unlimited staff',        49900.0, 30, 10, 999, TRUE);
 
--- 13) Owner Subscriptions
+-- 14) Owner Subscriptions
 INSERT INTO owner_subscriptions (id, owner_id, package_id, started_at, expires_at, status, amount) VALUES
-(1, 1, 2, CURRENT_TIMESTAMP - INTERVAL '10 days', CURRENT_TIMESTAMP + INTERVAL '20 days', 'ACTIVE', 24900.0);
+(1, 1, 2, CURRENT_TIMESTAMP - INTERVAL '15 days', CURRENT_TIMESTAMP + INTERVAL '15 days', 'ACTIVE', 24900.0);
 
--- 14) Payments (Parking session payment & Owner subscription payment)
+-- 15) Payments (Matching Subscription & Session with Transactions)
 INSERT INTO payments (id, user_id, wallet_account_id, session_id, subscription_id, reference, wallet_payment_reference, wallet_transaction_number, receiver_phone, amount, fee, total, status, message, paid_at) VALUES
-(1, 4, 2, 1, NULL, 'PP-100001', 'PAY-WAL-100001', 'TX-WAL-999001', '09234567890', 1000.0, 0.0, 1000.0, 'COMPLETED', 'Parking session payment successful', CURRENT_TIMESTAMP - INTERVAL '1 hour'),
-(2, 2, 1, NULL, 1, 'PP-100002', 'PAY-WAL-100002', 'TX-WAL-999002', '09123456789', 24900.0, 0.0, 24900.0, 'COMPLETED', 'Pro package subscription payment successful', CURRENT_TIMESTAMP - INTERVAL '10 days');
+(1, 4, 2, 1, NULL, 'PP-SES-000001', 'PAY-WAL-SES-000001', 'TX-WAL-SES-000001', '+959600000001', 500.0, 0.0, 500.0, 'COMPLETED', 'Parking session payment for slot G-A01 successful', CURRENT_TIMESTAMP - INTERVAL '1 hour'),
+(2, 2, 1, NULL, 1, 'PP-SUB-000001', 'PAY-WAL-SUB-000001', 'TX-WAL-SUB-000001', '+959000000001', 24900.0, 0.0, 24900.0, 'COMPLETED', 'Pro package subscription payment successful', CURRENT_TIMESTAMP - INTERVAL '15 days');
 
 -- Reset sequences for auto-increment IDs in PostgreSQL
 SELECT setval('roles_id_seq', (SELECT MAX(id) FROM roles));
+SELECT setval('cities_id_seq', (SELECT MAX(id) FROM cities));
 SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
 SELECT setval('parking_owners_id_seq', (SELECT MAX(id) FROM parking_owners));
 SELECT setval('wallet_accounts_id_seq', (SELECT MAX(id) FROM wallet_accounts));

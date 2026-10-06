@@ -12,7 +12,6 @@ import {
   ParkingCircle,
   Smartphone,
   ArrowRight,
-  CheckCircle2,
   Building2,
 } from "lucide-react"
 import Navbar from "@/components/layout/Navbar"
@@ -209,15 +208,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Proof badges */}
-              <div className="flex flex-wrap gap-3 pt-2 text-xs sm:text-sm text-slate-200">
-                {[t("home.proof1", "No credit card required"), t("home.proof2", "Instant setup"), t("home.proof3", "Available 24/7")].map((text) => (
-                  <span key={text} className="flex items-center gap-1.5 bg-black/50 border border-white/20 backdrop-blur-md rounded-full px-3.5 py-1.5 shadow-sm text-white font-medium">
-                    <CheckCircle2 className="size-3.5 text-amber-400 shrink-0" />
-                    <span>{text}</span>
-                  </span>
-                ))}
-              </div>
             </div>
 
             {/* ── Right: Interactive 3D Parking Lot Preview ── */}
@@ -238,7 +228,7 @@ export default function Home() {
             <div>
               <p className="text-primary text-xs font-bold uppercase tracking-widest mb-1">Explore Locations</p>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-                Cities in Kayin State (ကရင်ပြည်နယ်)
+                Cities in Kayin State
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
                 Select a township or city to explore available smart parking lots and reserve your slot.

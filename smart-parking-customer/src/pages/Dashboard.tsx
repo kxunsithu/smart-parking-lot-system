@@ -219,7 +219,7 @@ export default function Dashboard() {
             <div>
               <p className="text-primary text-xs font-bold uppercase tracking-widest mb-1">Explore Locations</p>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-                {t("home.find_parking", "Cities in Kayin State (ကရင်ပြည်နယ်)")}
+                {t("home.find_parking", "Cities in Kayin State")}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {t("dashboard.subtitle", "Select a township or city to explore available smart parking lots and reserve your slot.")}

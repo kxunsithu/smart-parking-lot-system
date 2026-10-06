@@ -16,7 +16,7 @@ export default function Footer() {
           </div>
           <div>
             <p className="font-bold text-sm">Smart Parking</p>
-            <p className="text-[10px] text-muted-foreground">Kayin State · ကရင်ပြည်နယ်</p>
+            <p className="text-[10px] text-muted-foreground">Kayin State</p>
           </div>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-4 text-xs text-muted-foreground text-center">

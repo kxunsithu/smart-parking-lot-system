@@ -625,7 +625,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "about.hero_subtitle": "ကရင်ပြည်နယ်၏ Parking လိုအပ်ချက်များကို ဖြည့်ဆည်းရန် Computer Science ကျောင်းသား ၆ ဦးမှ ဒီဇိုင်းဆွဲ တည်ဆောက်ထားသော Smart Parking System ဖြစ်ပါသည်။",
     "about.location": "ကရင်ပြည်နယ် · Computer Science Department",
     "about.stand_for": "ကျွန်ုပ်တို့ ကိုယ်စားပြုသောအရာ",
-    "about.driven_by": "ရည်ရွယ်ချက်ဦးဆောင်ပြီး စိတ်အားထက်သန်မှုဖြင့် တည်ဆောက်ထားသည်",
+    "about.driven_by": "စိတ်အားထက်သန်မှုဖြင့် တည်ဆောက်ထားသည်",
     "about.mission_title": "ကျွန်ုပ်တို့၏ Mission",
     "about.mission_desc": "ကရင်ပြည်နယ်တွင်း Smart Digital Parking System ဖြင့် ကားမောင်းသူတိုင်း အချိန်ကုန်သက်သာပြီး ယာဉ်ကြောပိတ်ဆို့မှု လျှော့ချပေးရန် ဖြစ်ပါသည်။",
     "about.vision_title": "ကျွန်ုပ်တို့၏ Vision",

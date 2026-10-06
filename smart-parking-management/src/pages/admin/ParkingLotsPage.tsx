@@ -99,7 +99,7 @@ export function ParkingLotsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Parking Lots — Kayin State"
-        description="View and manage all parking lots across Kayin State (ကရင်ပြည်နယ်)."
+        description="View and manage all parking lots across Kayin State."
       />
 
       <div className="space-y-4">

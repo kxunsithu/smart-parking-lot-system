@@ -186,7 +186,7 @@ export function LotsPage() {
     <div className="space-y-6">
       <PageHeader
         title="My Parking Lots"
-        description="Manage your parking lots in Kayin State (ကရင်ပြည်နယ်)."
+        description="Manage your parking lots in Kayin State."
         actions={
           <Button onClick={() => setCreateOpen(true)} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-sm">
             <Plus className="size-4" />

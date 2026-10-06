@@ -443,7 +443,7 @@ export function CitiesPage() {
               {/* City Name (Myanmar) */}
               <div className="space-y-1.5">
                 <Label htmlFor="city-name-mm" className="text-xs font-semibold">
-                  City Name (Myanmar / ကရင်ဘာသာ/မြန်မာ)
+                  City Name (Myanmar / မြန်မာ)
                 </Label>
                 <Input
                   id="city-name-mm"

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { Building2, CreditCard, ParkingSquare, UserCog, Users, Car, Receipt } from "lucide-react"
+import { Building2, CreditCard, ParkingSquare, Users, Car, Receipt } from "lucide-react"
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 import { PageHeader } from "@/components/common/PageHeader"
 import { StatCard } from "@/components/common/StatCard"
@@ -38,7 +38,6 @@ export function AdminDashboardPage() {
   const peopleData = data
     ? [
         { name: "Owners", value: data.total_owners },
-        { name: "Staff", value: data.total_staff },
         { name: "Customers", value: data.total_customers },
       ]
     : []
@@ -57,18 +56,16 @@ export function AdminDashboardPage() {
       <PageHeader title="Admin Dashboard" description="System-wide overview of the parking network." />
 
       {isLoading || !data ? (
-        <CardGridSkeleton count={4} />
+        <CardGridSkeleton count={6} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard label="Parking Owners" value={data.total_owners} icon={Building2} />
-          <StatCard label="Parking Staff" value={data.total_staff} icon={UserCog} />
           <StatCard label="Customers" value={data.total_customers} icon={Users} />
           <StatCard label="Parking Lots" value={data.total_parking_lots} icon={ParkingSquare} />
           <StatCard
             label="Total Revenue"
             value={formatCurrency(data.total_revenue)}
             icon={CreditCard}
-            className="sm:col-span-2"
           />
           <StatCard
             label="Session Revenue"
