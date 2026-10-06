@@ -167,7 +167,9 @@ export function FloorCameraScannerModal({
 
       // Calculate row grid layout for each section
       sortedSections.forEach((secName, secIdx) => {
-        const slotsInSec = sectionsMap[secName]
+        const slotsInSec = [...sectionsMap[secName]].sort((a, b) =>
+          a.slot_number.localeCompare(b.slot_number, undefined, { numeric: true, sensitivity: "base" })
+        )
         const cols = Math.min(slotsInSec.length, 5)
         const slotW = Math.min(22, 76 / cols - 3)
         const slotH = 26
@@ -717,7 +719,9 @@ export function FloorCameraScannerModal({
                   .sort()
                   .filter((sec) => selectedSectionFilter === "ALL" || selectedSectionFilter === sec)
                   .map((secName) => {
-                    const secSlots = roisBySection[secName]
+                    const secSlots = [...roisBySection[secName]].sort((a, b) =>
+                      a.slotNumber.localeCompare(b.slotNumber, undefined, { numeric: true, sensitivity: "base" })
+                    )
                     const freeCount = secSlots.filter((r) => r.detectedStatus === "AVAILABLE").length
                     const takenCount = secSlots.filter((r) => r.detectedStatus === "OCCUPIED").length
 

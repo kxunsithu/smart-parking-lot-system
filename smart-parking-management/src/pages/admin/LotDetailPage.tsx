@@ -406,7 +406,9 @@ function FloorSection({
         ) : (
           <div className="space-y-5">
             {sortedSections.map((section) => {
-              const sectionSlots = sectionMap[section]
+              const sectionSlots = [...sectionMap[section]].sort((a, b) =>
+                a.slot_number.localeCompare(b.slot_number, undefined, { numeric: true, sensitivity: "base" })
+              )
               const available = sectionSlots.filter((s) => s.status === "AVAILABLE").length
               const occupied = sectionSlots.filter((s) => s.status === "OCCUPIED").length
               return (

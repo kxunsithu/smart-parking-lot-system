@@ -107,11 +107,13 @@ class ParkingSlotService:
         if status:
             stmt = stmt.where(ParkingSlot.status == status)
 
+        sort_by = params.sort_by if params.sort_by is not None else "slot_number"
+
         items, total = self.slot_repo.paginate(
             stmt,
             page=params.page,
             limit=params.limit,
-            sort_by=params.sort_by,
+            sort_by=sort_by,
             order=params.order,
             search=params.search,
             search_fields=[ParkingSlot.slot_number, ParkingSlot.section],
