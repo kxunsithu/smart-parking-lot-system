@@ -21,6 +21,7 @@ configure_logging(debug=settings.DEBUG)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Path("uploads/profile_images").mkdir(parents=True, exist_ok=True)
+    Path("uploads/city_images").mkdir(parents=True, exist_ok=True)
     db = SessionLocal()
     try:
         TokenBlacklistRepository(db).purge_expired()

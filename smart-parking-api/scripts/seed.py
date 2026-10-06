@@ -91,7 +91,7 @@ DEFAULT_PACKAGES = [
     },
 ]
 
-PASSWORD = "Admin2026@"
+PASSWORD = "Parking2026@"
 
 # ── Users ────────────────────────────────────────────────────────────────────
 
@@ -650,24 +650,39 @@ def seed():
 
         # 2.5 Cities (Only 6 cities)
         print("\n[2.5] Cities")
+        # Resolve the uploads directory relative to the API root (one level above scripts/)
+        api_root = Path(__file__).resolve().parents[1]
         for c_data in CITIES_DATA:
+            # Verify the image file physically exists before trusting the path
+            seed_image_url = c_data.get("image_url")
+            if seed_image_url:
+                image_disk_path = api_root / seed_image_url.lstrip("/")
+                if not image_disk_path.exists():
+                    print(f"  [!] WARNING: Image file not found on disk: {image_disk_path}")
+                    print(f"      City '{c_data['name']}' will be seeded WITHOUT an image.")
+                    seed_image_url = None
+
             c_obj = db.query(City).filter_by(name=c_data["name"]).first()
             if not c_obj:
                 c_obj = City(
                     name=c_data["name"],
                     name_mm=c_data["name_mm"],
                     description=c_data["description"],
-                    image_url=c_data.get("image_url"),
+                    image_url=seed_image_url,
                     is_active=True,
                 )
                 db.add(c_obj)
                 db.flush()
-                print(f"  [+] City: {c_data['name']} ({c_data['name_mm']})")
+                print(f"  [+] City: {c_data['name']} ({c_data['name_mm']})" +
+                      (f" — image: {seed_image_url}" if seed_image_url else " — no image"))
             else:
-                if c_data.get("image_url") and not c_obj.image_url:
-                    c_obj.image_url = c_data["image_url"]
+                # Always sync image_url from seed data (overwrite stale/missing values)
+                if c_obj.image_url != seed_image_url:
+                    c_obj.image_url = seed_image_url
                     db.flush()
-                print(f"  [=] City exists: {c_data['name']}")
+                    print(f"  [~] City updated image_url: {c_data['name']} → {seed_image_url}")
+                else:
+                    print(f"  [=] City exists: {c_data['name']}")
 
         # 3. Users (Password: Admin2026@ for all users)
         print("\n[3] Users")
