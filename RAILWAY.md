@@ -76,7 +76,9 @@ The system consists of 4 services to deploy in your Railway project:
 5. Under **Settings** -> **Networking**, click **Generate Domain** to get your public API URL (e.g., `smart-parking-api-production.up.railway.app`).
 
 > ℹ️ **Note on Migrations & Seeding:**  
-> The `Dockerfile` inside `smart-parking-api` automatically executes `alembic upgrade head` and `python -m scripts.seed` on start. If you ever need to perform a clean database reset on first deployment, set `FRESH_MIGRATE=1` in the variables, let it deploy once, and then remove `FRESH_MIGRATE`.
+> The `Dockerfile` inside `smart-parking-api` automatically executes `alembic upgrade head` and `python -m scripts.seed` on start.
+> - To skip migrations/seeding on deploy, set `SKIP_MIGRATIONS=1` or `AUTO_MIGRATE=false` in environment variables.
+> - If you ever need to perform a clean database reset on deployment, set `FRESH_MIGRATE=1`, let it deploy once, and then remove it.
 
 ---
 
