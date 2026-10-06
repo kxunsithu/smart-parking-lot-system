@@ -99,7 +99,7 @@ SEED_USERS = [
     # Admin
     {"name": "System Admin",           "email": "khunsithu350@gmail.com",        "role": RoleName.ADMIN.value,    "phone": "+959000000001", "is_verified": True},
 
-    # Owners (10 — Real corporate/banking office accounts)
+    # Owners (12 — Real corporate/banking office and parking company accounts)
     {"name": "KBZ Banking Office",     "email": "kbz.bankingoffice@gmail.com",   "role": RoleName.OWNER.value,    "phone": "+959600000001", "is_verified": True},
     {"name": "AYA Bank Hpa-an",         "email": "ayabank.hpaan@gmail.com",       "role": RoleName.OWNER.value,    "phone": "+959600000002", "is_verified": True},
     {"name": "CB Bank Myawaddy",       "email": "cbbank.myawaddy@gmail.com",     "role": RoleName.OWNER.value,    "phone": "+959600000003", "is_verified": True},
@@ -110,6 +110,8 @@ SEED_USERS = [
     {"name": "Shwe Taung Real Estate", "email": "shwetaung.realestate@gmail.com", "role": RoleName.OWNER.value,    "phone": "+959600000008", "is_verified": True},
     {"name": "Grand Royal Group",      "email": "grandroyal.group@gmail.com",    "role": RoleName.OWNER.value,    "phone": "+959600000009", "is_verified": True},
     {"name": "City Mart Holding",      "email": "citymart.holding@gmail.com",    "role": RoleName.OWNER.value,    "phone": "+959600000010", "is_verified": True},
+    {"name": "Kayin Smart Parking",    "email": "kayin.smartparking@gmail.com",  "role": RoleName.OWNER.value,    "phone": "+959600000011", "is_verified": True},
+    {"name": "Hpa An Smart Parking",   "email": "hpaan.smartparking@gmail.com",  "role": RoleName.OWNER.value,    "phone": "+959600000012", "is_verified": True},
 
     # Staff (12)
     {"name": "Saw Kler Htoo",          "email": "sawhklertoo.staff@gmail.com",    "role": RoleName.STAFF.value,    "phone": "+959700000001", "is_verified": True},
@@ -156,6 +158,8 @@ OWNER_PROFILES = {
     "shwetaung.realestate@gmail.com": {"company_name": "Shwe Taung Real Estate", "package": "Pro"},
     "grandroyal.group@gmail.com":     {"company_name": "Grand Royal Group",       "package": "Basic"},
     "citymart.holding@gmail.com":     {"company_name": "City Mart Holding",       "package": "Basic"},
+    "kayin.smartparking@gmail.com":   {"company_name": "Kayin Smart Parking",     "package": "Enterprise"},
+    "hpaan.smartparking@gmail.com":   {"company_name": "Hpa An Smart Parking",    "package": "Pro"},
 }
 
 # ── Customer cars ─────────────────────────────────────────────────────────────
@@ -224,7 +228,7 @@ CITIES_DATA = [
 PARKING_LOTS = [
     # ── 1. Hpa-an Central Market Parking ─────────────────────────────────────
     {
-        "owner_email": "cbbank.myawaddy@gmail.com",
+        "owner_email": "hpaan.smartparking@gmail.com",
         "name": "ဘားအံဈေးကြီး ယာဉ်ရပ်နားစခန်း",
         "city": "Hpa-an",
         "google_map_url": "https://maps.google.com/maps?q=16.8916004,97.6349558&z=15&output=embed",
@@ -582,7 +586,7 @@ PARKING_LOTS = [
 
     # ── 14. Hpa-an Shwe Myo Daw Pagoda Parking ───────────────────────────────
     {
-        "owner_email": "cbbank.myawaddy@gmail.com",
+        "owner_email": "kayin.smartparking@gmail.com",
         "name": "ရွှေယဉ်မျှော်ဘုရား ယာဉ်ရပ်နားစခန်း",
         "city": "Hpa-an",
         "google_map_url": "https://maps.google.com/maps?q=16.8939438,97.6311569&z=15&output=embed",
