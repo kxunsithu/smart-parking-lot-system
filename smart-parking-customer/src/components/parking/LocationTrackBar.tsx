@@ -11,7 +11,7 @@ export function LocationTrackBar({
   lotName: string
   floorName: string
   slotNumber: string
-  onTrack: () => void
+  onTrack?: () => void
   showTrack?: boolean
 }) {
   const { t } = useLanguage()
@@ -29,7 +29,7 @@ export function LocationTrackBar({
           </p>
         </div>
       </div>
-      {showTrack && (
+      {showTrack && onTrack && (
         <button
           type="button"
           onClick={onTrack}

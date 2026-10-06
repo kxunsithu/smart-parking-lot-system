@@ -19,30 +19,34 @@ function formatCurrency(value: number): string {
   return `${value.toLocaleString()} MMK`
 }
 
-function statusMeta(status: string, t: (key: string, fallback?: string) => string): {
+function statusMeta(
+  status: string,
+  t?: (key: string, fallback?: string) => string
+): {
   label: string
   icon: React.ReactNode
   color: string
   bg: string
 } {
+  const tr = t || ((_key: string, fallback?: string) => fallback || _key)
   switch (status) {
     case "COMPLETED":
       return {
-        label: t("receipt.paid", "Paid"),
+        label: tr("receipt.paid", "Paid"),
         icon: <CheckCircle2 className="w-4 h-4" />,
         color: "text-green-600 dark:text-green-400",
         bg: "bg-green-500/10 border-green-500/20",
       }
     case "PENDING":
       return {
-        label: t("receipt.pending", "Pending"),
+        label: tr("receipt.pending", "Pending"),
         icon: <Clock className="w-4 h-4" />,
         color: "text-amber-600 dark:text-amber-400",
         bg: "bg-amber-500/10 border-amber-500/20",
       }
     case "FAILED":
       return {
-        label: t("receipt.failed", "Failed"),
+        label: tr("receipt.failed", "Failed"),
         icon: <XCircle className="w-4 h-4" />,
         color: "text-red-600 dark:text-red-400",
         bg: "bg-red-500/10 border-red-500/20",
