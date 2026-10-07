@@ -186,6 +186,33 @@ CUSTOMER_CARS = {
     "khunsithu2003@gmail.com": [("KYN 2A-3456", "Toyota",  "Black"), ("KYN 1B-6789", "Suzuki",  "Red"), ("YGN 3C-1234", "Honda", "Blue"),],
 }
 
+# ── Customer home locations (real coordinates within the 6 seeded cities) ───
+
+CUSTOMER_LOCATIONS = {
+    # Hpa-an
+    "sawblayhtoo@gmail.com":   (16.8895, 97.6361),
+    "nawthablue@gmail.com":    (16.8938, 97.6298),
+    "maungkawlaw@gmail.com":   (16.8867, 97.6345),
+    "nawwahlay@gmail.com":     (16.8951, 97.6375),
+    "khunsithu2003@gmail.com": (16.8901, 97.6316),
+    # Hlaingbwe
+    "sawdohhtoo@gmail.com":    (17.1248, 97.8162),
+    "nawpawdoh@gmail.com":     (17.1281, 97.8129),
+    # Kawkareik
+    "sawlerpaw@gmail.com":     (16.5568, 98.2385),
+    "nawehkhu@gmail.com":      (16.5542, 98.2417),
+    # Myawaddy
+    "maunghsawah@gmail.com":   (16.6891, 98.5072),
+    "sawpawtaw@gmail.com":     (16.6865, 98.5101),
+    "nawkhupaw@gmail.com":     (16.6905, 98.5058),
+    # Kyainseikgyi
+    "sawhserdoh@gmail.com":    (16.0425, 98.1193),
+    "nawgaypaw@gmail.com":     (16.0402, 98.1224),
+    # Payathonzu
+    "maungplawheh@gmail.com":  (15.3028, 98.3831),
+    "sawklergay@gmail.com":    (15.3052, 98.3806),
+}
+
 # ── Cities — ONLY Hlaingbwe, Hpa-an, Kawkareik, Kyainseikgyi, Myawaddy, Payathonzu ──
 
 CITIES_DATA = [
@@ -227,6 +254,41 @@ CITIES_DATA = [
     },
 ]
 
+# ── Parking bay grid ─────────────────────────────────────────────────────────
+# Real bay dimensions converted to degrees at ~16°N latitude
+# (1° latitude ≈ 110,900 m, 1° longitude ≈ 106,600 m).
+BAY_LAT_STEP = round(5.0 / 110_900, 7)   # ≈ 5 m between rows (bay + aisle)
+BAY_LNG_STEP = round(2.75 / 106_600, 7)  # ≈ 2.75 m bay width
+
+
+def map_url(lat: float, lng: float) -> str:
+    """Google Maps embed URL pinned to the lot's real-world coordinates."""
+    return f"https://maps.google.com/maps?q={lat},{lng}&z=15&output=embed"
+
+
+def build_slot_coordinates(lot_lat: float, lot_lng: float, slots: list[dict]) -> None:
+    """Lay slots out as a real parking grid centred on the lot.
+
+    Every section becomes one row: bays sit ~2.75 m apart, rows ~5 m apart,
+    and alternate rows are staggered by half a bay like a real parking lot.
+    Mutates each slot dict with `latitude` / `longitude`.
+    """
+    rows: dict[str, list[dict]] = {}
+    for slot in slots:
+        rows.setdefault(slot.get("section") or "A", []).append(slot)
+
+    row_ids = list(rows)
+    for row_idx, section in enumerate(row_ids):
+        row = rows[section]
+        row_lat = lot_lat + (row_idx - (len(row_ids) - 1) / 2) * BAY_LAT_STEP
+        stagger = BAY_LNG_STEP / 2 if row_idx % 2 else 0.0
+        for col_idx, slot in enumerate(row):
+            slot["latitude"] = round(row_lat, 6)
+            slot["longitude"] = round(
+                lot_lng + (col_idx - (len(row) - 1) / 2) * BAY_LNG_STEP + stagger, 6
+            )
+
+
 # ── Parking lots — mapped strictly to the 6 allowed cities ──────────────────
 
 PARKING_LOTS = [
@@ -235,7 +297,8 @@ PARKING_LOTS = [
         "owner_email": "hpaan.smartparking@gmail.com",
         "name": "ဘားအံဈေးကြီး ယာဉ်ရပ်နားစခန်း",
         "city": "Hpa-an",
-        "google_map_url": "https://maps.google.com/maps?q=16.8916004,97.6349558&z=15&output=embed",
+        "lat": 16.8916004,
+        "lng": 97.6349558,
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 500.0,
@@ -244,25 +307,25 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 16.89161, "longitude": 97.63497},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 16.89162, "longitude": 97.63498},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 16.89163, "longitude": 97.63499},
-                    {"slot_number": "G-A04", "section": "A", "latitude": 16.89164, "longitude": 97.63500},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 16.89165, "longitude": 97.63501},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 16.89166, "longitude": 97.63502},
-                    {"slot_number": "G-B03", "section": "B", "latitude": 16.89167, "longitude": 97.63503},
-                    {"slot_number": "G-B04", "section": "B", "latitude": 16.89168, "longitude": 97.63504},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-A04", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
+                    {"slot_number": "G-B03", "section": "B"},
+                    {"slot_number": "G-B04", "section": "B"},
                 ],
             },
             {
                 "floor_name": "Level 1 (L1)",
                 "slots": [
-                    {"slot_number": "L1-A01", "section": "A", "latitude": 16.89171, "longitude": 97.63497},
-                    {"slot_number": "L1-A02", "section": "A", "latitude": 16.89172, "longitude": 97.63498},
-                    {"slot_number": "L1-A03", "section": "A", "latitude": 16.89173, "longitude": 97.63499},
-                    {"slot_number": "L1-B01", "section": "B", "latitude": 16.89174, "longitude": 97.63500},
-                    {"slot_number": "L1-B02", "section": "B", "latitude": 16.89175, "longitude": 97.63501},
-                    {"slot_number": "L1-B03", "section": "B", "latitude": 16.89176, "longitude": 97.63502},
+                    {"slot_number": "L1-A01", "section": "A"},
+                    {"slot_number": "L1-A02", "section": "A"},
+                    {"slot_number": "L1-A03", "section": "A"},
+                    {"slot_number": "L1-B01", "section": "B"},
+                    {"slot_number": "L1-B02", "section": "B"},
+                    {"slot_number": "L1-B03", "section": "B"},
                 ],
             },
         ],
@@ -273,7 +336,8 @@ PARKING_LOTS = [
         "owner_email": "kbz.bankingoffice@gmail.com",
         "name": "ဘားအံမြို့နယ်ရုံး ယာဉ်ရပ်နားစခန်း",
         "city": "Hpa-an",
-        "google_map_url": "https://maps.google.com/maps?q=16.890556,97.633333&z=15&output=embed",
+        "lat": 16.890556,
+        "lng": 97.633333,
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 400.0,
@@ -282,12 +346,12 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 16.89057, "longitude": 97.63334},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 16.89058, "longitude": 97.63335},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 16.89059, "longitude": 97.63336},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 16.89060, "longitude": 97.63337},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 16.89061, "longitude": 97.63338},
-                    {"slot_number": "G-B03", "section": "B", "latitude": 16.89062, "longitude": 97.63339},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
+                    {"slot_number": "G-B03", "section": "B"},
                 ],
             },
         ],
@@ -298,7 +362,8 @@ PARKING_LOTS = [
         "owner_email": "kbz.bankingoffice@gmail.com",
         "name": "ဘားအံပြည်သူ့ဆေးရုံကြီး ယာဉ်ရပ်နားစခန်း",
         "city": "Hpa-an",
-        "google_map_url": "https://maps.google.com/maps?q=16.882569,97.635904&z=15&output=embed",
+        "lat": 16.882569,
+        "lng": 97.635904,
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 300.0,
@@ -307,12 +372,12 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 16.88258, "longitude": 97.63591},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 16.88259, "longitude": 97.63592},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 16.88260, "longitude": 97.63593},
-                    {"slot_number": "G-A04", "section": "A", "latitude": 16.88261, "longitude": 97.63594},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 16.88262, "longitude": 97.63595},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 16.88263, "longitude": 97.63596},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-A04", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
                 ],
             },
         ],
@@ -323,7 +388,8 @@ PARKING_LOTS = [
         "owner_email": "yomabank.kayin@gmail.com",
         "name": "မြဝတီနယ်စပ်ကုန်သွယ်ရေး ယာဉ်ရပ်နားစခန်း",
         "city": "Myawaddy",
-        "google_map_url": "https://maps.google.com/maps?q=16.691700,98.509800&z=15&output=embed",
+        "lat": 16.693932,
+        "lng": 98.514007,
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 800.0,
@@ -332,29 +398,29 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 16.69171, "longitude": 98.50981},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 16.69172, "longitude": 98.50982},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 16.69173, "longitude": 98.50983},
-                    {"slot_number": "G-A04", "section": "A", "latitude": 16.69174, "longitude": 98.50984},
-                    {"slot_number": "G-A05", "section": "A", "latitude": 16.69175, "longitude": 98.50985},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 16.69176, "longitude": 98.50986},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 16.69177, "longitude": 98.50987},
-                    {"slot_number": "G-B03", "section": "B", "latitude": 16.69178, "longitude": 98.50988},
-                    {"slot_number": "G-B04", "section": "B", "latitude": 16.69179, "longitude": 98.50989},
-                    {"slot_number": "G-B05", "section": "B", "latitude": 16.69180, "longitude": 98.50990},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-A04", "section": "A"},
+                    {"slot_number": "G-A05", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
+                    {"slot_number": "G-B03", "section": "B"},
+                    {"slot_number": "G-B04", "section": "B"},
+                    {"slot_number": "G-B05", "section": "B"},
                 ],
             },
             {
                 "floor_name": "Level 1 (L1)",
                 "slots": [
-                    {"slot_number": "L1-A01", "section": "A", "latitude": 16.69181, "longitude": 98.50981},
-                    {"slot_number": "L1-A02", "section": "A", "latitude": 16.69182, "longitude": 98.50982},
-                    {"slot_number": "L1-A03", "section": "A", "latitude": 16.69183, "longitude": 98.50983},
-                    {"slot_number": "L1-A04", "section": "A", "latitude": 16.69184, "longitude": 98.50984},
-                    {"slot_number": "L1-B01", "section": "B", "latitude": 16.69185, "longitude": 98.50985},
-                    {"slot_number": "L1-B02", "section": "B", "latitude": 16.69186, "longitude": 98.50986},
-                    {"slot_number": "L1-B03", "section": "B", "latitude": 16.69187, "longitude": 98.50987},
-                    {"slot_number": "L1-B04", "section": "B", "latitude": 16.69188, "longitude": 98.50988},
+                    {"slot_number": "L1-A01", "section": "A"},
+                    {"slot_number": "L1-A02", "section": "A"},
+                    {"slot_number": "L1-A03", "section": "A"},
+                    {"slot_number": "L1-A04", "section": "A"},
+                    {"slot_number": "L1-B01", "section": "B"},
+                    {"slot_number": "L1-B02", "section": "B"},
+                    {"slot_number": "L1-B03", "section": "B"},
+                    {"slot_number": "L1-B04", "section": "B"},
                 ],
             },
         ],
@@ -365,7 +431,8 @@ PARKING_LOTS = [
         "owner_email": "yomabank.kayin@gmail.com",
         "name": "မြဝတီဈေး ယာဉ်ရပ်နားစခန်း",
         "city": "Myawaddy",
-        "google_map_url": "https://maps.google.com/maps?q=16.6968331,98.5055148&z=15&output=embed",
+        "lat": 16.6882408,
+        "lng": 98.5105649,
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 600.0,
@@ -374,14 +441,14 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 16.69684, "longitude": 98.50552},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 16.69685, "longitude": 98.50553},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 16.69686, "longitude": 98.50554},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 16.69687, "longitude": 98.50555},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 16.69688, "longitude": 98.50556},
-                    {"slot_number": "G-B03", "section": "B", "latitude": 16.69689, "longitude": 98.50557},
-                    {"slot_number": "G-C01", "section": "C", "latitude": 16.69690, "longitude": 98.50558},
-                    {"slot_number": "G-C02", "section": "C", "latitude": 16.69691, "longitude": 98.50559},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
+                    {"slot_number": "G-B03", "section": "B"},
+                    {"slot_number": "G-C01", "section": "C"},
+                    {"slot_number": "G-C02", "section": "C"},
                 ],
             },
         ],
@@ -392,7 +459,8 @@ PARKING_LOTS = [
         "owner_email": "wavemoney.center@gmail.com",
         "name": "ကော့ကရိတ်မြို့လယ် ယာဉ်ရပ်နားစခန်း",
         "city": "Kawkareik",
-        "google_map_url": "https://maps.google.com/maps?q=16.555531,98.239960&z=15&output=embed",
+        "lat": 16.555531,
+        "lng": 98.239960,
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 400.0,
@@ -401,12 +469,12 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 16.55554, "longitude": 98.23997},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 16.55555, "longitude": 98.23998},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 16.55556, "longitude": 98.23999},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 16.55557, "longitude": 98.24000},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 16.55558, "longitude": 98.24001},
-                    {"slot_number": "G-B03", "section": "B", "latitude": 16.55559, "longitude": 98.24002},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
+                    {"slot_number": "G-B03", "section": "B"},
                 ],
             },
         ],
@@ -417,7 +485,8 @@ PARKING_LOTS = [
         "owner_email": "maxmyanmar.group@gmail.com",
         "name": "ကော့ကရိတ်ဈေး ယာဉ်ရပ်နားစခန်း",
         "city": "Kawkareik",
-        "google_map_url": "https://maps.google.com/maps?q=16.554200,98.243500&z=15&output=embed",
+        "lat": 16.555137,
+        "lng": 98.235632,
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 350.0,
@@ -426,11 +495,11 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 16.55421, "longitude": 98.24351},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 16.55422, "longitude": 98.24352},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 16.55423, "longitude": 98.24353},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 16.55424, "longitude": 98.24354},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 16.55425, "longitude": 98.24355},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
                 ],
             },
         ],
@@ -441,7 +510,8 @@ PARKING_LOTS = [
         "owner_email": "ayabank.hpaan@gmail.com",
         "name": "ကြာအင်းဆိပ်ကြီးဆိပ်ကမ်း ယာဉ်ရပ်နားစခန်း",
         "city": "Kyainseikgyi",
-        "google_map_url": "https://maps.google.com/maps?q=16.041500,98.103000&z=15&output=embed",
+        "lat": 16.041500,
+        "lng": 98.103000,
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 450.0,
@@ -450,14 +520,14 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 16.04151, "longitude": 98.10301},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 16.04152, "longitude": 98.10302},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 16.04153, "longitude": 98.10303},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 16.04154, "longitude": 98.10304},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 16.04155, "longitude": 98.10305},
-                    {"slot_number": "G-B03", "section": "B", "latitude": 16.04156, "longitude": 98.10306},
-                    {"slot_number": "G-C01", "section": "C", "latitude": 16.04157, "longitude": 98.10307},
-                    {"slot_number": "G-C02", "section": "C", "latitude": 16.04158, "longitude": 98.10308},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
+                    {"slot_number": "G-B03", "section": "B"},
+                    {"slot_number": "G-C01", "section": "C"},
+                    {"slot_number": "G-C02", "section": "C"},
                 ],
             },
         ],
@@ -468,7 +538,8 @@ PARKING_LOTS = [
         "owner_email": "ayabank.hpaan@gmail.com",
         "name": "ကြာအင်းဆိပ်ကြီးဈေး ယာဉ်ရပ်နားစခန်း",
         "city": "Kyainseikgyi",
-        "google_map_url": "https://maps.google.com/maps?q=16.0420027,98.1204781&z=15&output=embed",
+        "lat": 16.0420027,
+        "lng": 98.1204781,
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 350.0,
@@ -477,11 +548,11 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 16.04201, "longitude": 98.12049},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 16.04202, "longitude": 98.12050},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 16.04203, "longitude": 98.12051},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 16.04204, "longitude": 98.12052},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 16.04205, "longitude": 98.12053},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
                 ],
             },
         ],
@@ -492,7 +563,8 @@ PARKING_LOTS = [
         "owner_email": "shwetaung.realestate@gmail.com",
         "name": "လှိုင်းဘွဲ့မြို့နယ် ယာဉ်ရပ်နားစခန်း",
         "city": "Hlaingbwe",
-        "google_map_url": "https://maps.google.com/maps?q=17.1262648,97.8145321&z=15&output=embed",
+        "lat": 17.1262648,
+        "lng": 97.8145321,
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 300.0,
@@ -501,12 +573,12 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 17.12627, "longitude": 97.81454},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 17.12628, "longitude": 97.81455},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 17.12629, "longitude": 97.81456},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 17.12630, "longitude": 97.81457},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 17.12631, "longitude": 97.81458},
-                    {"slot_number": "G-B03", "section": "B", "latitude": 17.12632, "longitude": 97.81459},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
+                    {"slot_number": "G-B03", "section": "B"},
                 ],
             },
         ],
@@ -517,7 +589,8 @@ PARKING_LOTS = [
         "owner_email": "denko.trading@gmail.com",
         "name": "ဘုရားသုံးဆူနယ်စပ်ဈေး ယာဉ်ရပ်နားစခန်း",
         "city": "Payathonzu",
-        "google_map_url": "https://maps.google.com/maps?q=15.301500,98.384500&z=15&output=embed",
+        "lat": 15.301500,
+        "lng": 98.384500,
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 400.0,
@@ -526,11 +599,11 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 15.30151, "longitude": 98.38451},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 15.30152, "longitude": 98.38452},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 15.30153, "longitude": 98.38453},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 15.30154, "longitude": 98.38454},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 15.30155, "longitude": 98.38455},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
                 ],
             },
         ],
@@ -541,7 +614,8 @@ PARKING_LOTS = [
         "owner_email": "grandroyal.group@gmail.com",
         "name": "ဘုရားသုံးဆူမြို့လယ် ယာဉ်ရပ်နားစခန်း",
         "city": "Payathonzu",
-        "google_map_url": "https://maps.google.com/maps?q=15.3040495,98.3818582&z=15&output=embed",
+        "lat": 15.3040495,
+        "lng": 98.3818582,
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 350.0,
@@ -550,12 +624,12 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 15.30406, "longitude": 98.38187},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 15.30407, "longitude": 98.38188},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 15.30408, "longitude": 98.38189},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 15.30409, "longitude": 98.38190},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 15.30410, "longitude": 98.38191},
-                    {"slot_number": "G-B03", "section": "B", "latitude": 15.30411, "longitude": 98.38192},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
+                    {"slot_number": "G-B03", "section": "B"},
                 ],
             },
         ],
@@ -566,7 +640,8 @@ PARKING_LOTS = [
         "owner_email": "citymart.holding@gmail.com",
         "name": "မြဝတီစက်မှုဇုန် ယာဉ်ရပ်နားစခန်း",
         "city": "Myawaddy",
-        "google_map_url": "https://maps.google.com/maps?q=16.7025407,98.4921896&z=15&output=embed",
+        "lat": 16.7025407,
+        "lng": 98.4921896,
         "type": LotType.PRIVATE.value,
         "is_active": True,
         "rate_per_hour": 700.0,
@@ -575,14 +650,14 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 16.70255, "longitude": 98.49220},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 16.70256, "longitude": 98.49221},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 16.70257, "longitude": 98.49222},
-                    {"slot_number": "G-A04", "section": "A", "latitude": 16.70258, "longitude": 98.49223},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 16.70259, "longitude": 98.49224},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 16.70260, "longitude": 98.49225},
-                    {"slot_number": "G-B03", "section": "B", "latitude": 16.70261, "longitude": 98.49226},
-                    {"slot_number": "G-B04", "section": "B", "latitude": 16.70262, "longitude": 98.49227},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-A04", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
+                    {"slot_number": "G-B03", "section": "B"},
+                    {"slot_number": "G-B04", "section": "B"},
                 ],
             },
         ],
@@ -593,7 +668,8 @@ PARKING_LOTS = [
         "owner_email": "kayin.smartparking@gmail.com",
         "name": "ရွှေယဉ်မျှော်ဘုရား ယာဉ်ရပ်နားစခန်း",
         "city": "Hpa-an",
-        "google_map_url": "https://maps.google.com/maps?q=16.8939438,97.6311569&z=15&output=embed",
+        "lat": 16.8939438,
+        "lng": 97.6311569,
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 200.0,
@@ -602,14 +678,14 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 16.89395, "longitude": 97.63117},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 16.89396, "longitude": 97.63118},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 16.89397, "longitude": 97.63119},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 16.89398, "longitude": 97.63120},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 16.89399, "longitude": 97.63121},
-                    {"slot_number": "G-B03", "section": "B", "latitude": 16.89400, "longitude": 97.63122},
-                    {"slot_number": "G-C01", "section": "C", "latitude": 16.89401, "longitude": 97.63123},
-                    {"slot_number": "G-C02", "section": "C", "latitude": 16.89402, "longitude": 97.63124},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
+                    {"slot_number": "G-B03", "section": "B"},
+                    {"slot_number": "G-C01", "section": "C"},
+                    {"slot_number": "G-C02", "section": "C"},
                 ],
             },
         ],
@@ -620,7 +696,8 @@ PARKING_LOTS = [
         "owner_email": "hpaan.smartparking@gmail.com",
         "name": "ဇွဲကပင် နာရီစင် ယာဉ်ရပ်နားစခန်း",
         "city": "Hpa-an",
-        "google_map_url": "https://maps.google.com/maps?q=16.890000,97.632000&z=15&output=embed",
+        "lat": 16.888988,
+        "lng": 97.634466,
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 500.0,
@@ -629,11 +706,11 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 16.89001, "longitude": 97.63201},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 16.89002, "longitude": 97.63202},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 16.89003, "longitude": 97.63203},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 16.89004, "longitude": 97.63204},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 16.89005, "longitude": 97.63205},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
                 ],
             },
         ],
@@ -644,7 +721,8 @@ PARKING_LOTS = [
         "owner_email": "hpaan.smartparking@gmail.com",
         "name": "သံလွင်တံတား ယာဉ်ရပ်နားစခန်း",
         "city": "Hpa-an",
-        "google_map_url": "https://maps.google.com/maps?q=16.895000,97.625000&z=15&output=embed",
+        "lat": 16.8417263,
+        "lng": 97.610982,
         "type": LotType.PUBLIC.value,
         "is_active": True,
         "rate_per_hour": 600.0,
@@ -653,11 +731,11 @@ PARKING_LOTS = [
             {
                 "floor_name": "Ground Floor (G)",
                 "slots": [
-                    {"slot_number": "G-A01", "section": "A", "latitude": 16.89501, "longitude": 97.62501},
-                    {"slot_number": "G-A02", "section": "A", "latitude": 16.89502, "longitude": 97.62502},
-                    {"slot_number": "G-A03", "section": "A", "latitude": 16.89503, "longitude": 97.62503},
-                    {"slot_number": "G-B01", "section": "B", "latitude": 16.89504, "longitude": 97.62504},
-                    {"slot_number": "G-B02", "section": "B", "latitude": 16.89505, "longitude": 97.62505},
+                    {"slot_number": "G-A01", "section": "A"},
+                    {"slot_number": "G-A02", "section": "A"},
+                    {"slot_number": "G-A03", "section": "A"},
+                    {"slot_number": "G-B01", "section": "B"},
+                    {"slot_number": "G-B02", "section": "B"},
                 ],
             },
         ],
@@ -851,9 +929,13 @@ def seed():
             if not user:
                 continue
             cust = db.query(Customer).filter_by(user_id=user.id).first()
+            home_lat, home_lng = CUSTOMER_LOCATIONS.get(email, (None, None))
             if not cust:
-                cust = Customer(user_id=user.id)
+                cust = Customer(user_id=user.id, current_lat=home_lat, current_lng=home_lng)
                 db.add(cust)
+                db.flush()
+            elif cust.current_lat is None or cust.current_lng is None:
+                cust.current_lat, cust.current_lng = home_lat, home_lng
                 db.flush()
             for plate, brand, color in cars:
                 car = db.query(Car).filter_by(plate_number=plate).first()
@@ -877,11 +959,13 @@ def seed():
 
             lot = db.query(ParkingLot).filter_by(name=lot_data["name"]).first()
             if not lot:
+                for fl in lot_data["floors"]:
+                    build_slot_coordinates(lot_data["lat"], lot_data["lng"], fl["slots"])
                 lot = ParkingLot(
                     owner_id=owner.id,
                     name=lot_data["name"],
                     city=lot_data["city"],
-                    google_map_url=lot_data["google_map_url"],
+                    google_map_url=map_url(lot_data["lat"], lot_data["lng"]),
                     type=lot_data["type"],
                     is_active=lot_data["is_active"],
                     rate_per_hour=lot_data["rate_per_hour"],
@@ -899,8 +983,8 @@ def seed():
                             floor_id=floor.id,
                             slot_number=s["slot_number"],
                             section=s.get("section"),
-                            latitude=s.get("latitude"),
-                            longitude=s.get("longitude"),
+                            latitude=s["latitude"],
+                            longitude=s["longitude"],
                             status=SlotStatus.AVAILABLE.value,
                         )
                         db.add(slot)

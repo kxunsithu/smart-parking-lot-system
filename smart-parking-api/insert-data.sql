@@ -35,21 +35,21 @@ INSERT INTO wallet_accounts (id, owner_id, name, wallet_phone, api_key, is_activ
 
 -- 6) Parking Lots (Kayin State — strictly allowed cities)
 INSERT INTO parking_lots (id, owner_id, name, google_map_url, type, is_active, rate_per_hour, city) VALUES
-(1, 1, 'Hpa-an Central Market Parking', 'https://maps.google.com/maps?q=16.89160,97.63496&hl=en&z=16&output=embed', 'PUBLIC', TRUE, 500.0, 'Hpa-an'),
-(2, 1, 'Myawaddy Border Trade Parking', 'https://maps.google.com/maps?q=16.69170,98.50980&hl=en&z=16&output=embed', 'PUBLIC', TRUE, 800.0, 'Myawaddy'),
-(3, 1, 'Kawkareik Town Centre Parking', 'https://maps.google.com/maps?q=16.55420,98.24350&hl=en&z=16&output=embed', 'PUBLIC', TRUE, 400.0, 'Kawkareik');
+(1, 1, 'Hpa-an Central Market Parking', 'https://maps.google.com/maps?q=16.8916004,97.6349558&z=15&output=embed', 'PUBLIC', TRUE, 500.0, 'Hpa-an'),
+(2, 1, 'Myawaddy Border Trade Parking', 'https://maps.google.com/maps?q=16.693932,98.514007&z=15&output=embed', 'PUBLIC', TRUE, 800.0, 'Myawaddy'),
+(3, 1, 'Kawkareik Town Centre Parking', 'https://maps.google.com/maps?q=16.555531,98.239960&z=15&output=embed', 'PUBLIC', TRUE, 400.0, 'Kawkareik');
 
 -- 7) Parking Floors
 INSERT INTO parking_floors (id, parking_lot_id, floor_name) VALUES
 (1, 1, 'Ground Floor (G)'),
 (2, 1, 'Level 1 (L1)');
 
--- 8) Parking Slots
+-- 8) Parking Slots (real parking-bay grid around the lot's coordinates)
 INSERT INTO parking_slots (id, floor_id, slot_number, section, latitude, longitude, status) VALUES
-(1, 1, 'G-A01', 'A', 16.89160, 97.63496, 'AVAILABLE'),
-(2, 1, 'G-A02', 'A', 16.89161, 97.63497, 'AVAILABLE'),
-(3, 1, 'G-B01', 'B', 16.89164, 97.63500, 'AVAILABLE'),
-(4, 2, 'L1-A01', 'A', 16.89168, 97.63496, 'AVAILABLE');
+(1, 1, 'G-A01', 'A', 16.891578, 97.634943, 'AVAILABLE'),
+(2, 1, 'G-A02', 'A', 16.891578, 97.634969, 'AVAILABLE'),
+(3, 1, 'G-B01', 'B', 16.891623, 97.634969, 'AVAILABLE'),
+(4, 2, 'L1-A01', 'A', 16.891600, 97.634956, 'AVAILABLE');
 
 -- 9) Parking Staff
 INSERT INTO parking_staff (id, user_id, parking_lot_id, created_by) VALUES
@@ -57,7 +57,7 @@ INSERT INTO parking_staff (id, user_id, parking_lot_id, created_by) VALUES
 
 -- 10) Customers
 INSERT INTO customers (id, user_id, current_lat, current_lng) VALUES
-(1, 4, 16.89160, 97.63496);
+(1, 4, 16.8895, 97.6361);
 
 -- 11) Cars
 INSERT INTO cars (id, customer_id, plate_number, brand, color) VALUES
