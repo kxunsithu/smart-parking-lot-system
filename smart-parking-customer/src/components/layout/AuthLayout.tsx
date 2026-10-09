@@ -34,7 +34,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             </div>
             <div>
               <p className="text-sm text-foreground font-bold leading-tight">
-                Smart Parking
+                AI Parking
               </p>
               <p className="text-xs text-muted-foreground">Customer Portal</p>
             </div>

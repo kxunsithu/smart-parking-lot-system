@@ -123,7 +123,7 @@ function buildReceiptHtml(payment: PaymentListOut): string {
   <div class="receipt">
     <div class="header">
       <div>
-        <div class="brand">Smart Parking</div>
+        <div class="brand">AI Parking</div>
         <div class="subtitle">Transaction Receipt</div>
       </div>
       <span class="status">${escapeHtml(statusLabel)}</span>
@@ -137,7 +137,7 @@ function buildReceiptHtml(payment: PaymentListOut): string {
       <div class="total"><span>Total</span><span>${escapeHtml(formatCurrency(payment.total))}</span></div>
     </div>
     <div class="footer">
-      <span>${escapeHtml(payment.owner_name ?? "Smart Parking")}</span>
+      <span>${escapeHtml(payment.owner_name ?? "AI Parking")}</span>
       <span>Thank you for your payment.</span>
     </div>
   </div>
@@ -213,7 +213,7 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
         <div className="flex items-start justify-between p-5 border-b border-border">
           <div>
             <p className="text-base font-semibold leading-tight">{t("receipt.modal_title", "Transaction Receipt")}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Smart Parking</p>
+            <p className="text-xs text-muted-foreground mt-0.5">AI Parking</p>
           </div>
           <div className="flex items-center gap-2">
             <span
@@ -286,7 +286,7 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
 
           {/* Footer note */}
           <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t">
-            <span>{payment.owner_name ?? "Smart Parking"}</span>
+            <span>{payment.owner_name ?? "AI Parking"}</span>
             <span>Thank you.</span>
           </div>
         </div>

@@ -1,4 +1,4 @@
-# Smart Parking Customer Web App
+# AI-Based Parking - Customer Web App
 
 A modern React web application for customers to search, book, and manage parking spaces.
 
@@ -83,7 +83,7 @@ src/
 
 ## API Integration
 
-The app connects to the Smart Parking API with:
+The app connects to the AI-Based Parking API with:
 - Automatic JWT token management
 - Token refresh on 401 errors
 - Request/response interceptors

@@ -1,6 +1,6 @@
 # Railway Deployment Guide
 
-This guide provides step-by-step instructions for deploying the **Smart Parking Lot Management System** on [Railway](https://railway.app/).
+This guide provides step-by-step instructions for deploying the **AI-Based Parking Management System** on [Railway](https://railway.app/).
 
 ---
 
@@ -42,7 +42,7 @@ The system consists of 4 services to deploy in your Railway project:
 | Variable | Value / Description |
 |---|---|
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` *(Railway variable reference)* |
-| `APP_NAME` | `Smart Parking Lot Management System` |
+| `APP_NAME` | `AI-Based Parking Management System` |
 | `APP_ENV` | `production` |
 | `DEBUG` | `False` |
 | `API_V1_PREFIX` | `/api/v1` |
@@ -63,7 +63,7 @@ The system consists of 4 services to deploy in your Railway project:
 | `SMTP_USER` | `<your-email>` |
 | `SMTP_PASSWORD` | `<your-app-password>` |
 | `SMTP_FROM_EMAIL` | `<your-email>` |
-| `SMTP_FROM_NAME` | `Smart Parking System` |
+| `SMTP_FROM_NAME` | `AI-Based Parking System` |
 | `SMTP_USE_TLS` | `True` |
 | `OTP_EXPIRE_MINUTES` | `10` |
 | `OTP_LENGTH` | `6` |

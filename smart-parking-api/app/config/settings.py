@@ -67,7 +67,7 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = ""
-    SMTP_FROM_NAME: str = "Smart Parking System"
+    SMTP_FROM_NAME: str = "AI-Based Parking System"
     SMTP_USE_TLS: bool = True
 
     @model_validator(mode="after")

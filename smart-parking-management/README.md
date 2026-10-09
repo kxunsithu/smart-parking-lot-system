@@ -1,6 +1,6 @@
-# Smart Parking Lot Management System — Frontend
+# AI-Based Parking Management System — Frontend
 
-A modern, responsive React + TypeScript frontend for the Smart Parking Lot Management System, with
+A modern, responsive React + TypeScript frontend for the AI-Based Parking Management System, with
 dedicated dashboards for System Admins, Parking Owners, Parking Staff, and Customers.
 
 ## Tech Stack

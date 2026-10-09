@@ -12,7 +12,7 @@ export function AuthLayout() {
           </div>
           <div>
             <p className="text-sm text-foreground font-bold leading-tight">
-              Smart Parking
+              AI Parking
             </p>
             <p className="text-xs text-muted-foreground">Management Portal</p>
           </div>

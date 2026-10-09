@@ -56,11 +56,11 @@ export function AppSidebar({ role, onNavigate, collapsible = true }: AppSidebarP
           )}
         >
           <div className="size-9 rounded overflow-hidden shrink-0 border border-sidebar-border bg-background flex items-center justify-center">
-            <img src={appIcon} alt="Smart Parking" className="w-full h-full object-contain" />
+            <img src={appIcon} alt="AI Parking" className="w-full h-full object-contain" />
           </div>
           <div className="leading-tight min-w-0">
             <p className="text-sm font-bold text-foreground leading-tight truncate">
-              Smart Parking
+              AI Parking
             </p>
             <p className="text-xs text-muted-foreground truncate">
               {ROLE_LABELS[role]}
@@ -71,7 +71,7 @@ export function AppSidebar({ role, onNavigate, collapsible = true }: AppSidebarP
         {/* Logo (collapsed) */}
         {!expanded && (
           <div className="size-9 rounded overflow-hidden border border-sidebar-border bg-background flex items-center justify-center">
-            <img src={appIcon} alt="Smart Parking" className="w-full h-full object-contain" />
+            <img src={appIcon} alt="AI Parking" className="w-full h-full object-contain" />
           </div>
         )}
       </div>

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Smart Parking API",
-    "description": "A Smart Parking Lot Management System backend API collection",
+    "description": "An AI-Based Parking Management System backend API collection",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [

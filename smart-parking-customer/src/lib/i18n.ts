@@ -58,7 +58,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "home.stat_available": "Available Slots Now",
     "home.stat_online": "Live System Online",
     "home.nearby_lots": "Parking Lots in Kayin State",
-    "home.why_smart": "Why Smart Parking?",
+    "home.why_smart": "Why AI-Based Parking?",
     "home.why_subtitle": "Everything you need for seamless vehicle parking in Kayin State.",
     "home.feat1_title": "Real-Time Parking",
     "home.feat1_desc": "Locate available slots in real-time across all lots in Kayin State with live occupancy data.",
@@ -82,7 +82,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "home.step4_title": "Pay & Park",
     "home.step4_desc": "Complete payment via digital wallet and your session goes live instantly.",
     "home.cta_title": "Ready to park smarter?",
-    "home.cta_subtitle": "Join drivers across Kayin State using Smart Parking to save time and money.",
+    "home.cta_subtitle": "Join drivers across Kayin State using AI-Based Parking to save time and money.",
     "home.create_account": "Create Free Account",
     "home.login_instead": "Log in instead",
     "home.proof1": "No credit card required",
@@ -198,7 +198,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Auth
     "auth.login_title": "Welcome Back",
-    "auth.login_subtitle": "Sign in to your Smart Parking account",
+    "auth.login_subtitle": "Sign in to your AI-Based Parking account",
     "auth.email": "Email Address",
     "auth.password": "Password",
     "auth.forgot_password": "Forgot Password?",
@@ -207,7 +207,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "auth.no_account": "Don't have an account?",
     "auth.register_link": "Register",
     "auth.register_title": "Create Account",
-    "auth.register_subtitle": "Sign up to start using Smart Parking.",
+    "auth.register_subtitle": "Sign up to start using AI-Based Parking.",
     "auth.full_name": "Full Name",
     "auth.phone": "Phone Number",
     "auth.confirm_password": "Confirm Password",
@@ -369,9 +369,9 @@ export const translations: Record<Language, Record<string, string>> = {
     "dashboard.total": "total",
 
     // About Us
-    "about.title": "About Smart Parking",
+    "about.title": "About AI-Based Parking",
     "about.badge": "Computer Science Capstone Project",
-    "about.hero_subtitle": "A full-stack smart parking lot management system designed and built by 6 passionate Computer Science students — built to serve Kayin State's (ကရင်ပြည်နယ်) growing urban parking needs.",
+    "about.hero_subtitle": "A full-stack AI-based parking management system designed and built by 6 passionate Computer Science students — built to serve Kayin State's (ကရင်ပြည်နယ်) growing urban parking needs.",
     "about.location": "Kayin State · ကရင်ပြည်နယ် · Computer Science Department",
     "about.stand_for": "What We Stand For",
     "about.driven_by": "Driven by Purpose, Built with Passion",
@@ -430,7 +430,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "track.navigating": "Navigating to Slot",
 
     // Footer
-    "footer.subtitle": "Smart Parking Lot Management System. Built for Kayin State.",
+    "footer.subtitle": "AI-Based Parking Management System. Built for Kayin State.",
     "footer.about_us": "About Us",
   },
 
@@ -783,7 +783,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "about.hero_subtitle": "ကရင်ပြည်နယ်၏ ကားရပ်နားမှု လိုအပ်ချက်များကို ဖြည့်ဆည်းရန် ကွန်ပျူတာသိပ္ပံ ကျောင်းသား ၆ ဦးမှ ဒီဇိုင်းဆွဲ တည်ဆောက်ထားသော စမတ် ယာဉ်ရပ်နားစခန်း စီမံခန့်ခွဲမှုစနစ် ဖြစ်ပါသည်။",
     "about.location": "ကရင်ပြည်နယ် · ကွန်ပျူတာသိပ္ပံ ဌာန",
     "about.stand_for": "ကျွန်ုပ်တို့ ကိုယ်စားပြုသည့် တန်ဖိုးများ",
-    "about.driven_by": "Smart Parking System ဖြင့် ယာဉ်ရပ်နားမှုကို ပိုမိုလွယ်ကူစေပါ",
+    "about.driven_by": "AI Parking System ဖြင့် ယာဉ်ရပ်နားမှုကို ပိုမိုလွယ်ကူစေပါ",
     "about.mission_title": "ကျွန်ုပ်တို့၏ ရည်မှန်းချက်",
     "about.mission_desc": "ကရင်ပြည်နယ်တွင်း စမတ်ကျသော ဒစ်ဂျစ်တယ် ယာဉ်ရပ်နားစခန်း စီမံခန့်ခွဲမှုစနစ်ဖြင့် ကားမောင်းသူတိုင်း အချိန်ကုန်သက်သာပြီး ယာဉ်ကြောပိတ်ဆို့မှု လျှော့ချပေးရန် ဖြစ်ပါသည်။",
     "about.vision_title": "ကျွန်ုပ်တို့၏ မျှော်မှန်းချက်",

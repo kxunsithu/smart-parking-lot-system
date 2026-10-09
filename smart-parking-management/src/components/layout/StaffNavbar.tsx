@@ -73,7 +73,7 @@ export function StaffNavbar() {
                 <ParkingSquare className="size-5 text-primary-foreground" />
               </div>
               <div className="hidden sm:block">
-                <p className="font-extrabold text-sm leading-tight tracking-tight text-foreground">Smart Parking</p>
+                <p className="font-extrabold text-sm leading-tight tracking-tight text-foreground">AI Parking</p>
                 <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Staff Portal</p>
               </div>
             </NavLink>
@@ -183,7 +183,7 @@ export function StaffNavbar() {
                 <ParkingSquare className="size-5 text-primary-foreground" />
               </div>
               <div>
-                <p className="font-extrabold text-sm leading-tight text-foreground">Smart Parking</p>
+                <p className="font-extrabold text-sm leading-tight text-foreground">AI Parking</p>
                 <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Staff Portal</p>
               </div>
             </div>

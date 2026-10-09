@@ -1,6 +1,6 @@
-# Smart Parking Lot Management System 🚗🅿️
+# AI-Based Parking Management System 🚗🅿️
 
-A comprehensive, full-stack Smart Parking Lot Management System comprising a **FastAPI backend REST API** and two **React (Vite) frontend applications** (Management & Customer Portal).
+A comprehensive, full-stack AI-Based Parking Management System comprising a **FastAPI backend REST API** and two **React (Vite) frontend applications** (Management & Customer Portal).
 
 ---
 
@@ -173,4 +173,4 @@ pytest -v
 ---
 
 ## 📄 License
-This project is proprietary software for Smart Parking Lot Management.
+This project is proprietary software for AI-Based Parking Management.

@@ -1,6 +1,6 @@
 # 🛠️ Detailed Local Development Setup Guide
 
-This guide provides comprehensive, step-by-step instructions on setting up and running the **Smart Parking Lot Management System** on your local machine.
+This guide provides comprehensive, step-by-step instructions on setting up and running the **AI-Based Parking Management System** on your local machine.
 
 ---
 

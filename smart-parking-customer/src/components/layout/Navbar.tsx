@@ -84,10 +84,10 @@ export default function Navbar() {
             className="flex items-center gap-2.5 group cursor-pointer text-left"
           >
             <div className="size-9 rounded overflow-hidden shadow-sm group-hover:scale-105 transition-transform shrink-0">
-              <img src={appIcon} alt="Smart Parking" className="w-full h-full object-contain" />
+              <img src={appIcon} alt="AI Parking" className="w-full h-full object-contain" />
             </div>
             <div>
-              <p className="font-extrabold text-sm leading-tight text-foreground">Smart Parking</p>
+              <p className="font-extrabold text-sm leading-tight text-foreground">AI Parking</p>
               <p className="text-[10px] text-primary font-semibold uppercase tracking-widest">Kayin State</p>
             </div>
           </button>

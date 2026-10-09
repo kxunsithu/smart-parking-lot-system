@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="A Smart Parking Lot Management System backend API.",
+    description="An AI-Based Parking Management System backend API.",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",

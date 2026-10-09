@@ -15,12 +15,12 @@ export default function Footer() {
             <Car className="size-4 text-white" />
           </div>
           <div>
-            <p className="font-bold text-sm">Smart Parking</p>
+            <p className="font-bold text-sm">AI Parking</p>
             <p className="text-[10px] text-muted-foreground">Kayin State</p>
           </div>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-4 text-xs text-muted-foreground text-center">
-          <p>© {new Date().getFullYear()} {t("footer.subtitle", "Smart Parking Lot Management System. Built for Kayin State.")}</p>
+          <p>© {new Date().getFullYear()} {t("footer.subtitle", "AI-Based Parking Management System. Built for Kayin State.")}</p>
           <Link to="/about" className="hover:text-primary transition-colors font-medium underline-offset-4 hover:underline">
             {t("footer.about_us", "About Us")}
           </Link>

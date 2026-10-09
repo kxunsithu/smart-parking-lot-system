@@ -1,6 +1,6 @@
-# Smart Parking Lot System - AI Camera Slot Detection System (အသေးစိတ် ရှင်းလင်းချက် စာရွက်စာတမ်း)
+# AI-Based Parking Management System - AI Camera Slot Detection System (အသေးစိတ် ရှင်းလင်းချက် စာရွက်စာတမ်း)
 
-ဤစာရွက်စာတမ်းသည် **Smart Parking Lot Management System** တွင် ပါဝင်သော **AI Camera Slot Detection & Live Floor Map Feature** ၏ နည်းပညာအသေးစိတ်၊ အလုပ်လုပ်ပုံအဆင့်ဆင့်၊ Architecture ပုံစံ တွဲဖက်ထားမှု၊ တိကျမှု (Accuracy) ဆန်းစစ်ချက်နှင့် လုံခြုံရေး စည်းမျဉ်းများကို မြန်မာဘာသာဖြင့် ပြည့်စုံစွာ ရှင်းလင်းရေးသားထားခြင်း ဖြစ်ပါသည်။
+ဤစာရွက်စာတမ်းသည် **AI-Based Parking Management System** တွင် ပါဝင်သော **AI Camera Slot Detection & Live Floor Map Feature** ၏ နည်းပညာအသေးစိတ်၊ အလုပ်လုပ်ပုံအဆင့်ဆင့်၊ Architecture ပုံစံ တွဲဖက်ထားမှု၊ တိကျမှု (Accuracy) ဆန်းစစ်ချက်နှင့် လုံခြုံရေး စည်းမျဉ်းများကို မြန်မာဘာသာဖြင့် ပြည့်စုံစွာ ရှင်းလင်းရေးသားထားခြင်း ဖြစ်ပါသည်။
 
 ---
 
@@ -162,4 +162,4 @@ Backend API ၏ `CameraDetectionService` တွင် အောက်ပါ စ�
 ---
 
 📄 စာရွက်စာတမ်း ပြုစုပြီးစီးသည့် ရက်စွဲ: **October 2026**  
-🏢 စနစ်အမည်: **Smart Parking Lot System (AI Camera Detection Module)**
+🏢 စနစ်အမည်: **AI-Based Parking Management System (AI Camera Detection Module)**

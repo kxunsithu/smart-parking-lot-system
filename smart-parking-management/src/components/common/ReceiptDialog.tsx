@@ -132,7 +132,7 @@ function buildReceiptHtml(payment: PaymentListOut, isOwner: boolean): string {
   <div class="receipt">
     <div class="header">
       <div>
-        <div class="brand">Smart Parking</div>
+        <div class="brand">AI Parking</div>
         <div class="subtitle">Transaction Receipt</div>
       </div>
       <span class="status">${escapeHtml(statusLabel)}</span>
@@ -149,7 +149,7 @@ function buildReceiptHtml(payment: PaymentListOut, isOwner: boolean): string {
     </div>
 
     <div class="footer">
-      <span>${escapeHtml(payment.owner_name ?? "Smart Parking")}</span>
+      <span>${escapeHtml(payment.owner_name ?? "AI Parking")}</span>
       <span>Thank you for your payment.</span>
     </div>
   </div>
@@ -206,7 +206,7 @@ export function ReceiptDialog({ payment, onOpenChange, isOwner }: ReceiptDialogP
         <div className="space-y-4">
           <div className="flex items-start justify-between border-b pb-3">
             <div>
-              <p className="text-lg font-semibold leading-tight">Smart Parking</p>
+              <p className="text-lg font-semibold leading-tight">AI Parking</p>
               <p className="text-xs text-muted-foreground">Transaction Receipt</p>
             </div>
             <StatusBadge label={meta.label} tone={meta.tone} />
@@ -265,7 +265,7 @@ export function ReceiptDialog({ payment, onOpenChange, isOwner }: ReceiptDialogP
           </div>
 
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{payment.owner_name ?? "Smart Parking"}</span>
+            <span>{payment.owner_name ?? "AI Parking"}</span>
             <span>Thank you for your payment.</span>
           </div>
         </div>
