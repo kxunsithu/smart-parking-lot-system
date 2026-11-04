@@ -37,6 +37,7 @@ The system consists of 4 services to deploy in your Railway project:
    - **Service Name**: `smart-parking-api`
    - **Root Directory**: `smart-parking-api`
 3. Railway will automatically detect the `Dockerfile` inside `smart-parking-api/`.
+   - If the build fails with `"/requirements.txt": not found`, it means Railway is building from the repository root instead of `smart-parking-api/`. Either set **Root Directory** = `smart-parking-api` in the service settings, or keep the repo root as context — the included `railway.json` files handle both cases via the `APP_DIR` build arg.
 4. Go to **Variables** tab and set the environment variables:
 
 | Variable | Value / Description |
@@ -118,6 +119,27 @@ After generating public domains for all 3 services on Railway, make sure to upda
 Re-deploy `smart-parking-api` (or save variables to trigger an automatic re-deploy).
 
 ---
+
+## 💸 Free / Low-Cost Backend-Only Deployment
+
+Railway itself no longer offers a permanent free tier, but you can run the **backend only** for close to free by combining Railway's trial credit with a free external Postgres:
+
+1. **Database (free):** Create a free Postgres on [Neon](https://neon.tech) or [Supabase](https://supabase.com). Copy its connection string and set it as `DATABASE_URL` on the Railway service (the app auto-converts `postgres://` → `postgresql://`).
+2. **Backend service (Railway trial credit):** New Project → Deploy from GitHub → Root Directory `smart-parking-api`. Railway builds the Dockerfile. Set only the required env vars:
+   - `DATABASE_URL` (from Neon/Supabase)
+   - `APP_NAME`, `APP_ENV=production`, `DEBUG=False`
+   - `API_V1_PREFIX=/api/v1`
+   - `SECRET_KEY` (any long random string)
+   - `ALGORITHM=HS256`, `ACCESS_TOKEN_EXPIRE_MINUTES=30`, `REFRESH_TOKEN_EXPIRE_DAYS=7`
+   - `BACKEND_CORS_ORIGINS` (your frontend origin(s), or `[]` if none yet)
+   - `DEFAULT_PAGE_SIZE=10`, `MAX_PAGE_SIZE=100`, `DEFAULT_HOURLY_RATE=1000.0`
+   - `DEFAULT_ADMIN_NAME/EMAIL/PASSWORD/PHONE`
+   - Optional: SMTP, wallet vars (can be skipped; defaults are empty/localhost)
+3. **Networking:** Settings → Networking → Generate Domain. Your API is at `https://<name>.up.railway.app`.
+4. **Skip heavy features to save credit:** set `SKIP_MIGRATIONS=1` after the first successful deploy to avoid re-running seed on every redeploy; leave `AUTO_MIGRATE=true` only when schema changes.
+5. **Uploads caveat:** Railway's filesystem is ephemeral. Uploaded images under `/uploads` are lost on redeploy. For a truly free setup, either disable image uploads or point them at a free object store (Cloudinary/S3 free tier).
+
+Health check: `https://<name>.up.railway.app/health` → `{"status":"healthy"}`.
 
 ## 🔍 Verification
 

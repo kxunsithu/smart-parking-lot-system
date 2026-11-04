@@ -10,6 +10,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize_database_url(cls, values):
+        """Normalize provider URLs (e.g. Supabase/Neon/Railway) to a SQLAlchemy-friendly form."""
+        if isinstance(values, dict):
+            url = values.get("DATABASE_URL")
+            if isinstance(url, str):
+                if url.startswith("postgres://"):
+                    values["DATABASE_URL"] = url.replace("postgres://", "postgresql://", 1)
+        return values
+
     # Application
     APP_NAME: str
     APP_ENV: str
